@@ -1,6 +1,6 @@
-<h1 align="center">Goat Indicators</h1>
+<h1 align="center">Goat Pit Indicators</h1>
 
-Goat Indicators is a RuneLite plugin that shows how full a goat pit is at a glance, and reminds you when an emptied pit still needs its spikes put back. The plugin draws the pit's state directly on the pit itself: a coloured fill and an `X / 20` count you can read from across the area, so you never have to walk over and count by hand.
+Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a glance, and reminds you when an emptied pit still needs its spikes put back. The plugin draws the pit's state directly on the pit itself: a coloured fill and an `X / 20` count you can read from across the area, so you never have to walk over and count by hand.
 
 ## Features
 
@@ -22,14 +22,17 @@ Goat Indicators is a RuneLite plugin that shows how full a goat pit is at a glan
 |---|---|---|
 | Show overlay | Master toggle for the on-pit overlay | On |
 | Show count | Show the `X / 20` count label | On |
-| Full colour | Fill when the pit is full | Light green |
-| Partial colour | Fill while the pit is filling | Light yellow |
-| Needs-spikes colour | Fill when the pit is empty and unspiked | Light red |
-| Show "Add Spikes" | Show the spikes reminder | On |
+| Show "Add Spikes" | Show the spikes reminder at `0 / 20` | On |
+| Full: outline only | Draw a full pit as outline only, no fill | Off |
+| Needs spikes: outline only | Draw a spikes-needed pit as outline only, no fill | Off |
+| Full colour | Fill when the pit is full | Green |
+| Partly full colour | Midpoint of the outline gradient | Gold |
+| Needs-spikes colour | Fill/outline when the pit needs spikes | Red |
+| Label colour | Colour of the count and "Add Spikes" text | White |
 | Max draw distance | How far away pits still draw (tiles) | 32 |
 
 ## Links
 
-- [Report a bug](https://github.com/Oveduumnakal/Goat-Indicators-Plugin/issues/new?template=bug_report.yml)
-- [Request a feature](https://github.com/Oveduumnakal/Goat-Indicators-Plugin/issues/new?template=feature_request.yml)
+- [Report a bug](https://github.com/Oveduumnakal/Goat-Pit-Indicators-Plugin/issues/new?template=bug_report.yml)
+- [Request a feature](https://github.com/Oveduumnakal/Goat-Pit-Indicators-Plugin/issues/new?template=feature_request.yml)
 - [Buy me a coffee](https://buymeacoffee.com/oveduumnakal)

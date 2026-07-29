@@ -139,11 +139,11 @@ class GoatPitOverlay extends Overlay
 	{
 		if (state.isFull())
 		{
-			return config.fullColor();
+			return config.fullOutlineOnly() ? null : config.fullColor();
 		}
 		if (promptAddSpikes(state))
 		{
-			return config.needsSpikesColor();
+			return config.spikesOutlineOnly() ? null : config.needsSpikesColor();
 		}
 		return null;
 	}

@@ -71,12 +71,34 @@ public interface GoatIndicatorsConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(
+		keyName = "fullOutlineOnly",
+		name = "Full: outline only",
+		description = "Draw a full pit with just its outline, leaving the footprint unfilled.",
+		position = 4
+	)
+	default boolean fullOutlineOnly()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "spikesOutlineOnly",
+		name = "Needs spikes: outline only",
+		description = "Draw a spikes-needed pit with just its outline, leaving the footprint unfilled.",
+		position = 5
+	)
+	default boolean spikesOutlineOnly()
+	{
+		return false;
+	}
+
 	@Alpha
 	@ConfigItem(
 		keyName = "fullColor",
 		name = "Full",
 		description = "Fill colour for a pit holding all 20 goats.",
-		position = 4
+		position = 6
 	)
 	default Color fullColor()
 	{
@@ -88,7 +110,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "partialColor",
 		name = "Partly full",
 		description = "Fill colour for a pit that is neither full nor waiting on spikes.",
-		position = 5
+		position = 7
 	)
 	default Color partialColor()
 	{
@@ -100,7 +122,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "needsSpikesColor",
 		name = "Needs spikes",
 		description = "Fill colour for an empty pit with no spikes set.",
-		position = 6
+		position = 8
 	)
 	default Color needsSpikesColor()
 	{
@@ -112,7 +134,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "textColor",
 		name = "Label",
 		description = "Colour of the count and \"Add Spikes\" text.",
-		position = 7
+		position = 9
 	)
 	default Color textColor()
 	{
@@ -124,7 +146,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "maxDrawDistance",
 		name = "Draw distance",
 		description = "Stop drawing the overlay for pits further away than this many tiles.",
-		position = 8
+		position = 10
 	)
 	default int maxDrawDistance()
 	{
@@ -136,7 +158,7 @@ public interface GoatIndicatorsConfig extends Config
 		name = "Debug logging (developer)",
 		description = "Log pit ids, varbits and varbit changes to the client log for id discovery. "
 			+ "Leave off unless you are pinning down the goat pit's ids.",
-		position = 9
+		position = 11
 	)
 	default boolean debugLogging()
 	{
