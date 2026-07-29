@@ -31,6 +31,7 @@ import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.VarbitChanged;
+import net.runelite.client.Notifier;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -45,6 +46,8 @@ import net.runelite.client.ui.overlay.OverlayManager;
 )
 public class GoatIndicatorsPlugin extends Plugin
 {
+	private static final String NEEDS_SPIKES_MESSAGE = "A goat pit needs spikes.";
+
 	@Inject
 	private OverlayManager overlayManager;
 
@@ -56,6 +59,15 @@ public class GoatIndicatorsPlugin extends Plugin
 
 	@Inject
 	private GoatPitDiscovery discovery;
+
+	@Inject
+	private GoatIndicatorsConfig config;
+
+	@Inject
+	private Notifier notifier;
+
+	/** Last seen spikes state, so a loss of spikes can be detected as a transition. Starts spiked. */
+	private boolean lastSpiked = true;
 
 	@Override
 	protected void startUp()
@@ -80,6 +92,29 @@ public class GoatIndicatorsPlugin extends Plugin
 	public void onVarbitChanged(VarbitChanged event)
 	{
 		discovery.onVarbitChanged(event);
+		if (GoatIds.SPIKES_VARBIT_OVERRIDE >= 0 && event.getVarbitId() == GoatIds.SPIKES_VARBIT_OVERRIDE)
+		{
+			boolean spiked = event.getValue() != 0;
+			if (shouldNotifyNeedsSpikes(lastSpiked, spiked, !tracker.getPits().isEmpty()))
+			{
+				notifier.notify(config.needsSpikesNotification(), NEEDS_SPIKES_MESSAGE);
+			}
+			lastSpiked = spiked;
+		}
+	}
+
+	/**
+	 * Whether losing spikes should raise a notification: only on a spiked→unspiked transition while a
+	 * pit is loaded in the scene. Package-private and static so the rule can be unit tested directly.
+	 *
+	 * @param wasSpiked the previously seen spikes state
+	 * @param nowSpiked the spikes state just reported
+	 * @param pitLoaded whether a goat pit is currently in the scene
+	 * @return true if a "needs spikes" notification should fire
+	 */
+	static boolean shouldNotifyNeedsSpikes(boolean wasSpiked, boolean nowSpiked, boolean pitLoaded)
+	{
+		return pitLoaded && wasSpiked && !nowSpiked;
 	}
 
 	@Subscribe
@@ -100,6 +135,7 @@ public class GoatIndicatorsPlugin extends Plugin
 		{
 			tracker.clear();
 			discovery.reset();
+			lastSpiked = true;
 		}
 	}
 

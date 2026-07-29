@@ -29,6 +29,7 @@ import net.runelite.client.config.Alpha;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.Notification;
 import net.runelite.client.config.Range;
 
 /** Settings for the goat pit overlay: what is drawn, and in which colours. */
@@ -154,11 +155,22 @@ public interface GoatIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "needsSpikesNotification",
+		name = "Needs-spikes notification",
+		description = "Notify when a nearby goat pit loses its spikes and needs new ones set.",
+		position = 11
+	)
+	default Notification needsSpikesNotification()
+	{
+		return Notification.OFF;
+	}
+
+	@ConfigItem(
 		keyName = "debugLogging",
 		name = "Debug logging (developer)",
 		description = "Log pit ids, varbits and varbit changes to the client log for id discovery. "
 			+ "Leave off unless you are pinning down the goat pit's ids.",
-		position = 11
+		position = 12
 	)
 	default boolean debugLogging()
 	{
