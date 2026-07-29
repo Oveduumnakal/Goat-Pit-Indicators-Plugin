@@ -7,9 +7,14 @@ Captured 2026-07-29 in a developer-mode session, via the plugin's own
 
 | Thing | Id | Notes |
 |---|---|---|
-| Pit object | `19750` | See caveat below — its cache definition is empty. |
+| Pit **game object** | `62343` | What the overlay draws its footprint on. |
+| Pit **ground object** | `19750` | The ground object beneath the pit; not used for drawing. |
 | Wyrmscraid Goat (NPC) | `16298` | The goat caught by the pit. |
-| Ground item near pit | `62343` | Reported in-game; role not yet confirmed. |
+
+The pit renders as two stacked scene entities. The tracker keys on the **game
+object** `62343`, since that is the one with a footprint the overlay can outline.
+The earlier empty `getObjectDefinition(19750)` reading was because `19750` is the
+ground object, not a game object.
 
 ## Caveat: object 19750 carries no state
 

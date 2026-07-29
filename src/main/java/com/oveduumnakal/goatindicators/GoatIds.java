@@ -48,12 +48,13 @@ final class GoatIds
 	static final int PIT_CAPACITY = 20;
 
 	/**
-	 * Exact object ids of the goat pit. Confirmed in a developer-mode session (see
-	 * {@code docs/discovery.md}); {@code 19750} is the pit object. Name matching via
-	 * {@link #PIT_NAME_FRAGMENT} still runs as a fallback if this set is emptied.
+	 * Exact game-object ids of the goat pit, the object the overlay draws its footprint on. Confirmed
+	 * in a developer-mode session (see {@code docs/discovery.md}): the pit renders as game object
+	 * {@code 62343} (id {@code 19750} is the ground object beneath it, which the tracker does not use).
+	 * Name matching via {@link #PIT_NAME_FRAGMENT} still runs as a fallback if this set is emptied.
 	 */
 	static final Set<Integer> PIT_OBJECT_IDS =
-		Collections.unmodifiableSet(new HashSet<>(Arrays.asList(19750)));
+		Collections.unmodifiableSet(new HashSet<>(Arrays.asList(62343)));
 
 	/**
 	 * Lower-cased fragment matched against {@link net.runelite.api.ObjectComposition#getName()} when
