@@ -84,12 +84,25 @@ most likely things to be wrong in-game.
    session.
 4. Git repo initialised with an initial commit on `main`.
 
+## Discovery logging (new)
+
+`GoatPitDiscovery.java` captures the discovery data itself — no Dev Tools
+hunting. Enable **"Debug logging (developer)"** in the config, then at a pit it
+logs to `~/.runelite/logs/client.log` (grep `goat-discovery`):
+- on first pit load: id, name, worldPoint, footprint, declared varbit + value,
+  varPlayer, impostor ids, actions, spikes heuristic result;
+- on every varbit change while a pit is loaded: varbitId / varpId / value — so
+  adding or removing a goat reveals the count varbit.
+
+The toggle defaults **off**; it is safe to leave shipped.
+
 ## Not done — needs the user
 
 1. **In-game discovery, still blocking correctness.** See Next action. This is
    the one item that needs a live game client. Two heuristics are unverified
    guesses: (a) the object's declared varbit equals the goat count, (b) an
-   "Add spikes" action means the pit is unspiked. Confirm or replace both.
+   "Add spikes" action means the pit is unspiked. Confirm or replace both. Use
+   the discovery logging above to gather the data.
 2. No `banner.png` / `icon.png` — needs a design pass; README omits image refs
    for now so nothing is broken.
 3. GitHub repo not created — outward-facing publish, left for explicit go-ahead.
