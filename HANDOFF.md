@@ -1,6 +1,6 @@
 # Handoff — Goat Pit Indicators
 
-Written 2026-07-29, updated 2026-07-29 (Release 1.0 cut, hub PR submitted).
+Written 2026-07-29, updated 2026-07-29 (Release 1.0.1 cut, hub PR bumped to it).
 Plan file: `/home/deck/.claude/plans/gleaming-launching-papert.md`.
 Renamed from "Goat Indicators" → **Goat Pit Indicators** (display name only; the
 Java package `com.oveduumnakal.goatindicators` and class names are unchanged).
@@ -8,17 +8,22 @@ Java package `com.oveduumnakal.goatindicators` and class names are unchanged).
 ## Next action
 
 Watch the plugin-hub PR — https://github.com/runelite/plugin-hub/pull/14452 —
-and respond to any maintainer review. Their `build` check runs the plugin at the
-pinned commit `6323a22`; a first-time contributor's workflow may need maintainer
-approval before it runs. Nothing on our side is outstanding.
+and answer any maintainer review. It now pins `commit=a6efcae` (Release 1.0.1);
+nothing on our side is outstanding.
 
 ## Status
 
-- **Release 1.0 SHIPPED**: tag `R-1.0` (commit `6323a22`), GitHub release
-  "Release 1.0" published + marked latest, `Release 1.0` milestone auto-closed.
-- **Plugin-hub PR OPEN**: runelite/plugin-hub#14452 adds `plugins/goat-pit-indicators`
-  (repository + `commit=6323a22`). Submitted from fork `Oveduumnakal/plugin-hub`,
-  branch `add-goat-pit-indicators`.
+- **Release 1.0.1 SHIPPED**: tag `R-1.0.1` → commit `a6efcae`
+  (`a6efcae61c1a624288246ca5923e405a18fc5596`), GitHub release "Release 1.0.1"
+  published + marked latest, `Release 1.0.1` milestone (#2) created. This release
+  makes pit capacity Hunter-level based (was a hardcoded 20) and refreshes the
+  banner/icon to the `+1` indicator art.
+- **Release 1.0**: tag `R-1.0` → commit `151a4ed` (annotated-tag object SHA
+  `6323a22` — never use that as a commit; the hub rejected it once).
+- **Plugin-hub PR OPEN, bumped to 1.0.1**: runelite/plugin-hub#14452 adds
+  `plugins/goat-pit-indicators`, now `commit=a6efcae61c1a624288246ca5923e405a18fc5596`.
+  Commented "fixed hard coded pit maximum values and updated art work to match".
+  Fork `Oveduumnakal/plugin-hub`, branch `add-goat-pit-indicators`.
 - **Artwork DONE**: `banner.png` (root, in README), `icon.png` 48x48 (root, under
   the hub's 48x72 max), source kept at `docs/icon-source.png`. Four overlay
   screenshots in `docs/images/`, shown in the README (merged via PR #5, issue #3).
@@ -27,7 +32,7 @@ approval before it runs. Nothing on our side is outstanding.
 - **In-game discovery DONE** — real ids confirmed, overlay verified live.
 - **GitHub repo LIVE**: https://github.com/Oveduumnakal/Goat-Pit-Indicators-Plugin
   — `main` pushed, 11 labels, Discussions on.
-- **Version 1.0** in `runelite-plugin.properties`.
+- **Version 1.0.1** in `runelite-plugin.properties`.
 - **First real PR merged**: PR #5 (artwork/screenshots) — the flow is proven end
   to end. No open PRs or issues on our repo.
 
@@ -40,7 +45,9 @@ required key (`displayName`, `author`, `description`, `tags`, `plugins`,
 `getResource()` risk). `build=standard` means the hub replaces `build.gradle` at
 review, so the local `mavenLocal()` / `latest.release` / Test-class-as-`run`-main
 bits do not affect the hub build. To re-submit at a new version: tag `R-<v>`,
-then bump `commit=` in the hub file to the new tag's hash.
+then set `commit=` in the hub file to the **commit** the tag points to, not the
+tag object's SHA. Get it with `git rev-parse R-<v>^{commit}` (annotated tags have
+their own object SHA, which the hub rejects — this is what broke PR #14452).
 
 ## Discovery results (confirmed in-game)
 
@@ -51,9 +58,9 @@ Recorded in full in `docs/discovery.md`. Key facts:
 | Pit **game object** | `62343` | What the overlay draws its footprint on. |
 | Pit **ground object** | `19750` | Beneath the pit; empty composition, not used. |
 | Wyrmscraid Goat (NPC) | `16298` | The goat the pit catches. |
-| **Count** | varbit `15725` | Part of VarPlayer 5706; steps 0→20. Verified 1→2→3. |
+| **Count** | varbit `15725` | Part of VarPlayer 5706; steps 0→capacity. Verified 1→2→3. |
 | **Spikes** | varbit `15724` | 1 = spiked, 0 = needs spikes. |
-| Capacity | 20 | Confirmed by the account holder. |
+| Capacity | Hunter-level based | 16/18/20/22/24 at Hunter 60/70/77/85/93+ (OSRS Wiki). `GoatIds.capacityForHunterLevel`. The account holder's confirmed "20" was their 77–84 band. |
 
 The pit is **not** a standard multiloc object — object 62343/19750 carry no
 declared varbit or actions, so the original "declared varbit = count" and
