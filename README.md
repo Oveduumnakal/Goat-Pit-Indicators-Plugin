@@ -1,5 +1,9 @@
 <h1 align="center">Goat Pit Indicators</h1>
 
+<p align="center">
+  <img src="banner.png" alt="Goat Pit Indicators — goats leaping into a spiked pit with a 12 / 20 counter" width="100%">
+</p>
+
 Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a glance, and reminds you when an emptied pit still needs its spikes put back. The plugin draws the pit's state directly on the pit itself: a coloured fill and an `X / 20` count you can read from across the area, so you never have to walk over and count by hand.
 
 ## Features
@@ -15,6 +19,14 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 - **Make it yours**
 
   The full, partial, and needs-spikes fill colours, the count label, the "Add Spikes" prompt, and the draw distance are all configurable. Turn the whole overlay off from the config panel when you don't need it.
+
+## Screenshots
+
+| Filling up | Full |
+|---|---|
+| ![A partly full pit showing a green outline and a 12 / 20 count](docs/images/GoatIndicators-PartiallyFull.png) | ![A full pit with a solid green fill and 20 / 20 count](docs/images/GoatIndicators-Full.png) |
+| **Empty, still spiked** | **Needs spikes** |
+| ![An empty but spiked pit showing a red outline and 0 / 20 count](docs/images/GoatIndicators-EmptyWithSpikes.png) | ![An empty unspiked pit with a red fill and an "Add Spikes" prompt](docs/images/GoatIndicators-AddSpikes.png) |
 
 ## Configuration
 
