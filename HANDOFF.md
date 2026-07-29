@@ -1,25 +1,46 @@
 # Handoff — Goat Pit Indicators
 
-Written 2026-07-29. Plan file: `/home/deck/.claude/plans/gleaming-launching-papert.md`.
+Written 2026-07-29, updated 2026-07-29 (Release 1.0 cut, hub PR submitted).
+Plan file: `/home/deck/.claude/plans/gleaming-launching-papert.md`.
 Renamed from "Goat Indicators" → **Goat Pit Indicators** (display name only; the
 Java package `com.oveduumnakal.goatindicators` and class names are unchanged).
 
 ## Next action
 
-Add `banner.png` / `icon.png` art, then cut Release 1.0 (tag `R-1.0` once the
-`Release 1.0` milestone has zero open issues). The overlay is verified live and
-CI is proven green (see Status), so nothing else blocks a release.
+Watch the plugin-hub PR — https://github.com/runelite/plugin-hub/pull/14452 —
+and respond to any maintainer review. Their `build` check runs the plugin at the
+pinned commit `6323a22`; a first-time contributor's workflow may need maintainer
+approval before it runs. Nothing on our side is outstanding.
 
 ## Status
 
+- **Release 1.0 SHIPPED**: tag `R-1.0` (commit `6323a22`), GitHub release
+  "Release 1.0" published + marked latest, `Release 1.0` milestone auto-closed.
+- **Plugin-hub PR OPEN**: runelite/plugin-hub#14452 adds `plugins/goat-pit-indicators`
+  (repository + `commit=6323a22`). Submitted from fork `Oveduumnakal/plugin-hub`,
+  branch `add-goat-pit-indicators`.
+- **Artwork DONE**: `banner.png` (root, in README), `icon.png` 48x48 (root, under
+  the hub's 48x72 max), source kept at `docs/icon-source.png`. Four overlay
+  screenshots in `docs/images/`, shown in the README (merged via PR #5, issue #3).
 - **Build GREEN**: `./gradlew build` passes compile, tests, `check-style.py`,
   javadoc, no warnings.
 - **In-game discovery DONE** — real ids confirmed, overlay verified live.
 - **GitHub repo LIVE**: https://github.com/Oveduumnakal/Goat-Pit-Indicators-Plugin
-  — `main` pushed, 11 labels, Discussions on, `Release 1.0` milestone.
-- **Version 1.0** in `runelite-plugin.properties`, matching the milestone.
-- **CI proven green end to end**: PR #2 ran `build` + `conventions` both green,
-  then was closed as out of scope (see Not done #1). No open PRs or issues.
+  — `main` pushed, 11 labels, Discussions on.
+- **Version 1.0** in `runelite-plugin.properties`.
+- **First real PR merged**: PR #5 (artwork/screenshots) — the flow is proven end
+  to end. No open PRs or issues on our repo.
+
+## Plugin-hub compliance (verified against runelite/plugin-hub README)
+
+All requirements met at submission: `runelite-plugin.properties` has every
+required key (`displayName`, `author`, `description`, `tags`, `plugins`,
+`build=standard`); `plugins=` class exists; `icon.png` 48x48 ≤ 48x72; BSD
+2-Clause license; public repo; main code bundles no classpath resources (no
+`getResource()` risk). `build=standard` means the hub replaces `build.gradle` at
+review, so the local `mavenLocal()` / `latest.release` / Test-class-as-`run`-main
+bits do not affect the hub build. To re-submit at a new version: tag `R-<v>`,
+then bump `commit=` in the hub file to the new tag's hash.
 
 ## Discovery results (confirmed in-game)
 
@@ -81,15 +102,10 @@ logic is in static package-private methods so `Client` never needs stubbing).
 
 ## Not done
 
-1. **First real PR still to merge.** The PR flow is proven (PR #2 opened from a
-   feature branch with `Closes #1` + milestone, both checks green) but that PR
-   was a needs-spikes **notification** the account holder ruled **out of scope**,
-   so it was closed and issue #1 closed as not planned — no notification code is
-   on `main`. Next genuinely-new change gets the first merged PR. Convention:
-   PR body needs `Closes #<issue>` and a milestone or `pr-checks.yml` fails.
-2. **No `banner.png` / `icon.png`** — README omits image refs so nothing is
-   broken; add art before a wider release.
-3. **Client relaunch etiquette** — the account holder asked not to restart their
+1. **Plugin-hub review pending** — PR #14452 is open but not yet merged by the
+   RuneLite team; watch it and answer any review comments. This is the only open
+   thread.
+2. **Client relaunch etiquette** — the account holder asked not to restart their
    running client without a say-so. Build locally; only `./gradlew run` on
    request. (Kill stale clients with `pkill -9 java` — several piled up earlier.)
 
