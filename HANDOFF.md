@@ -11,13 +11,15 @@ Plan file: `/home/deck/.claude/plans/gleaming-launching-papert.md`.
 
 ## Build status: GREEN
 
-`./gradlew build` passes — compile, tests, `check-style.py`, and javadoc all
-clean. One non-blocking deprecation warning remains (`Client.getNpcs()` in
-`GoatPitTracker`; used only by the NPC-count fallback).
+`./gradlew build` passes clean — compile, tests, `check-style.py`, and javadoc,
+no warnings.
 
-Fix applied this pass: `GoatPitTracker.countGoatsInside` called `npc.getPlane()`,
-which does not exist on `NPC`/`Actor` in runelite-api 1.12.33. Now reads the
-plane from `npc.getWorldLocation().getPlane()` with a null guard.
+Fixes applied this pass, both in `GoatPitTracker`:
+- `countGoatsInside` called `npc.getPlane()`, which does not exist on
+  `NPC`/`Actor` in runelite-api 1.12.33. Now reads the plane from
+  `npc.getWorldLocation().getPlane()` with a null guard.
+- Replaced the deprecated `Client.getNpcs()` with
+  `client.getTopLevelWorldView().npcs()`.
 
 ## What exists
 

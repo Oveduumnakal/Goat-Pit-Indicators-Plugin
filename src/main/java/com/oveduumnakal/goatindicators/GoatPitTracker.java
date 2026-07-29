@@ -27,7 +27,6 @@ package com.oveduumnakal.goatindicators;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import javax.inject.Inject;
@@ -202,9 +201,8 @@ class GoatPitTracker
 		{
 			return 0;
 		}
-		List<NPC> npcs = client.getNpcs();
 		int count = 0;
-		for (NPC npc : npcs)
+		for (NPC npc : client.getTopLevelWorldView().npcs())
 		{
 			if (!isGoat(npc))
 			{
