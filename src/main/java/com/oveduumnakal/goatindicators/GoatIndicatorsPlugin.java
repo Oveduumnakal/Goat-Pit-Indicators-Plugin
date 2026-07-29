@@ -26,7 +26,6 @@ package com.oveduumnakal.goatindicators;
 
 import com.google.inject.Provides;
 import javax.inject.Inject;
-import net.runelite.api.GameObject;
 import net.runelite.api.GameState;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
@@ -74,12 +73,7 @@ public class GoatIndicatorsPlugin extends Plugin
 	@Subscribe
 	public void onGameObjectSpawned(GameObjectSpawned event)
 	{
-		GameObject object = event.getGameObject();
-		tracker.onSpawn(object);
-		if (tracker.isPitTracked(object))
-		{
-			discovery.onPitSpawn(object);
-		}
+		tracker.onSpawn(event.getGameObject());
 	}
 
 	@Subscribe

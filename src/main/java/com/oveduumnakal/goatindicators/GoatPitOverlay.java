@@ -45,16 +45,18 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayUtil;
 
 /**
- * Draws each loaded goat pit as a filled footprint carrying its {@code X / 20} count.
+ * Draws each loaded goat pit as an outlined footprint carrying its {@code X / 20} count.
  *
- * <p>The fill colour is the whole point: green means the pit is full and worth emptying, red means
- * it is empty with no spikes and will catch nothing until spikes go in, and the partial colour means
- * it is simply working. The "Add Spikes" line only appears in that red state.
+ * <p>The outline is the signal. A pit with no spikes is drawn solid red — it will catch nothing until
+ * spikes go back in. A spiked pit's outline runs from red toward green as the count climbs, so a
+ * glance tells you how close it is to full, and a full pit also gets a solid green fill so it stands
+ * out as ready to empty. The {@code X / 20} count sits in the centre, and the "Add Spikes" line only
+ * appears while the pit is unspiked.
  */
 class GoatPitOverlay extends Overlay
 {
-	private static final Stroke OUTLINE = new BasicStroke(1.0f);
-	private static final int OUTLINE_ALPHA = 200;
+	private static final Stroke OUTLINE = new BasicStroke(2.0f);
+	private static final int OUTLINE_ALPHA = 220;
 	private static final String ADD_SPIKES_TEXT = "Add Spikes";
 
 	private final Client client;
@@ -108,10 +110,12 @@ class GoatPitOverlay extends Overlay
 			return;
 		}
 		GoatPitState state = tracker.stateOf(pit);
-		Color fill = fillColorFor(state);
-		graphics.setColor(fill);
-		graphics.fill(footprint);
-		graphics.setColor(new Color(fill.getRed(), fill.getGreen(), fill.getBlue(), OUTLINE_ALPHA));
+		if (state.isFull())
+		{
+			graphics.setColor(config.fullColor());
+			graphics.fill(footprint);
+		}
+		graphics.setColor(outlineColorFor(state));
 		graphics.setStroke(OUTLINE);
 		graphics.draw(footprint);
 		renderLabels(graphics, pit, state);
@@ -142,17 +146,33 @@ class GoatPitOverlay extends Overlay
 		OverlayUtil.renderTextLocation(graphics, below, ADD_SPIKES_TEXT, config.textColor());
 	}
 
-	private Color fillColorFor(GoatPitState state)
+	/**
+	 * The outline colour: solid red while the pit is unspiked, otherwise a blend from the needs-spikes
+	 * colour toward the full colour in step with how full the pit is.
+	 */
+	private Color outlineColorFor(GoatPitState state)
 	{
-		if (state.isFull())
-		{
-			return config.fullColor();
-		}
 		if (state.needsSpikes())
 		{
-			return config.needsSpikesColor();
+			return withAlpha(config.needsSpikesColor(), OUTLINE_ALPHA);
 		}
-		return config.partialColor();
+		float fraction = (float) state.getCount() / GoatIds.PIT_CAPACITY;
+		return withAlpha(lerp(config.needsSpikesColor(), config.fullColor(), fraction), OUTLINE_ALPHA);
+	}
+
+	private static Color withAlpha(Color color, int alpha)
+	{
+		return new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha);
+	}
+
+	/** Linearly blends two colours, ignoring their alpha; {@code fraction} is clamped to 0..1. */
+	private static Color lerp(Color from, Color to, float fraction)
+	{
+		float f = Math.max(0.0f, Math.min(1.0f, fraction));
+		int r = Math.round(from.getRed() + (to.getRed() - from.getRed()) * f);
+		int g = Math.round(from.getGreen() + (to.getGreen() - from.getGreen()) * f);
+		int b = Math.round(from.getBlue() + (to.getBlue() - from.getBlue()) * f);
+		return new Color(r, g, b);
 	}
 
 	/**

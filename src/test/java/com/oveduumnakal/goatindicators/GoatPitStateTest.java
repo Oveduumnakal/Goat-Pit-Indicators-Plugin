@@ -51,9 +51,13 @@ public class GoatPitStateTest
 	}
 
 	@Test
-	public void aFullPitNeverAsksForSpikes()
+	public void needsSpikesTracksSpikesRegardlessOfCount()
 	{
-		assertFalse(new GoatPitState(20, false).needsSpikes());
+		assertTrue(new GoatPitState(0, false).needsSpikes());
+		assertTrue(new GoatPitState(5, false).needsSpikes());
+		assertTrue(new GoatPitState(20, false).needsSpikes());
+		assertFalse(new GoatPitState(0, true).needsSpikes());
+		assertFalse(new GoatPitState(20, true).needsSpikes());
 	}
 
 	@Test

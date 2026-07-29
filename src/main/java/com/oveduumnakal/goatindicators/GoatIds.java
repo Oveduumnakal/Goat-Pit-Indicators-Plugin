@@ -24,6 +24,7 @@
  */
 package com.oveduumnakal.goatindicators;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -47,10 +48,12 @@ final class GoatIds
 	static final int PIT_CAPACITY = 20;
 
 	/**
-	 * Exact object ids of the goat pit, if known. Empty means "identify by name instead", which is
-	 * the shipping default until a developer-mode session confirms the real ids.
+	 * Exact object ids of the goat pit. Confirmed in a developer-mode session (see
+	 * {@code docs/discovery.md}); {@code 19750} is the pit object. Name matching via
+	 * {@link #PIT_NAME_FRAGMENT} still runs as a fallback if this set is emptied.
 	 */
-	static final Set<Integer> PIT_OBJECT_IDS = Collections.unmodifiableSet(new HashSet<>());
+	static final Set<Integer> PIT_OBJECT_IDS =
+		Collections.unmodifiableSet(new HashSet<>(Arrays.asList(19750)));
 
 	/**
 	 * Lower-cased fragment matched against {@link net.runelite.api.ObjectComposition#getName()} when
@@ -71,16 +74,19 @@ final class GoatIds
 	static final String ADD_SPIKES_ACTION = "add spikes";
 
 	/**
-	 * Explicit varbit holding the goat count, or {@code -1} to use the varbit the object composition
-	 * declares. Set this only if discovery shows the object's own varbit is not the count.
+	 * Varbit holding the goat count. Object {@code 19750} carries no composition varbit, so the count
+	 * lives in this player varbit (part of VarPlayer 5706) instead. Confirmed in a developer-mode
+	 * session stepping 0 → 1 as a goat was caught; see {@code docs/discovery.md}. Set to {@code -1} to
+	 * fall back to the object's declared varbit and then to NPC counting.
 	 */
-	static final int COUNT_VARBIT_OVERRIDE = -1;
+	static final int COUNT_VARBIT_OVERRIDE = 15725;
 
 	/**
-	 * Explicit varbit holding the spikes state ({@code 0} = unspiked), or {@code -1} to fall back to
-	 * detecting {@link #ADD_SPIKES_ACTION} on the pit's composition.
+	 * Varbit holding the spikes state ({@code 0} = unspiked, {@code 1} = spiked), also part of
+	 * VarPlayer 5706. Observed dropping to 0 when the pit was emptied and returning to 1 when spikes
+	 * were re-added. Set to {@code -1} to fall back to detecting {@link #ADD_SPIKES_ACTION}.
 	 */
-	static final int SPIKES_VARBIT_OVERRIDE = -1;
+	static final int SPIKES_VARBIT_OVERRIDE = 15724;
 
 	private GoatIds()
 	{

@@ -31,21 +31,20 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
-import net.runelite.api.GameObject;
 import net.runelite.api.ObjectComposition;
-import net.runelite.api.Point;
-import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.VarbitChanged;
 
 /**
- * Writes goat-pit discovery data to the client log so the real object ids and count/spikes varbits
- * can be read straight from {@code ~/.runelite/logs/client.log} instead of hunting through Dev Tools.
+ * Writes goat-pit discovery data to the client log so the real count and spikes varbits can be read
+ * straight from {@code ~/.runelite/logs/client.log} instead of hunting through Dev Tools.
  *
  * <p>Everything here is gated on {@link GoatIndicatorsConfig#debugLogging()} and does nothing when it
- * is off, so it is inert for normal users. When a pit first loads it logs the pit's id, name,
- * footprint, declared varbit and var-player, impostor ids, current actions and the spikes heuristic
- * result. While any pit is loaded it also logs every varbit change, so adding or removing a goat
- * reveals which varbit holds the count. All output is prefixed {@code [goat-discovery]} for grepping.
+ * is off. Rather than wait for the pit to fire a scene spawn (its runtime id can be a multiloc
+ * impostor that never matches), {@link #dumpDefinitions} reads each id in {@link GoatIds#PIT_OBJECT_IDS}
+ * straight from the object cache and logs its declared varbit, var-player, actions and impostor ids —
+ * that declared varbit is the count source the plugin uses. It then logs varbit changes, marking any
+ * that hit the pit's declared varbit/var-player and otherwise keeping only values in the goat-count
+ * range so the per-tick game clocks drop out. All output is prefixed {@code [goat-discovery]}.
  */
 @Slf4j
 @Singleton
@@ -53,73 +52,116 @@ class GoatPitDiscovery
 {
 	private static final String PREFIX = "[goat-discovery]";
 
+	/** Values above this are never a goat count, so out-of-range varbit changes are filtered as noise. */
+	private static final int MAX_PLAUSIBLE_COUNT = 25;
+
+	/** Var-players that tick every game cycle regardless of the pit; logging them is pure noise. */
+	private static final Set<Integer> NOISE_VARPS = noiseVarps();
+
 	@Inject
 	private Client client;
 
 	@Inject
 	private GoatIndicatorsConfig config;
 
-	@Inject
-	private GoatPitTracker tracker;
+	private final Set<Integer> pitVarbits = new HashSet<>();
 
-	private final Set<Long> logged = new HashSet<>();
+	private final Set<Integer> pitVarps = new HashSet<>();
 
-	/** Clears the "already logged" memory so a returning pit is described again after a scene reload. */
+	private boolean dumped;
+
+	/** Clears the per-scene memory so the pit definition is dumped again after a scene reload. */
 	void reset()
 	{
-		logged.clear();
+		dumped = false;
+		pitVarbits.clear();
+		pitVarps.clear();
 	}
 
 	/**
-	 * Describes a pit the first time it is seen in the current scene.
-	 *
-	 * @param pit a goat pit the tracker has just accepted
+	 * Logs the cached object definition of every configured pit id once per scene: name, declared
+	 * varbit and var-player (the count source), menu actions and impostor ids. Safe to call every
+	 * event; it runs at most once until {@link #reset()}.
 	 */
-	void onPitSpawn(GameObject pit)
+	void dumpDefinitions()
 	{
-		if (!config.debugLogging() || pit == null)
+		if (!config.debugLogging() || dumped)
 		{
 			return;
 		}
-		if (!logged.add(pit.getHash()))
+		dumped = true;
+		for (int id : GoatIds.PIT_OBJECT_IDS)
 		{
-			return;
+			ObjectComposition base = client.getObjectDefinition(id);
+			if (base == null)
+			{
+				log.info("{} object def id={} -> not in cache", PREFIX, id);
+				continue;
+			}
+			int varbit = base.getVarbitId();
+			int varp = base.getVarPlayerId();
+			if (varbit >= 0)
+			{
+				pitVarbits.add(varbit);
+			}
+			if (varp >= 0)
+			{
+				pitVarps.add(varp);
+			}
+			int[] impostorIds = base.getImpostorIds();
+			log.info(
+				"{} object def: id={} name='{}' declaredVarbit={} declaredVarPlayer={} actions={} impostorIds={}",
+				PREFIX, id, base.getName(), varbit, varp, Arrays.toString(base.getActions()),
+				Arrays.toString(impostorIds));
+			if (impostorIds != null)
+			{
+				ObjectComposition active = base.getImpostor();
+				String name = active == null ? null : active.getName();
+				String[] actions = active == null ? null : active.getActions();
+				log.info(
+					"{} object def id={} active impostor: name='{}' actions={}",
+					PREFIX, id, name, Arrays.toString(actions));
+			}
 		}
-		ObjectComposition base = client.getObjectDefinition(pit.getId());
-		String name = base == null ? "?" : base.getName();
-		int declaredVarbit = base == null ? -1 : base.getVarbitId();
-		int declaredVarp = base == null ? -1 : base.getVarPlayerId();
-		int varbitValue = declaredVarbit < 0 ? -1 : client.getVarbitValue(declaredVarbit);
-		int[] impostorIds = base == null ? null : base.getImpostorIds();
-		ObjectComposition active = base == null ? null : base.getImpostor();
-		String[] actions = active == null ? (base == null ? null : base.getActions()) : active.getActions();
-		boolean spiked = GoatPitTracker.spikedFromActions(actions);
-		WorldPoint sw = pit.getWorldLocation();
-		Point min = pit.getSceneMinLocation();
-		Point max = pit.getSceneMaxLocation();
-		int width = min == null || max == null ? -1 : max.getX() - min.getX() + 1;
-		int height = min == null || max == null ? -1 : max.getY() - min.getY() + 1;
-		log.info(
-			"{} pit spawned: id={} name='{}' worldPoint={} footprint={}x{} declaredVarbit={} (value={}) "
-				+ "varPlayer={} impostorIds={} actions={} spikedHeuristic={}",
-			PREFIX, pit.getId(), name, sw, width, height, declaredVarbit, varbitValue, declaredVarp,
-			Arrays.toString(impostorIds), Arrays.toString(actions), spiked);
 	}
 
 	/**
-	 * Logs a varbit change while a pit is loaded, so a goat added or removed points straight at the
-	 * varbit that moved. Silent when no pit is in the scene, to keep the firehose down.
+	 * Logs a varbit change worth seeing: any change to the pit's declared varbit/var-player, or any
+	 * other change whose value is in the plausible goat-count range. Per-tick clocks are dropped.
 	 *
 	 * @param event the varbit change reported by the client
 	 */
 	void onVarbitChanged(VarbitChanged event)
 	{
-		if (!config.debugLogging() || tracker.getPits().isEmpty())
+		if (!config.debugLogging())
+		{
+			return;
+		}
+		dumpDefinitions();
+		int varbit = event.getVarbitId();
+		int varp = event.getVarpId();
+		int value = event.getValue();
+		if (pitVarbits.contains(varbit) || pitVarps.contains(varp))
+		{
+			log.info(
+				"{} PIT VARBIT change: varbitId={} varpId={} value={}",
+				PREFIX, varbit, varp, value);
+			return;
+		}
+		if (NOISE_VARPS.contains(varp) || value < 0 || value > MAX_PLAUSIBLE_COUNT)
 		{
 			return;
 		}
 		log.info(
-			"{} varbit change while pit loaded: varbitId={} varpId={} value={}",
-			PREFIX, event.getVarbitId(), event.getVarpId(), event.getValue());
+			"{} candidate varbit change: varbitId={} varpId={} value={}",
+			PREFIX, varbit, varp, value);
+	}
+
+	private static Set<Integer> noiseVarps()
+	{
+		Set<Integer> varps = new HashSet<>();
+		varps.add(3077);
+		varps.add(3079);
+		return varps;
 	}
 }

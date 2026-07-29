@@ -68,12 +68,13 @@ final class GoatPitState
 	}
 
 	/**
-	 * Whether the pit is empty <em>and</em> unspiked, the one state that needs player action before
-	 * the pit will catch anything. An empty pit that still has spikes is simply waiting.
+	 * Whether the pit is missing its spikes and so cannot catch anything until they are re-added. This
+	 * is simply the unspiked state: on this pit spikes are consumed when it is emptied, so an unspiked
+	 * pit always needs player action regardless of how many goats it currently holds.
 	 */
 	boolean needsSpikes()
 	{
-		return isEmpty() && !spiked;
+		return !spiked;
 	}
 
 	/** The overlay label, e.g. {@code "12 / 20"}. */

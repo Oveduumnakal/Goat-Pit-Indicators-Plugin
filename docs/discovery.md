@@ -1,72 +1,62 @@
-# In-game discovery — goat pit ids
+# In-game discovery — goat pit
 
-**Status: NOT YET DONE.** This file is the template to fill in during a
-developer-mode session at a goat pit. Until it is filled in, the plugin runs on
-the structural heuristics described in `GoatIds.java`, two of which are unverified
-guesses (see the bottom of this file).
+Captured 2026-07-29 in a developer-mode session, via the plugin's own
+`[goat-discovery]` logging (config toggle "Debug logging (developer)").
 
-## How to run
+## Confirmed ids
 
-```
-./gradlew run
-```
-
-RuneLite launches in developer mode with the plugin loaded. Log in, enable
-**Goat Indicators** in the config panel, and travel to a goat pit. Open **Dev
-Tools** (the wrench icon added in developer mode).
-
-## What to capture
-
-### 1. Pit object id(s) and location
-
-Dev Tools → **Scene** → hover or right-click the pit tile.
-
-| State | Object id | Notes |
+| Thing | Id | Notes |
 |---|---|---|
-| Empty | | |
-| Partially full | | |
-| Full | | |
+| Pit object | `19750` | See caveat below — its cache definition is empty. |
+| Wyrmscraid Goat (NPC) | `16298` | The goat caught by the pit. |
+| Ground item near pit | `62343` | Reported in-game; role not yet confirmed. |
 
-- South-west `WorldPoint` of the pit: `___`
-- Footprint size (2x2 / 3x3): `___`
-- Does the object id change per state, or is it one id with impostors? `___`
+## Caveat: object 19750 carries no state
 
-→ If ids are stable, put them in `GoatIds.PIT_OBJECT_IDS` to pin detection.
+Reading `getObjectDefinition(19750)` from the cache returns an empty shell:
 
-### 2. Goat count source
+```
+object def: id=19750 name='null' declaredVarbit=-1 declaredVarPlayer=-1 actions=[] impostorIds=null
+```
 
-Dev Tools → **Varbits**. Add or remove a goat and watch for a varbit that steps
-0 → 20.
+So the original heuristics **cannot work** on this pit:
+- there is no declared varbit → the "object varbit = goat count" assumption fails;
+- there are no menu actions → the "offers 'Add spikes' ⇒ unspiked" assumption fails.
 
-- Count varbit id: `___`
-- Steps 0 → 20 as goats are added? `___`
-- Is it the varbit the object composition declares (`getVarbitId()`)? `___`
+All pit state is held in **VarPlayer 5706** instead.
 
-→ If the count varbit is **not** the object's own declared varbit, set
-`GoatIds.COUNT_VARBIT_OVERRIDE` to it.
-→ If no varbit moves at all, the plugin falls back to counting goat NPCs on the
-footprint; record that here and leave `COUNT_VARBIT_OVERRIDE = -1`.
+## Pit state lives in VarPlayer 5706
 
-### 3. Spikes state
+Action-to-varbit mapping observed (spikes started present, empty pit):
 
-Remove and re-add spikes.
+| Action | 15724 | 15725 | 15726 |
+|---|---|---|---|
+| Login: spiked, empty | 1 | (0) | 1 |
+| Caught a goat | (1) | 1 | 2 |
+| Emptied the pit | 0 | 0 | 0 |
+| Re-added spikes | 1 | (0) | 1 |
 
-- Does a varbit flip? Which id: `___`
-- Or does the pit object id / composition change instead? `___`
-- Does the "Add spikes" menu action appear only when unspiked? `___`
+Parenthesised values were unchanged at that step.
 
-→ If a varbit flips, set `GoatIds.SPIKES_VARBIT_OVERRIDE` to it (0 = unspiked).
-→ Otherwise the action-based heuristic in `spikedFromActions` stands.
+Decoded meaning:
+- **`15724` = spikes present.** `1` = spiked, `0` = needs spikes. Drops to 0 when
+  the pit is emptied (spikes consumed), returns to 1 when spikes are re-added.
+- **`15725` = goat caught.** `1` = a goat is in the trap awaiting collection.
+- **`15726` = stage.** `0` = empty & unspiked, `1` = spiked & ready, `2` = goat
+  caught. A superset of the two booleans above.
+- `15727` = set to 1 at login, did not move afterwards — role unknown, ignored.
 
-### 4. Per-player or shared
+Lifetime tally (not pit state): varbit `11625` (varp `4923`) stepped 17 → 18 when
+the pit was emptied — a running count of goats caught.
 
-- Is the count per-player (instanced / VarPlayer) or shared across everyone? `___`
+## Implication for the plugin
 
-## Heuristics currently unverified
+This pit is a **single-catch trap**, not a 0–20 fill. The `X / 20` count model in
+the original plan does not apply. The overlay should instead show three states:
 
-Confirm or replace these two during the session — they are the most likely
-things to be wrong in-game:
+- **needs spikes** — `15724 == 0`
+- **spiked, waiting for a goat** — `15724 == 1` and `15725 == 0`
+- **goat caught, ready to collect** — `15725 == 1`
 
-1. **The object's declared varbit equals the goat count.** Assumed by `readCount`.
-2. **An "Add spikes" action means the pit is unspiked.** Assumed by
-   `spikedFromActions` / `readSpiked`.
+Open question still to confirm with the account holder: can the pit hold more than
+one goat at once (is there any count), or is it strictly one-at-a-time?
