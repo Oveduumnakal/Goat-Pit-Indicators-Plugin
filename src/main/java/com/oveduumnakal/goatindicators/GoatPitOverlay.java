@@ -170,8 +170,8 @@ class GoatPitOverlay extends Overlay
 	}
 
 	/**
-	 * The outline colour: solid red while the pit is unspiked, otherwise a blend from the needs-spikes
-	 * colour toward the full colour in step with how full the pit is.
+	 * The outline colour: solid red while the pit is unspiked, otherwise a blend running from the
+	 * needs-spikes colour through the partial colour to the full colour in step with how full it is.
 	 */
 	private Color outlineColorFor(GoatPitState state)
 	{
@@ -180,12 +180,27 @@ class GoatPitOverlay extends Overlay
 			return withAlpha(config.needsSpikesColor(), OUTLINE_ALPHA);
 		}
 		float fraction = (float) state.getCount() / GoatIds.PIT_CAPACITY;
-		return withAlpha(lerp(config.needsSpikesColor(), config.fullColor(), fraction), OUTLINE_ALPHA);
+		Color blended = lerp3(config.needsSpikesColor(), config.partialColor(), config.fullColor(), fraction);
+		return withAlpha(blended, OUTLINE_ALPHA);
 	}
 
 	private static Color withAlpha(Color color, int alpha)
 	{
 		return new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha);
+	}
+
+	/**
+	 * Blends across three colour stops — {@code from} at 0, {@code mid} at 0.5, {@code to} at 1 —
+	 * ignoring alpha; {@code fraction} is clamped to 0..1.
+	 */
+	private static Color lerp3(Color from, Color mid, Color to, float fraction)
+	{
+		float f = Math.max(0.0f, Math.min(1.0f, fraction));
+		if (f <= 0.5f)
+		{
+			return lerp(from, mid, f * 2.0f);
+		}
+		return lerp(mid, to, (f - 0.5f) * 2.0f);
 	}
 
 	/** Linearly blends two colours, ignoring their alpha; {@code fraction} is clamped to 0..1. */
