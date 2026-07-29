@@ -110,9 +110,10 @@ class GoatPitOverlay extends Overlay
 			return;
 		}
 		GoatPitState state = tracker.stateOf(pit);
-		if (state.isFull())
+		Color fill = fillColorFor(state);
+		if (fill != null)
 		{
-			graphics.setColor(config.fullColor());
+			graphics.setColor(fill);
 			graphics.fill(footprint);
 		}
 		graphics.setColor(outlineColorFor(state));
@@ -121,9 +122,43 @@ class GoatPitOverlay extends Overlay
 		renderLabels(graphics, pit, state);
 	}
 
+	/**
+	 * Whether to prompt for spikes: only when the pit is both empty and unspiked, i.e. showing
+	 * {@code 0 / 20}. In that state the count label is replaced by the prompt.
+	 */
+	private boolean promptAddSpikes(GoatPitState state)
+	{
+		return state.isEmpty() && state.needsSpikes();
+	}
+
+	/**
+	 * The footprint fill colour, or {@code null} to leave the pit unfilled. A full pit fills green; a
+	 * spikes-needed pit fills with the needs-spikes colour; every in-between state is outline only.
+	 */
+	private Color fillColorFor(GoatPitState state)
+	{
+		if (state.isFull())
+		{
+			return config.fullColor();
+		}
+		if (promptAddSpikes(state))
+		{
+			return config.needsSpikesColor();
+		}
+		return null;
+	}
+
 	private void renderLabels(Graphics2D graphics, GameObject pit, GoatPitState state)
 	{
-		boolean spikesLine = config.showAddSpikes() && state.needsSpikes();
+		if (config.showAddSpikes() && promptAddSpikes(state))
+		{
+			Point at = pit.getCanvasTextLocation(graphics, ADD_SPIKES_TEXT, 0);
+			if (at != null)
+			{
+				OverlayUtil.renderTextLocation(graphics, at, ADD_SPIKES_TEXT, config.textColor());
+			}
+			return;
+		}
 		if (config.showCount())
 		{
 			Point at = pit.getCanvasTextLocation(graphics, state.label(), 0);
@@ -132,18 +167,6 @@ class GoatPitOverlay extends Overlay
 				OverlayUtil.renderTextLocation(graphics, at, state.label(), config.textColor());
 			}
 		}
-		if (!spikesLine)
-		{
-			return;
-		}
-		Point at = pit.getCanvasTextLocation(graphics, ADD_SPIKES_TEXT, 0);
-		if (at == null)
-		{
-			return;
-		}
-		int offset = config.showCount() ? graphics.getFontMetrics().getHeight() : 0;
-		Point below = new Point(at.getX(), at.getY() + offset);
-		OverlayUtil.renderTextLocation(graphics, below, ADD_SPIKES_TEXT, config.textColor());
 	}
 
 	/**
