@@ -1,16 +1,29 @@
 # Handoff — Goat Indicators
 
-Written 2026-07-29. Plan file: `/home/deck/.claude/plans/gleaming-launching-papert.md`.
+Written 2026-07-29, updated 2026-07-29 after the first build + local-work pass.
+Plan file: `/home/deck/.claude/plans/gleaming-launching-papert.md`.
 
 ## Next action
 
-Run `./gradlew build` in this folder. It has never been run — nothing here is
-compile-verified yet.
+**In-game discovery** — the only remaining correctness blocker. Run
+`./gradlew run`, go to a goat pit in developer mode, and fill in
+`docs/discovery.md` (template already written). Then update `GoatIds.java`.
+
+## Build status: GREEN
+
+`./gradlew build` passes — compile, tests, `check-style.py`, and javadoc all
+clean. One non-blocking deprecation warning remains (`Client.getNpcs()` in
+`GoatPitTracker`; used only by the NPC-count fallback).
+
+Fix applied this pass: `GoatPitTracker.countGoatsInside` called `npc.getPlane()`,
+which does not exist on `NPC`/`Actor` in runelite-api 1.12.33. Now reads the
+plane from `npc.getWorldLocation().getPlane()` with a null guard.
 
 ## What exists
 
-Local folder only: `/home/deck/Documents/GitHub/Goat-Indicators-Plugin`.
-No git repo, no remote, no commit.
+Local folder: `/home/deck/Documents/GitHub/Goat-Indicators-Plugin`.
+**Git repo initialised** (branch `main`, one initial commit, 31 files). No
+remote, not pushed.
 
 **Scaffolding**, copied from `../Pricewatch-Plugin` (same layout as Stockpile):
 
@@ -61,25 +74,31 @@ The first two are sound. **The spikes heuristic and the assumption that the
 object varbit equals the goat count are both unverified guesses** and are the
 most likely things to be wrong in-game.
 
-## Not done
+## Done this pass
 
-1. `./gradlew build` never run. Expect compile errors and style-check failures on
-   the first pass — `check-style.py` is strict (Javadoc on every type, no `//`
-   comments, Allman braces, 120 cols, wrapped 3+ link chains).
-2. No `README.md`, no `banner.png`/`icon.png`, no `docs/discovery.md`.
-3. GitHub repo not created. Still to do: `gh repo create
-   Oveduumnakal/Goat-Indicators-Plugin --public`, push `main`, recreate
+1. `./gradlew build` runs green (see Build status above).
+2. `README.md` written (features, config table, links).
+3. `docs/discovery.md` written as a fill-in-the-blanks template for the in-game
+   session.
+4. Git repo initialised with an initial commit on `main`.
+
+## Not done — needs the user
+
+1. **In-game discovery, still blocking correctness.** See Next action. This is
+   the one item that needs a live game client. Two heuristics are unverified
+   guesses: (a) the object's declared varbit equals the goat count, (b) an
+   "Add spikes" action means the pit is unspiked. Confirm or replace both.
+2. No `banner.png` / `icon.png` — needs a design pass; README omits image refs
+   for now so nothing is broken.
+3. GitHub repo not created — outward-facing publish, left for explicit go-ahead.
+   `gh` is authenticated as `Oveduumnakal`, so when ready: `gh repo create
+   Oveduumnakal/Goat-Indicators-Plugin --public --source . --push`, recreate
    Stockpile's 11 labels (`bug` d73a4a, `enhancement` a2eeef, `documentation`
    0075ca, `duplicate` cfd3d7, `invalid` e4e669, `question` d876e3, `wontfix`
    ffffff, `In Progress` fbca04, `dependencies` 0366d6, `github_actions` 000000,
    `maintenance/architecture` c5def5), enable Discussions (the issue-form
    `config.yml` links to it), and create the `Release 0.1` milestone —
    `pr-checks.yml` fails any PR without one.
-4. **In-game discovery, still blocking correctness.** With `./gradlew run`, at a
-   goat pit, in developer mode, capture: the pit's object id(s) per state, the
-   varbit that steps 0→20 as goats are added, the varbit or action that flips
-   with spikes, and whether the count is per-player. Then update `GoatIds` and
-   write `docs/discovery.md`.
 
 ## Repo conventions inherited from Stockpile
 
