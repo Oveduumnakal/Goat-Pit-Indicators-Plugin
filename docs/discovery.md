@@ -65,3 +65,12 @@ the original plan does not apply. The overlay should instead show three states:
 
 Open question still to confirm with the account holder: can the pit hold more than
 one goat at once (is there any count), or is it strictly one-at-a-time?
+
+## Correction (2026-07-29)
+
+The "single-catch trap" reading above was wrong. The pit **does** hold a count:
+varbit `15725` steps 0 → capacity, and the shipped overlay uses the `X / N` model.
+Capacity is **not** a fixed 20 either — it scales with Hunter level per the OSRS
+Wiki ([Goat pit](https://oldschool.runescape.wiki/w/Goat_pit)): 16 at level 60,
+18 at 70, 20 at 77, 22 at 85, 24 at 93+. Encoded in
+`GoatIds.capacityForHunterLevel(int)` as of release 1.0.1.

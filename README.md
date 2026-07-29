@@ -4,13 +4,13 @@
   <img src="banner.png" alt="Goat Pit Indicators — goats leaping into a spiked pit with a 12 / 20 counter" width="100%">
 </p>
 
-Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a glance, and reminds you when an emptied pit still needs its spikes put back. The plugin draws the pit's state directly on the pit itself: a coloured fill and an `X / 20` count you can read from across the area, so you never have to walk over and count by hand.
+Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a glance, and reminds you when an emptied pit still needs its spikes put back. The plugin draws the pit's state directly on the pit itself: a coloured fill and an `X / N` count you can read from across the area, so you never have to walk over and count by hand. The capacity `N` is not fixed — it grows with your Hunter level, from 16 at level 60 up to 24 at level 93+.
 
 ## Features
 
 - **See how full a pit is without walking to it**
 
-  Every goat pit in view carries a live `X / 20` count and a colour fill that reads at a glance — green when the pit is full, a neutral fill while it is filling up.
+  Every goat pit in view carries a live `X / N` count and a colour fill that reads at a glance — green when the pit is full, a neutral fill while it is filling up. The capacity `N` tracks your Hunter level (16 at 60, rising to 24 at 93+).
 
 - **Never forget the spikes**
 
@@ -33,8 +33,8 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 | Setting | What it does | Default |
 |---|---|---|
 | Show overlay | Master toggle for the on-pit overlay | On |
-| Show count | Show the `X / 20` count label | On |
-| Show "Add Spikes" | Show the spikes reminder at `0 / 20` | On |
+| Show count | Show the `X / N` count label (capacity scales with Hunter level) | On |
+| Show "Add Spikes" | Show the spikes reminder on an empty, unspiked pit | On |
 | Full: outline only | Draw a full pit as outline only, no fill | Off |
 | Needs spikes: outline only | Draw a spikes-needed pit as outline only, no fill | Off |
 | Full colour | Fill when the pit is full | Green |

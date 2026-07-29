@@ -28,18 +28,21 @@ package com.oveduumnakal.goatindicators;
  * A snapshot of one goat pit: how many goats it holds and whether it is spiked.
  *
  * <p>Deliberately free of RuneLite types so the fullness and "needs spikes" rules can be unit
- * tested without a client. The count is clamped into {@code 0 .. }{@link GoatIds#PIT_CAPACITY} on
- * construction, so a varbit that turns out to carry an unexpected value can never produce a label
- * like {@code 37 / 20}.
+ * tested without a client. Capacity is not fixed — it scales with Hunter level (see
+ * {@link GoatIds#capacityForHunterLevel(int)}) — so it is passed in per snapshot. The count is
+ * clamped into {@code 0 .. capacity} on construction, so a varbit that turns out to carry an
+ * unexpected value can never produce a label like {@code 37 / 20}.
  */
 final class GoatPitState
 {
 	private final int count;
 	private final boolean spiked;
+	private final int capacity;
 
-	GoatPitState(int count, boolean spiked)
+	GoatPitState(int count, boolean spiked, int capacity)
 	{
-		this.count = Math.max(0, Math.min(GoatIds.PIT_CAPACITY, count));
+		this.capacity = Math.max(GoatIds.MIN_CAPACITY, Math.min(GoatIds.MAX_CAPACITY, capacity));
+		this.count = Math.max(0, Math.min(this.capacity, count));
 		this.spiked = spiked;
 	}
 
@@ -47,6 +50,12 @@ final class GoatPitState
 	int getCount()
 	{
 		return count;
+	}
+
+	/** How many goats this pit holds when full, for the player's current Hunter level. */
+	int getCapacity()
+	{
+		return capacity;
 	}
 
 	/** Whether the pit currently has spikes set. */
@@ -58,7 +67,7 @@ final class GoatPitState
 	/** Whether the pit is at capacity and cannot trap any more goats. */
 	boolean isFull()
 	{
-		return count >= GoatIds.PIT_CAPACITY;
+		return count >= capacity;
 	}
 
 	/** Whether the pit holds no goats at all. */
@@ -77,10 +86,10 @@ final class GoatPitState
 		return !spiked;
 	}
 
-	/** The overlay label, e.g. {@code "12 / 20"}. */
+	/** The overlay label, e.g. {@code "12 / 20"} (the denominator is this pit's capacity). */
 	String label()
 	{
-		return count + " / " + GoatIds.PIT_CAPACITY;
+		return count + " / " + capacity;
 	}
 
 	@Override
@@ -95,13 +104,13 @@ final class GoatPitState
 			return false;
 		}
 		GoatPitState that = (GoatPitState) other;
-		return count == that.count && spiked == that.spiked;
+		return count == that.count && spiked == that.spiked && capacity == that.capacity;
 	}
 
 	@Override
 	public int hashCode()
 	{
-		return count * 31 + (spiked ? 1 : 0);
+		return (count * 31 + capacity) * 31 + (spiked ? 1 : 0);
 	}
 
 	@Override

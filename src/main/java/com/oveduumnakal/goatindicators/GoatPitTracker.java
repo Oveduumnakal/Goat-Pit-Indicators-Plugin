@@ -36,6 +36,7 @@ import net.runelite.api.GameObject;
 import net.runelite.api.NPC;
 import net.runelite.api.ObjectComposition;
 import net.runelite.api.Point;
+import net.runelite.api.Skill;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 
@@ -106,7 +107,16 @@ class GoatPitTracker
 	 */
 	GoatPitState stateOf(GameObject pit)
 	{
-		return new GoatPitState(readCount(pit), readSpiked(pit));
+		return new GoatPitState(readCount(pit), readSpiked(pit), readCapacity());
+	}
+
+	/**
+	 * The pit's capacity for the player's current Hunter level. Uses the real (unboosted) level, since
+	 * the pit's size is fixed by trained level, not by temporary boosts.
+	 */
+	private int readCapacity()
+	{
+		return GoatIds.capacityForHunterLevel(client.getRealSkillLevel(Skill.HUNTER));
 	}
 
 	private boolean isPit(GameObject object)

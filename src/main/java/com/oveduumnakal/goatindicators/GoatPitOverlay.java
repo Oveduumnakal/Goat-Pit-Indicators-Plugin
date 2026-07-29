@@ -45,12 +45,13 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayUtil;
 
 /**
- * Draws each loaded goat pit as an outlined footprint carrying its {@code X / 20} count.
+ * Draws each loaded goat pit as an outlined footprint carrying its {@code X / N} count, where
+ * {@code N} is the pit's capacity for the player's Hunter level.
  *
  * <p>The outline is the signal. A pit with no spikes is drawn solid red — it will catch nothing until
  * spikes go back in. A spiked pit's outline runs from red toward green as the count climbs, so a
  * glance tells you how close it is to full, and a full pit also gets a solid green fill so it stands
- * out as ready to empty. The {@code X / 20} count sits in the centre, and the "Add Spikes" line only
+ * out as ready to empty. The {@code X / N} count sits in the centre, and the "Add Spikes" line only
  * appears while the pit is unspiked.
  */
 class GoatPitOverlay extends Overlay
@@ -124,7 +125,7 @@ class GoatPitOverlay extends Overlay
 
 	/**
 	 * Whether to prompt for spikes: only when the pit is both empty and unspiked, i.e. showing
-	 * {@code 0 / 20}. In that state the count label is replaced by the prompt.
+	 * {@code 0 / N}. In that state the count label is replaced by the prompt.
 	 */
 	private boolean promptAddSpikes(GoatPitState state)
 	{
@@ -179,7 +180,7 @@ class GoatPitOverlay extends Overlay
 		{
 			return withAlpha(config.needsSpikesColor(), OUTLINE_ALPHA);
 		}
-		float fraction = (float) state.getCount() / GoatIds.PIT_CAPACITY;
+		float fraction = (float) state.getCount() / state.getCapacity();
 		Color blended = lerp3(config.needsSpikesColor(), config.partialColor(), config.fullColor(), fraction);
 		return withAlpha(blended, OUTLINE_ALPHA);
 	}

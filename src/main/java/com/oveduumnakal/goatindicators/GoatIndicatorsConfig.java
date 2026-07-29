@@ -52,7 +52,7 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "showCount",
 		name = "Show goat count",
-		description = "Draw the X / 20 label on the pit.",
+		description = "Draw the goat count (e.g. 12 / 20) on the pit. The capacity scales with your Hunter level.",
 		position = 2
 	)
 	default boolean showCount()
@@ -97,7 +97,7 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "fullColor",
 		name = "Full",
-		description = "Fill colour for a pit holding all 20 goats.",
+		description = "Fill colour for a pit that is full.",
 		position = 6
 	)
 	default Color fullColor()
