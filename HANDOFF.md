@@ -6,9 +6,9 @@ Java package `com.oveduumnakal.goatindicators` and class names are unchanged).
 
 ## Next action
 
-Verify the overlay in-game after a config reset (see "Colour caveat" below), then
-open the first PR (`feature/feature-1-pit-overlay`, body `Closes #1`, milestone
-`Release 0.1`) to confirm CI is green end to end.
+Add `banner.png` / `icon.png` art, then cut Release 1.0 (tag `R-1.0` once the
+`Release 1.0` milestone has zero open issues). The overlay is verified live and
+CI is proven green (see Status), so nothing else blocks a release.
 
 ## Status
 
@@ -16,7 +16,10 @@ open the first PR (`feature/feature-1-pit-overlay`, body `Closes #1`, milestone
   javadoc, no warnings.
 - **In-game discovery DONE** — real ids confirmed, overlay verified live.
 - **GitHub repo LIVE**: https://github.com/Oveduumnakal/Goat-Pit-Indicators-Plugin
-  — `main` pushed, 11 labels, Discussions on, `Release 0.1` milestone created.
+  — `main` pushed, 11 labels, Discussions on, `Release 1.0` milestone.
+- **Version 1.0** in `runelite-plugin.properties`, matching the milestone.
+- **CI proven green end to end**: PR #2 ran `build` + `conventions` both green,
+  then was closed as out of scope (see Not done #1). No open PRs or issues.
 
 ## Discovery results (confirmed in-game)
 
@@ -78,7 +81,11 @@ logic is in static package-private methods so `Client` never needs stubbing).
 
 ## Not done
 
-1. **First PR / CI end-to-end** — see Next action. Branch protection conventions:
+1. **First real PR still to merge.** The PR flow is proven (PR #2 opened from a
+   feature branch with `Closes #1` + milestone, both checks green) but that PR
+   was a needs-spikes **notification** the account holder ruled **out of scope**,
+   so it was closed and issue #1 closed as not planned — no notification code is
+   on `main`. Next genuinely-new change gets the first merged PR. Convention:
    PR body needs `Closes #<issue>` and a milestone or `pr-checks.yml` fails.
 2. **No `banner.png` / `icon.png`** — README omits image refs so nothing is
    broken; add art before a wider release.
