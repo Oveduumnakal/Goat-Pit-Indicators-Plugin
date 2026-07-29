@@ -130,4 +130,16 @@ public interface GoatIndicatorsConfig extends Config
 	{
 		return 32;
 	}
+
+	@ConfigItem(
+		keyName = "debugLogging",
+		name = "Debug logging (developer)",
+		description = "Log pit ids, varbits and varbit changes to the client log for id discovery. "
+			+ "Leave off unless you are pinning down the goat pit's ids.",
+		position = 9
+	)
+	default boolean debugLogging()
+	{
+		return false;
+	}
 }
