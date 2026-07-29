@@ -1,124 +1,94 @@
-# Handoff — Goat Indicators
+# Handoff — Goat Pit Indicators
 
-Written 2026-07-29, updated 2026-07-29 after the first build + local-work pass.
-Plan file: `/home/deck/.claude/plans/gleaming-launching-papert.md`.
+Written 2026-07-29. Plan file: `/home/deck/.claude/plans/gleaming-launching-papert.md`.
+Renamed from "Goat Indicators" → **Goat Pit Indicators** (display name only; the
+Java package `com.oveduumnakal.goatindicators` and class names are unchanged).
 
 ## Next action
 
-**In-game discovery** — the only remaining correctness blocker. Run
-`./gradlew run`, go to a goat pit in developer mode, and fill in
-`docs/discovery.md` (template already written). Then update `GoatIds.java`.
+Verify the overlay in-game after a config reset (see "Colour caveat" below), then
+open the first PR (`feature/feature-1-pit-overlay`, body `Closes #1`, milestone
+`Release 0.1`) to confirm CI is green end to end.
 
-## Build status: GREEN
+## Status
 
-`./gradlew build` passes clean — compile, tests, `check-style.py`, and javadoc,
-no warnings.
+- **Build GREEN**: `./gradlew build` passes compile, tests, `check-style.py`,
+  javadoc, no warnings.
+- **In-game discovery DONE** — real ids confirmed, overlay verified live.
+- **GitHub repo LIVE**: https://github.com/Oveduumnakal/Goat-Pit-Indicators-Plugin
+  — `main` pushed, 11 labels, Discussions on, `Release 0.1` milestone created.
 
-Fixes applied this pass, both in `GoatPitTracker`:
-- `countGoatsInside` called `npc.getPlane()`, which does not exist on
-  `NPC`/`Actor` in runelite-api 1.12.33. Now reads the plane from
-  `npc.getWorldLocation().getPlane()` with a null guard.
-- Replaced the deprecated `Client.getNpcs()` with
-  `client.getTopLevelWorldView().npcs()`.
+## Discovery results (confirmed in-game)
 
-## What exists
+Recorded in full in `docs/discovery.md`. Key facts:
 
-Local folder: `/home/deck/Documents/GitHub/Goat-Indicators-Plugin`.
-**Git repo initialised** (branch `main`, one initial commit, 31 files). No
-remote, not pushed.
+| Thing | Id / varbit | Notes |
+|---|---|---|
+| Pit **game object** | `62343` | What the overlay draws its footprint on. |
+| Pit **ground object** | `19750` | Beneath the pit; empty composition, not used. |
+| Wyrmscraid Goat (NPC) | `16298` | The goat the pit catches. |
+| **Count** | varbit `15725` | Part of VarPlayer 5706; steps 0→20. Verified 1→2→3. |
+| **Spikes** | varbit `15724` | 1 = spiked, 0 = needs spikes. |
+| Capacity | 20 | Confirmed by the account holder. |
 
-**Scaffolding**, copied from `../Pricewatch-Plugin` (same layout as Stockpile):
+The pit is **not** a standard multiloc object — object 62343/19750 carry no
+declared varbit or actions, so the original "declared varbit = count" and
+"'Add spikes' action = unspiked" heuristics were both wrong. State lives entirely
+in VarPlayer 5706. `GoatIds.COUNT_VARBIT_OVERRIDE` / `SPIKES_VARBIT_OVERRIDE` are
+set to these ids; `PIT_OBJECT_IDS = {62343}`.
 
-- `gradlew`, `gradlew.bat`, `gradle/wrapper/*`, `.gitignore`, `LICENSE` — verbatim
-- `.github/workflows/{build,pr-checks,release}.yml` — verbatim
-- `.github/{FUNDING,dependabot}.yml` — verbatim
-- `scripts/check-style.py` — verbatim (13 style rules, wired into `./gradlew check`)
-- `.gitattributes` — copied minus the `*.snapshot` stanza (no persisted schema here)
-- `build.gradle` — copied, `pluginMainClass` repointed to `GoatIndicatorsPluginTest`
-- `settings.gradle` — `rootProject.name = 'goatindicators'`
-- `runelite-plugin.properties` — written fresh, version 0.1
-- `.github/ISSUE_TEMPLATE/*.yml` — rewritten for this plugin; area dropdowns are
-  now Pit overlay / Goat count accuracy / Spikes prompt / Config / Other
+## Overlay behaviour (as built, to the account holder's spec)
 
-**Source**, package `com.oveduumnakal.goatindicators`:
+- Outline always drawn; colour runs **red → gold → green** with the count.
+- Unspiked pit: solid red outline.
+- Full (20/20): green fill.
+- Empty **and** unspiked (`0/20`): red fill + "Add Spikes" text, count hidden.
+- Every other state: outline only + `n / 20`.
+- Config toggles **Full: outline only** / **Needs spikes: outline only** suppress
+  those two fills.
+- Default colours: full `#AF00FF00`, partial `#AFFFDD00`, needs-spikes `#4BFF0000`.
+
+## Colour caveat
+
+The new default colours only apply to a **fresh** config. A profile that already
+ran the plugin has the old colours saved and will not pick up the new defaults —
+reset the three colour settings by hand, or use a clean profile, to see them.
+
+## Discovery logging (shipped, default off)
+
+`GoatPitDiscovery.java` + the **"Debug logging (developer)"** toggle log pit ids
+and varbit changes to `~/.runelite/logs/client.log` (grep `goat-discovery`). It
+reads pit definitions straight from the object cache and filters the varbit
+firehose to the count range. Left in as a maintenance aid; safe to ship off.
+
+## Source layout — package `com.oveduumnakal.goatindicators`
 
 | File | Role |
 |---|---|
-| `GoatIds.java` | All ids, name fragments, `PIT_CAPACITY = 20`, varbit overrides |
-| `GoatPitState.java` | Count + spiked, clamped; `isFull` / `needsSpikes` / `label()` |
-| `GoatPitTracker.java` | Collects pits from spawn events, reads count and spikes state |
-| `GoatIndicatorsConfig.java` | Toggles, three fill colours, text colour, draw distance |
-| `GoatPitOverlay.java` | Unions the pit's tile polys, fills, draws `X / 20` + "Add Spikes" |
+| `GoatIds.java` | Ids/varbits: pit object `62343`, count `15725`, spikes `15724`, capacity 20 |
+| `GoatPitState.java` | Count + spiked, clamped; `isFull` / `needsSpikes` (= unspiked) / `label()` |
+| `GoatPitTracker.java` | Collects pit game objects, reads count/spikes from the varbits |
+| `GoatPitDiscovery.java` | Debug-only id/varbit logging |
+| `GoatIndicatorsConfig.java` | Toggles, outline-only options, colours, draw distance, debug flag |
+| `GoatPitOverlay.java` | Footprint outline (red→gold→green), fills, `n / 20` + "Add Spikes" |
 | `GoatIndicatorsPlugin.java` | Wiring, event subscriptions, overlay add/remove |
 
-**Tests**: `GoatPitStateTest` (boundaries at 0/1/19/20, clamping, label),
-`GoatPitTrackerTest` (name matching, `spikedFromActions`). No Mockito — the
-tracker's decision logic was extracted into static package-private methods
-specifically so it could be tested without stubbing `Client`. That was a
-deliberate change from the plan, which assumed mocked-client tests.
+Tests: `GoatPitStateTest`, `GoatPitTrackerTest` (JUnit 4, no Mockito — decision
+logic is in static package-private methods so `Client` never needs stubbing).
 
-## Design decision worth knowing
+## Not done
 
-The goat pit has **no constants in runelite-api 1.12.33** — there is no
-`GOAT_PIT` object, varbit, or NPC id in the shipped `gameval` classes. Rather
-than block on that, the plugin identifies things structurally:
+1. **First PR / CI end-to-end** — see Next action. Branch protection conventions:
+   PR body needs `Closes #<issue>` and a milestone or `pr-checks.yml` fails.
+2. **No `banner.png` / `icon.png`** — README omits image refs so nothing is
+   broken; add art before a wider release.
+3. **Client relaunch etiquette** — the account holder asked not to restart their
+   running client without a say-so. Build locally; only `./gradlew run` on
+   request. (Kill stale clients with `pkill -9 java` — several piled up earlier.)
 
-- **Which object is a pit** — `ObjectComposition.getName()` contains `"goat pit"`.
-  `GoatIds.PIT_OBJECT_IDS` is an empty allowlist; fill it in to pin detection to
-  exact ids instead.
-- **Goat count** — the varbit the pit's own composition declares
-  (`ObjectComposition.getVarbitId()`), which is what drives its multiloc state.
-  Falls back to counting goat NPCs standing on the pit footprint if there is none.
-- **Spikes** — the pit is unspiked if its current composition still offers an
-  "Add spikes" action.
-
-The first two are sound. **The spikes heuristic and the assumption that the
-object varbit equals the goat count are both unverified guesses** and are the
-most likely things to be wrong in-game.
-
-## Done this pass
-
-1. `./gradlew build` runs green (see Build status above).
-2. `README.md` written (features, config table, links).
-3. `docs/discovery.md` written as a fill-in-the-blanks template for the in-game
-   session.
-4. Git repo initialised with an initial commit on `main`.
-
-## Discovery logging (new)
-
-`GoatPitDiscovery.java` captures the discovery data itself — no Dev Tools
-hunting. Enable **"Debug logging (developer)"** in the config, then at a pit it
-logs to `~/.runelite/logs/client.log` (grep `goat-discovery`):
-- on first pit load: id, name, worldPoint, footprint, declared varbit + value,
-  varPlayer, impostor ids, actions, spikes heuristic result;
-- on every varbit change while a pit is loaded: varbitId / varpId / value — so
-  adding or removing a goat reveals the count varbit.
-
-The toggle defaults **off**; it is safe to leave shipped.
-
-## Not done — needs the user
-
-1. **In-game discovery, still blocking correctness.** See Next action. This is
-   the one item that needs a live game client. Two heuristics are unverified
-   guesses: (a) the object's declared varbit equals the goat count, (b) an
-   "Add spikes" action means the pit is unspiked. Confirm or replace both. Use
-   the discovery logging above to gather the data.
-2. No `banner.png` / `icon.png` — needs a design pass; README omits image refs
-   for now so nothing is broken.
-3. GitHub repo not created — outward-facing publish, left for explicit go-ahead.
-   `gh` is authenticated as `Oveduumnakal`, so when ready: `gh repo create
-   Oveduumnakal/Goat-Indicators-Plugin --public --source . --push`, recreate
-   Stockpile's 11 labels (`bug` d73a4a, `enhancement` a2eeef, `documentation`
-   0075ca, `duplicate` cfd3d7, `invalid` e4e669, `question` d876e3, `wontfix`
-   ffffff, `In Progress` fbca04, `dependencies` 0366d6, `github_actions` 000000,
-   `maintenance/architecture` c5def5), enable Discussions (the issue-form
-   `config.yml` links to it), and create the `Release 0.1` milestone —
-   `pr-checks.yml` fails any PR without one.
-
-## Repo conventions inherited from Stockpile
+## Repo conventions (inherited from Stockpile)
 
 - Branches: `type/type-issue#-short-title`, e.g. `feature/feature-1-pit-overlay`.
-- PR body must contain `Closes #<issue>` and the PR must carry a milestone, or
-  `pr-checks.yml` fails.
-- Releases: tag `R-<version>`; the release workflow refuses to run unless a
-  matching `Release <version>` milestone exists with zero open issues.
+- PR body must contain `Closes #<issue>` and carry a milestone.
+- Releases: tag `R-<version>`; the release workflow needs a matching
+  `Release <version>` milestone with zero open issues.
