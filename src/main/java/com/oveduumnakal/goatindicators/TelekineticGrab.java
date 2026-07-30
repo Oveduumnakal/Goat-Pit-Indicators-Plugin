@@ -68,6 +68,13 @@ class TelekineticGrab
 		VarbitID.RUNE_POUCH_QUANTITY_3, VarbitID.RUNE_POUCH_QUANTITY_4,
 	};
 
+	/** Runes that satisfy the air cost: the air rune and every combination rune containing air. */
+	private static final Set<Integer> AIR_RUNE_IDS = Set.of(
+		ItemID.AIRRUNE,
+		ItemID.DUSTRUNE,
+		ItemID.MISTRUNE,
+		ItemID.SMOKERUNE);
+
 	/** Weapons whose air element covers the air rune, letting the cast run on a law rune alone. */
 	private static final Set<Integer> AIR_STAVES = Set.of(
 		ItemID.STAFF_OF_AIR,
@@ -90,7 +97,7 @@ class TelekineticGrab
 			client.getBoostedSkillLevel(Skill.MAGIC),
 			client.getVarbitValue(VarbitID.SPELLBOOK),
 			hasRune(ItemID.LAWRUNE),
-			hasRune(ItemID.AIRRUNE),
+			hasAirRune(),
 			airStaffEquipped());
 	}
 
@@ -113,6 +120,19 @@ class TelekineticGrab
 			return false;
 		}
 		return hasLawRune && (hasAirRune || airStaff);
+	}
+
+	/** Whether any air-providing rune (air or a combination rune) is available. */
+	private boolean hasAirRune()
+	{
+		for (int runeId : AIR_RUNE_IDS)
+		{
+			if (hasRune(runeId))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Whether the given rune id is held in the inventory or the rune pouch. */
