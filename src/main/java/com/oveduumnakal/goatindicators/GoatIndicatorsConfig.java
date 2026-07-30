@@ -174,6 +174,6 @@ public interface GoatIndicatorsConfig extends Config
 	)
 	default Color telegrabColor()
 	{
-		return new Color(255, 255, 0, 202);
+		return new Color(255, 0, 202, 255);
 	}
 }
