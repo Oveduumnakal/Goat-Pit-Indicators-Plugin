@@ -24,13 +24,17 @@
  */
 package com.oveduumnakal.goatindicators;
 
+import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.Stroke;
 import java.awt.geom.Area;
+import java.awt.image.BufferedImage;
 import javax.inject.Inject;
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
@@ -42,7 +46,7 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
-import net.runelite.client.ui.overlay.OverlayUtil;
+import net.runelite.client.util.ImageUtil;
 
 /**
  * Draws each loaded goat pit as an outlined footprint carrying its {@code X / N} count, where
@@ -60,10 +64,17 @@ class GoatPitOverlay extends Overlay
 	private static final int OUTLINE_ALPHA = 220;
 	private static final String ADD_SPIKES_TEXT = "Add Spikes";
 
+	/** Height in pixels the goat icon is scaled to for the total-caught label. */
+	private static final int ICON_HEIGHT = 16;
+
+	/** Gap in pixels between the goat icon and the total number. */
+	private static final int ICON_GAP = 2;
+
 	private final Client client;
 	private final GoatIndicatorsConfig config;
 	private final GoatPitTracker tracker;
 	private final GoatCatchCounter catchCounter;
+	private final BufferedImage totalIcon;
 
 	@Inject
 	GoatPitOverlay(Client client, GoatIndicatorsConfig config, GoatPitTracker tracker,
@@ -73,6 +84,7 @@ class GoatPitOverlay extends Overlay
 		this.config = config;
 		this.tracker = tracker;
 		this.catchCounter = catchCounter;
+		this.totalIcon = loadTotalIcon();
 		setLayer(OverlayLayer.ABOVE_SCENE);
 		setPosition(OverlayPosition.DYNAMIC);
 	}
@@ -146,13 +158,66 @@ class GoatPitOverlay extends Overlay
 		}
 		int sceneX = position.sceneX(min.getX(), max.getX());
 		int sceneY = position.sceneY(min.getY(), max.getY());
-		String text = ShortFormat.value(catchCounter.getTotal());
+		String text = totalCaughtText();
 		LocalPoint tile = LocalPoint.fromScene(sceneX, sceneY, pit.getWorldView());
 		Point at = Perspective.getCanvasTextLocation(client, graphics, tile, text, 0);
-		if (at != null)
+		if (at == null)
 		{
-			OverlayUtil.renderTextLocation(graphics, at, text, config.textColor());
+			return;
 		}
+		Color color = config.totalLabelColor();
+		if (drawIcon())
+		{
+			drawTotalIcon(graphics, at, color);
+		}
+		drawText(graphics, at, text, color);
+	}
+
+	/**
+	 * The total-caught label text for the configured prefix. "Text" prepends {@code "Total: "}; "None"
+	 * and "Icon" show the bare number (the icon draws separately, to the left of the number).
+	 */
+	private String totalCaughtText()
+	{
+		String number = ShortFormat.value(catchCounter.getTotal());
+		if (config.totalPrefix() == TotalPrefix.TEXT)
+		{
+			return "Total: " + number;
+		}
+		return number;
+	}
+
+	/** Whether the goat icon should precede the total: the prefix is set to icon and the icon loaded. */
+	private boolean drawIcon()
+	{
+		return config.totalPrefix() == TotalPrefix.ICON && totalIcon != null;
+	}
+
+	/**
+	 * Draws the goat icon just left of the total number, vertically centred on the text and faded to the
+	 * label color's alpha so it matches the number.
+	 */
+	private void drawTotalIcon(Graphics2D graphics, Point at, Color color)
+	{
+		FontMetrics metrics = graphics.getFontMetrics();
+		int iconX = at.getX() - totalIcon.getWidth() - ICON_GAP;
+		int iconY = at.getY() - metrics.getAscent() / 2 - totalIcon.getHeight() / 2;
+		Composite original = graphics.getComposite();
+		graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, color.getAlpha() / 255.0f));
+		graphics.drawImage(totalIcon, iconX, iconY, null);
+		graphics.setComposite(original);
+	}
+
+	/** Loads the goat icon from resources and scales it to {@link #ICON_HEIGHT}, or null if missing. */
+	private static BufferedImage loadTotalIcon()
+	{
+		BufferedImage raw = ImageUtil.loadImageResource(GoatPitOverlay.class, "goat_head.png");
+		if (raw == null)
+		{
+			return null;
+		}
+		int width = Math.max(1, Math.round(raw.getWidth() * (ICON_HEIGHT / (float) raw.getHeight())));
+		return ImageUtil.resizeImage(raw, width, ICON_HEIGHT);
 	}
 
 	/**
@@ -165,18 +230,19 @@ class GoatPitOverlay extends Overlay
 	}
 
 	/**
-	 * The footprint fill color, or {@code null} to leave the pit unfilled. A full pit fills green; a
-	 * spikes-needed pit fills with the needs-spikes color; every in-between state is outline only.
+	 * The footprint fill color, or {@code null} to leave the pit unfilled. A full pit takes the full
+	 * reminder fill, a spikes-needed pit takes the spike reminder fill, and every in-between state is
+	 * outline only. A fill's own alpha decides how strong it is, so alpha 0 reads as outline only.
 	 */
 	private Color fillColorFor(GoatPitState state)
 	{
 		if (state.isFull())
 		{
-			return config.fullOutlineOnly() ? null : config.fullColor();
+			return config.fullReminderFill();
 		}
 		if (promptAddSpikes(state))
 		{
-			return config.spikesOutlineOnly() ? null : config.needsSpikesColor();
+			return config.spikeReminderFill();
 		}
 		return null;
 	}
@@ -188,7 +254,7 @@ class GoatPitOverlay extends Overlay
 			Point at = pit.getCanvasTextLocation(graphics, ADD_SPIKES_TEXT, 0);
 			if (at != null)
 			{
-				OverlayUtil.renderTextLocation(graphics, at, ADD_SPIKES_TEXT, config.textColor());
+				drawText(graphics, at, ADD_SPIKES_TEXT, config.countLabelColor());
 			}
 			return;
 		}
@@ -197,23 +263,42 @@ class GoatPitOverlay extends Overlay
 			Point at = pit.getCanvasTextLocation(graphics, state.label(), 0);
 			if (at != null)
 			{
-				OverlayUtil.renderTextLocation(graphics, at, state.label(), config.textColor());
+				drawText(graphics, at, state.label(), config.countLabelColor());
 			}
 		}
 	}
 
 	/**
-	 * The outline color: solid red while the pit is unspiked, otherwise a blend running from the
-	 * needs-spikes color through the partial color to the full color in step with how full it is.
+	 * Draws label text with its own drop shadow, honouring the color's alpha. The built-in overlay text
+	 * helper leaves the shadow opaque, so a translucent label never actually looks translucent; here both
+	 * the shadow and the glyphs are drawn under an {@link AlphaComposite} keyed to the color's alpha, so
+	 * the whole label fades together and alpha 0 is fully invisible.
+	 */
+	private static void drawText(Graphics2D graphics, Point at, String text, Color color)
+	{
+		Composite original = graphics.getComposite();
+		graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, color.getAlpha() / 255.0f));
+		graphics.setColor(Color.BLACK);
+		graphics.drawString(text, at.getX() + 1, at.getY() + 1);
+		graphics.setColor(new Color(color.getRGB()));
+		graphics.drawString(text, at.getX(), at.getY());
+		graphics.setComposite(original);
+	}
+
+	/**
+	 * The outline color: the solid empty-outline color while the pit is unspiked, otherwise a blend
+	 * running from the empty-outline color through the midpoint color to the full-outline color in step
+	 * with how full it is.
 	 */
 	private Color outlineColorFor(GoatPitState state)
 	{
 		if (state.needsSpikes())
 		{
-			return withAlpha(config.needsSpikesColor(), OUTLINE_ALPHA);
+			return withAlpha(config.emptyOutlineColor(), OUTLINE_ALPHA);
 		}
 		float fraction = (float) state.getCount() / state.getCapacity();
-		Color blended = lerp3(config.needsSpikesColor(), config.partialColor(), config.fullColor(), fraction);
+		Color blended = lerp3(
+			config.emptyOutlineColor(), config.midpointOutlineColor(), config.fullOutlineColor(), fraction);
 		return withAlpha(blended, OUTLINE_ALPHA);
 	}
 
