@@ -30,7 +30,6 @@ import net.runelite.api.GameState;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
-import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -54,9 +53,6 @@ public class GoatIndicatorsPlugin extends Plugin
 	@Inject
 	private GoatPitTracker tracker;
 
-	@Inject
-	private GoatPitDiscovery discovery;
-
 	@Override
 	protected void startUp()
 	{
@@ -77,12 +73,6 @@ public class GoatIndicatorsPlugin extends Plugin
 	}
 
 	@Subscribe
-	public void onVarbitChanged(VarbitChanged event)
-	{
-		discovery.onVarbitChanged(event);
-	}
-
-	@Subscribe
 	public void onGameObjectDespawned(GameObjectDespawned event)
 	{
 		tracker.onDespawn(event.getGameObject());
@@ -99,7 +89,6 @@ public class GoatIndicatorsPlugin extends Plugin
 		if (state == GameState.LOADING || state == GameState.HOPPING || state == GameState.LOGIN_SCREEN)
 		{
 			tracker.clear();
-			discovery.reset();
 		}
 	}
 
