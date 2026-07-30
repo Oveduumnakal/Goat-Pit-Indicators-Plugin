@@ -41,6 +41,13 @@ import net.runelite.api.NPC;
  * a per-frame check re-highlights it and invites a wasted cast. This tracker bridges that gap: once a goat
  * has flown it is held in transit until it has jumped in (or despawned, or stalled past
  * {@link #MAX_LURED_TICKS}). Advanced once per game tick from {@link GoatIndicatorsPlugin}.
+ *
+ * <p>The flight spot-anim is shared by every player's grab, so tracking it alone cannot tell whose goat is in
+ * transit. The tracker therefore also records ownership: a goat becomes the local player's when it enters
+ * flight while the local player is (or was last tick) interacting with it — telegrab sets that interaction,
+ * a plain walk-here click does not. The whole-scene phase set drives the highlight suppression (any goat mid-
+ * lure cannot be grabbed, whoever cast it), while the owned subset drives the two-in-transit cap and count,
+ * so other players' grabs no longer push the local player to their limit.
  */
 @Singleton
 class GoatTransitTracker
@@ -68,14 +75,18 @@ class GoatTransitTracker
 	private final Map<Integer, Phase> phases = new HashMap<>();
 	private final Map<Integer, Integer> luredTicks = new HashMap<>();
 	private final Set<Integer> present = new HashSet<>();
+	private final Set<Integer> owned = new HashSet<>();
+	private int prevLocalTarget = -1;
 
 	/**
 	 * Advances every goat's phase by one tick from the live scene. Goats that have despawned since the last
 	 * tick are dropped, which also clears a goat the instant it is caught.
 	 *
-	 * @param npcs the world's current NPCs
+	 * @param npcs             the world's current NPCs
+	 * @param localTargetIndex the index of the NPC the local player is interacting with this tick, or
+	 *                         {@code -1} if none — used to attribute a flight to the local player's own grab
 	 */
-	void onTick(Iterable<? extends NPC> npcs)
+	void onTick(Iterable<? extends NPC> npcs, int localTargetIndex)
 	{
 		present.clear();
 		for (NPC npc : npcs)
@@ -88,17 +99,24 @@ class GoatTransitTracker
 			present.add(index);
 			boolean flying = npc.hasSpotAnim(GoatIds.IN_TRANSIT_SPOTANIM);
 			boolean jumping = npc.getAnimation() == GoatIds.IN_TRANSIT_ANIM;
-			advance(index, flying, jumping);
+			boolean localTargeted = index == localTargetIndex || index == prevLocalTarget;
+			advance(index, flying, jumping, localTargeted);
 		}
 		phases.keySet().retainAll(present);
 		luredTicks.keySet().retainAll(present);
+		owned.retainAll(phases.keySet());
+		prevLocalTarget = localTargetIndex;
 	}
 
 	/** Applies one tick's phase transition for a single goat, tracking how long it has been walking. */
-	private void advance(int index, boolean flying, boolean jumping)
+	private void advance(int index, boolean flying, boolean jumping, boolean localTargeted)
 	{
 		Phase prev = phases.get(index);
 		Phase next = nextPhase(prev, flying, jumping);
+		if (ownedThisTick(next, localTargeted))
+		{
+			owned.add(index);
+		}
 		if (next == Phase.LURED)
 		{
 			int age = (prev == Phase.LURED ? luredTicks.getOrDefault(index, 0) : 0) + 1;
@@ -119,6 +137,20 @@ class GoatTransitTracker
 			return;
 		}
 		phases.put(index, next);
+	}
+
+	/**
+	 * Whether this tick establishes the goat as the local player's own grab. Ownership latches on the flight
+	 * phase — the only phase carrying a caster-identifying interaction — and is kept for the rest of the
+	 * transit by the {@link #owned} set. A goat already owned stays owned regardless of this result.
+	 *
+	 * @param next          the goat's phase this tick
+	 * @param localTargeted whether the local player is (or was last tick) interacting with this goat
+	 * @return true when the local player owns this in-transit goat
+	 */
+	static boolean ownedThisTick(Phase next, boolean localTargeted)
+	{
+		return next == Phase.FLIGHT && localTargeted;
 	}
 
 	/**
@@ -147,16 +179,23 @@ class GoatTransitTracker
 		return null;
 	}
 
-	/** Whether this goat is mid-lure and so should not be highlighted or offered as a fresh target. */
+	/**
+	 * Whether this goat is mid-lure and so should not be highlighted or offered as a fresh target. Any goat
+	 * in transit qualifies, whoever cast the grab — an already-flying goat cannot be grabbed again.
+	 */
 	boolean isInTransit(int npcIndex)
 	{
 		return phases.containsKey(npcIndex);
 	}
 
-	/** How many goats are currently committed to a pit, for the two-in-transit cap. */
+	/**
+	 * How many of the local player's own goats are committed to a pit, for the two-in-transit cap. Other
+	 * players' lured goats share the flight graphic but are excluded here, so a busy pit does not push the
+	 * local player to their cap.
+	 */
 	int inTransitCount()
 	{
-		return phases.size();
+		return owned.size();
 	}
 
 	/** Forgets every tracked goat, for when the scene is torn down. */
@@ -165,5 +204,7 @@ class GoatTransitTracker
 		phases.clear();
 		luredTicks.clear();
 		present.clear();
+		owned.clear();
+		prevLocalTarget = -1;
 	}
 }
