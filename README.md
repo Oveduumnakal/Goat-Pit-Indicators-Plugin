@@ -16,6 +16,14 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 
   When a pit is empty and its spikes have not been re-added, the fill turns red and an "Add Spikes" prompt appears on the pit. An empty pit that still has its spikes is left neutral, so the warning only shows when it actually matters.
 
+- **Grab the ones you can reach**
+
+  Goats you can telekinetic-grab into a spiked, non-full pit from where you stand glow with an outline, so you can top a pit up without walking over. Only shows when you can actually cast Telekinetic Grab and the pit has room.
+
+- **Track your lifetime total**
+
+  A running count of every goat you have caught, drawn on the pit and kept across logins and client restarts. The game keeps no total of its own, so the plugin tallies each catch itself. Place it on any compass point, or turn it off.
+
 - **Make it yours**
 
   The outline gradient, the reminder fills, the telegrab highlight, the label colors, and the draw distance are all configurable, grouped into sections. Turn the whole overlay off from the config panel when you don't need it.
@@ -24,9 +32,13 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 
 | Filling up | Full |
 |---|---|
-| ![A partly full pit showing a green outline and a 12 / 20 count](docs/images/GoatIndicators-PartiallyFull.png) | ![A full pit with a solid green fill and 20 / 20 count](docs/images/GoatIndicators-Full.png) |
+| <img src="docs/images/GoatIndicators-PartiallyFull.png" alt="A partly full pit showing a gold outline and a 10 / 20 count" width="250"> | <img src="docs/images/GoatIndicators-Full.png" alt="A full pit with a solid green fill and 20 / 20 count" width="250"> |
 | **Empty, still spiked** | **Needs spikes** |
-| ![An empty but spiked pit showing a red outline and 0 / 20 count](docs/images/GoatIndicators-EmptyWithSpikes.png) | ![An empty unspiked pit with a red fill and an "Add Spikes" prompt](docs/images/GoatIndicators-AddSpikes.png) |
+| <img src="docs/images/GoatIndicators-EmptyWithSpikes.png" alt="An empty but spiked pit showing a red outline and 0 / 20 count" width="250"> | <img src="docs/images/GoatIndicators-AddSpikes.png" alt="An empty unspiked pit with a red fill and an Add Spikes prompt" width="250"> |
+
+Goats you can telekinetic-grab into the pit glow pink:
+
+<img src="docs/images/GoatIndicators-Telegrabbable.png" alt="Goats within telegrab range of a spiked pit glowing with a pink outline" width="600">
 
 ## Configuration
 
@@ -55,6 +67,7 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 |---|---|---|
 | Show Goats in Pit | Show the `X / N` count label (capacity scales with Hunter level) | On |
 | Show Total Caught | Where to draw the lifetime catch total: Off or a compass point | South-East |
+| Total Prefix | What precedes the total: nothing, a "Total: " label, or the goat icon | Icon |
 | Count Label Color | Color of the count and "Add Spikes" text | White |
 | Total Label Color | Color of the total-caught text | White |
 
