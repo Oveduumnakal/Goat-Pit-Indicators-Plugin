@@ -63,8 +63,9 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "showTotalCaught",
 		name = "Show total caught",
-		description = "Draw the running total of goats caught this session on the pit's north-east tile. "
-			+ "The game keeps no lifetime total, so this counts from when the plugin starts.",
+		description = "Draw the lifetime total of goats caught on the pit's north-east tile. The game "
+			+ "keeps no total of its own, so the plugin counts every catch and keeps the tally across "
+			+ "logins and restarts.",
 		position = 3
 	)
 	default boolean showTotalCaught()

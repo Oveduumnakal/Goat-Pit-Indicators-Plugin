@@ -33,11 +33,14 @@ import javax.inject.Singleton;
  * resets to zero when the pit is emptied. So the total is built going forward, adding every upward
  * step of the varbit and ignoring the drop back to zero on emptying.
  *
- * <p>The counter must be {@link #seed(int) seeded} with the live varbit value on login before it will
- * count, so a pit that is already part-full when the player logs in does not register as fresh
- * catches. {@link #suspend()} drops that seed for a logout or scene teardown; the running total
- * survives until {@link #reset()} or the client restarts. All state is package-private, so the
- * decision logic can be unit-tested without a {@code Client}.
+ * <p>The running total is a lifetime figure: the plugin {@link #restore(int) restores} it from
+ * persisted config on start and saves it back after every catch, so it keeps rolling across logins,
+ * logouts and plugin toggles. It only zeroes on an explicit {@link #reset()}. Counting itself is
+ * gated: the counter must be {@link #seed(int) seeded} with the live varbit value before it adds
+ * anything, so a pit that is already part-full when the player logs in does not register as fresh
+ * catches, and {@link #suspend()} drops that seed for a logout or scene teardown without touching the
+ * total. All state is package-private, so the decision logic can be unit-tested without a
+ * {@code Client}.
  */
 @Singleton
 class GoatCatchCounter
@@ -47,10 +50,22 @@ class GoatCatchCounter
 	/** Last observed count, or {@code -1} while unseeded (nothing is counted until seeded). */
 	private int lastCount = -1;
 
-	/** Goats caught since the last {@link #reset()} or client start. */
+	/** Lifetime goats caught, as carried across sessions until an explicit {@link #reset()}. */
 	int getTotal()
 	{
 		return total;
+	}
+
+	/**
+	 * Restores the persisted lifetime total, e.g. on plugin start. Leaves the counter unseeded, so
+	 * nothing is counted until the next {@link #seed(int)}.
+	 *
+	 * @param persistedTotal the total loaded from config, never negative in practice
+	 */
+	void restore(int persistedTotal)
+	{
+		total = Math.max(0, persistedTotal);
+		lastCount = -1;
 	}
 
 	/**

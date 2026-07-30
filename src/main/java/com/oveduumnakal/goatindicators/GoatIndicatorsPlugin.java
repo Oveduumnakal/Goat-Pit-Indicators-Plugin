@@ -46,8 +46,14 @@ import net.runelite.client.ui.overlay.OverlayManager;
 )
 public class GoatIndicatorsPlugin extends Plugin
 {
+	/** Config key holding the lifetime goats-caught total, so it survives logouts and plugin toggles. */
+	private static final String TOTAL_CAUGHT_KEY = "totalCaught";
+
 	@Inject
 	private Client client;
+
+	@Inject
+	private ConfigManager configManager;
 
 	@Inject
 	private OverlayManager overlayManager;
@@ -65,7 +71,7 @@ public class GoatIndicatorsPlugin extends Plugin
 	protected void startUp()
 	{
 		overlayManager.add(overlay);
-		catchCounter.reset();
+		catchCounter.restore(loadPersistedTotal());
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
 			catchCounter.seed(client.getVarbitValue(GoatIds.COUNT_VARBIT_OVERRIDE));
@@ -99,10 +105,23 @@ public class GoatIndicatorsPlugin extends Plugin
 	@Subscribe
 	public void onVarbitChanged(VarbitChanged event)
 	{
-		if (event.getVarbitId() == GoatIds.COUNT_VARBIT_OVERRIDE)
+		if (event.getVarbitId() != GoatIds.COUNT_VARBIT_OVERRIDE)
 		{
-			catchCounter.onCountChanged(event.getValue());
+			return;
 		}
+		int before = catchCounter.getTotal();
+		catchCounter.onCountChanged(event.getValue());
+		if (catchCounter.getTotal() != before)
+		{
+			configManager.setConfiguration(GoatIndicatorsConfig.GROUP, TOTAL_CAUGHT_KEY, catchCounter.getTotal());
+		}
+	}
+
+	/** Reads the persisted lifetime total, defaulting to zero when none is stored yet. */
+	private int loadPersistedTotal()
+	{
+		Integer stored = configManager.getConfiguration(GoatIndicatorsConfig.GROUP, TOTAL_CAUGHT_KEY, int.class);
+		return stored == null ? 0 : stored;
 	}
 
 	/**

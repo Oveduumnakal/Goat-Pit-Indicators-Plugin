@@ -71,6 +71,25 @@ public class GoatCatchCounterTest
 	}
 
 	@Test
+	public void restoreCarriesTheLifetimeTotalAndKeepsCounting()
+	{
+		GoatCatchCounter counter = new GoatCatchCounter();
+		counter.restore(41);
+		counter.seed(0);
+		counter.onCountChanged(1);
+		assertEquals(42, counter.getTotal());
+	}
+
+	@Test
+	public void restoreLeavesTheCounterUnseeded()
+	{
+		GoatCatchCounter counter = new GoatCatchCounter();
+		counter.restore(10);
+		counter.onCountChanged(3);
+		assertEquals(10, counter.getTotal());
+	}
+
+	@Test
 	public void resetClearsTheTotalAndBaseline()
 	{
 		GoatCatchCounter counter = new GoatCatchCounter();
