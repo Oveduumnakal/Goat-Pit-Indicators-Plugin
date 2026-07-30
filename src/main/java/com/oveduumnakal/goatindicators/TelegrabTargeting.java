@@ -32,10 +32,17 @@ package com.oveduumnakal.goatindicators;
  * lure rule from the Goat hunting guide: the caster must stand on the far side of the pit so the goat
  * is dragged across it into the trap. Concretely, the pit edge nearest the player is the cut line, and
  * a goat is a target only when it sits on that line or beyond it — never on the player's own side.
+ *
+ * <p>Range is necessary but not sufficient: Telekinetic Grab also needs line of sight to the goat, which
+ * depends on the scene collision map and so cannot be decided here. The overlay pairs this range check
+ * with a live line-of-sight test before highlighting a goat.
  */
 final class TelegrabTargeting
 {
-	/** Telekinetic Grab's maximum cast range in tiles; it ignores line of sight. */
+	/**
+	 * Telekinetic Grab's maximum cast range in tiles. Range alone does not make a goat grabbable — the
+	 * spell also requires line of sight, checked separately against the live scene.
+	 */
 	static final int MAX_RANGE = 10;
 
 	private TelegrabTargeting()
