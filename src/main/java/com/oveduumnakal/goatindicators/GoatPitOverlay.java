@@ -128,13 +128,13 @@ class GoatPitOverlay extends Overlay
 	}
 
 	/**
-	 * Draws the session catch total on the pit's north-east tile in Stockpile short form, so it sits
-	 * clear of the centred count. North is +y and east is +x, so the north-east tile is the pit's
-	 * {@code (maxX, maxY)} corner.
+	 * Draws the lifetime catch total on the pit corner chosen in the config, in Stockpile short form, so
+	 * it sits clear of the centred count. North is +y and east is +x.
 	 */
 	private void renderTotalCaught(Graphics2D graphics, GameObject pit)
 	{
-		if (!config.showTotalCaught())
+		TotalCaughtPosition position = config.totalCaughtPosition();
+		if (position == TotalCaughtPosition.OFF)
 		{
 			return;
 		}
@@ -144,9 +144,11 @@ class GoatPitOverlay extends Overlay
 		{
 			return;
 		}
+		int sceneX = position.sceneX(min.getX(), max.getX());
+		int sceneY = position.sceneY(min.getY(), max.getY());
 		String text = ShortFormat.value(catchCounter.getTotal());
-		LocalPoint northEast = LocalPoint.fromScene(max.getX(), max.getY(), pit.getWorldView());
-		Point at = Perspective.getCanvasTextLocation(client, graphics, northEast, text, 0);
+		LocalPoint tile = LocalPoint.fromScene(sceneX, sceneY, pit.getWorldView());
+		Point at = Perspective.getCanvasTextLocation(client, graphics, tile, text, 0);
 		if (at != null)
 		{
 			OverlayUtil.renderTextLocation(graphics, at, text, config.textColor());

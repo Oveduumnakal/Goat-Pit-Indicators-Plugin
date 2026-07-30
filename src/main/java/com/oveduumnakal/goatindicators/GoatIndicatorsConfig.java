@@ -61,16 +61,16 @@ public interface GoatIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "showTotalCaught",
+		keyName = "totalCaughtPosition",
 		name = "Show total caught",
-		description = "Draw the lifetime total of goats caught on the pit's north-east tile. The game "
-			+ "keeps no total of its own, so the plugin counts every catch and keeps the tally across "
-			+ "logins and restarts.",
+		description = "Where to draw the lifetime total of goats caught on the pit: off, or one of its "
+			+ "four corners. The game keeps no total of its own, so the plugin counts every catch and "
+			+ "keeps the tally across logins and restarts.",
 		position = 3
 	)
-	default boolean showTotalCaught()
+	default TotalCaughtPosition totalCaughtPosition()
 	{
-		return true;
+		return TotalCaughtPosition.SOUTH_EAST;
 	}
 
 	@ConfigItem(
