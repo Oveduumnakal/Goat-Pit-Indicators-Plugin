@@ -93,7 +93,7 @@ class GoatHighlightOverlay extends Overlay
 			return null;
 		}
 		List<GameObject> catchingPits = catchingPits();
-		if (catchingPits.isEmpty())
+		if (catchingPits.isEmpty() || TelegrabTargeting.atTransitCap(inTransitGoats()))
 		{
 			return null;
 		}
@@ -105,6 +105,25 @@ class GoatHighlightOverlay extends Overlay
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Counts goats currently being lured toward a pit, spotted by the in-transit graphic. Once this hits
+	 * the cap no further goat will land, so the highlight goes quiet until one falls in.
+	 */
+	private int inTransitGoats()
+	{
+		int count = 0;
+		for (NPC npc : client.getTopLevelWorldView().npcs())
+		{
+			if (npc != null
+				&& GoatPitTracker.matchesGoatName(npc.getName())
+				&& npc.hasSpotAnim(GoatIds.IN_TRANSIT_SPOTANIM))
+			{
+				count++;
+			}
+		}
+		return count;
 	}
 
 	/** The pits that can still take a goat: spiked and not yet full. */
