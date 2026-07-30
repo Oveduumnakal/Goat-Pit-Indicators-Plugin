@@ -102,7 +102,7 @@ public interface GoatIndicatorsConfig extends Config
 	)
 	default Color fullColor()
 	{
-		return new Color(0, 255, 0, 175);
+		return new Color(0, 255, 0, 30);
 	}
 
 	@Alpha
@@ -114,7 +114,7 @@ public interface GoatIndicatorsConfig extends Config
 	)
 	default Color partialColor()
 	{
-		return new Color(255, 221, 0, 175);
+		return new Color(255, 221, 0, 30);
 	}
 
 	@Alpha
@@ -126,7 +126,7 @@ public interface GoatIndicatorsConfig extends Config
 	)
 	default Color needsSpikesColor()
 	{
-		return new Color(255, 0, 0, 75);
+		return new Color(255, 0, 0, 30);
 	}
 
 	@Alpha
