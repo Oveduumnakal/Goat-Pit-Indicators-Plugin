@@ -211,13 +211,25 @@ public interface GoatIndicatorsConfig extends Config
 		return TotalCaughtPosition.SOUTH_EAST;
 	}
 
+	@ConfigItem(
+		keyName = "totalPrefix",
+		name = "Total Prefix",
+		description = "What precedes the total-caught number: nothing, a \"Total: \" label, or the goat icon.",
+		section = labelsSection,
+		position = 3
+	)
+	default TotalPrefix totalPrefix()
+	{
+		return TotalPrefix.ICON;
+	}
+
 	@Alpha
 	@ConfigItem(
 		keyName = "countLabelColor",
 		name = "Count Label Color",
 		description = "Color of the goat count and \"Add Spikes\" text.",
 		section = labelsSection,
-		position = 3
+		position = 4
 	)
 	default Color countLabelColor()
 	{
@@ -230,7 +242,7 @@ public interface GoatIndicatorsConfig extends Config
 		name = "Total Label Color",
 		description = "Color of the total-caught text.",
 		section = labelsSection,
-		position = 4
+		position = 5
 	)
 	default Color totalLabelColor()
 	{
