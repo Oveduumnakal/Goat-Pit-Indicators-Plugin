@@ -18,7 +18,7 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 
 - **Make it yours**
 
-  The full, partial, and needs-spikes fill colors, the count label, the "Add Spikes" prompt, and the draw distance are all configurable. Turn the whole overlay off from the config panel when you don't need it.
+  The outline gradient, the reminder fills, the telegrab highlight, the label colors, and the draw distance are all configurable, grouped into sections. Turn the whole overlay off from the config panel when you don't need it.
 
 ## Screenshots
 
@@ -30,18 +30,39 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 
 ## Configuration
 
+**Indicators**
+
 | Setting | What it does | Default |
 |---|---|---|
-| Show overlay | Master toggle for the on-pit overlay | On |
-| Show count | Show the `X / N` count label (capacity scales with Hunter level) | On |
+| Show Color Indicators | Master toggle for the on-pit outline and fills | On |
 | Show "Add Spikes" | Show the spikes reminder on an empty, unspiked pit | On |
-| Full: outline only | Draw a full pit as outline only, no fill | Off |
-| Needs spikes: outline only | Draw a spikes-needed pit as outline only, no fill | Off |
-| Full color | Fill when the pit is full | Green |
-| Partly full color | Midpoint of the outline gradient | Gold |
-| Needs-spikes color | Fill/outline when the pit needs spikes | Red |
-| Label color | Color of the count and "Add Spikes" text | White |
-| Max draw distance | How far away pits still draw (tiles) | 32 |
+| Highlight Telegrabbable | Glow goats you can telegrab into a spiked, non-full pit | On |
+
+**Indicator Colors**
+
+| Setting | What it does | Default |
+|---|---|---|
+| Empty Outline | Outline for an empty/unspiked pit; low end of the fill gradient (RGB) | Red |
+| Midpoint Outline | Middle of the outline gradient (RGB) | Gold |
+| Full Outline | Outline for a full pit; high end of the gradient (RGB) | Green |
+| Spike Reminder Fill | Fill for a pit that needs spikes (alpha 0 = outline only) | Faint red |
+| Full Reminder Fill | Fill for a full pit ready to empty (alpha 0 = outline only) | Faint green |
+| Telegrab Color | Outline for telegrabbable goats | Pink |
+
+**Labels**
+
+| Setting | What it does | Default |
+|---|---|---|
+| Show Goats in Pit | Show the `X / N` count label (capacity scales with Hunter level) | On |
+| Show Total Caught | Where to draw the lifetime catch total: Off or a compass point | South-East |
+| Count Label Color | Color of the count and "Add Spikes" text | White |
+| Total Label Color | Color of the total-caught text | White |
+
+**Misc**
+
+| Setting | What it does | Default |
+|---|---|---|
+| Draw Distance | How far away pits still draw (tiles) | 32 |
 
 ## Links
 

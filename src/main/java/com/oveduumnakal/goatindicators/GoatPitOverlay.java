@@ -151,7 +151,7 @@ class GoatPitOverlay extends Overlay
 		Point at = Perspective.getCanvasTextLocation(client, graphics, tile, text, 0);
 		if (at != null)
 		{
-			OverlayUtil.renderTextLocation(graphics, at, text, config.textColor());
+			OverlayUtil.renderTextLocation(graphics, at, text, config.totalLabelColor());
 		}
 	}
 
@@ -165,18 +165,19 @@ class GoatPitOverlay extends Overlay
 	}
 
 	/**
-	 * The footprint fill color, or {@code null} to leave the pit unfilled. A full pit fills green; a
-	 * spikes-needed pit fills with the needs-spikes color; every in-between state is outline only.
+	 * The footprint fill color, or {@code null} to leave the pit unfilled. A full pit takes the full
+	 * reminder fill, a spikes-needed pit takes the spike reminder fill, and every in-between state is
+	 * outline only. A fill's own alpha decides how strong it is, so alpha 0 reads as outline only.
 	 */
 	private Color fillColorFor(GoatPitState state)
 	{
 		if (state.isFull())
 		{
-			return config.fullOutlineOnly() ? null : config.fullColor();
+			return config.fullReminderFill();
 		}
 		if (promptAddSpikes(state))
 		{
-			return config.spikesOutlineOnly() ? null : config.needsSpikesColor();
+			return config.spikeReminderFill();
 		}
 		return null;
 	}
@@ -188,7 +189,7 @@ class GoatPitOverlay extends Overlay
 			Point at = pit.getCanvasTextLocation(graphics, ADD_SPIKES_TEXT, 0);
 			if (at != null)
 			{
-				OverlayUtil.renderTextLocation(graphics, at, ADD_SPIKES_TEXT, config.textColor());
+				OverlayUtil.renderTextLocation(graphics, at, ADD_SPIKES_TEXT, config.countLabelColor());
 			}
 			return;
 		}
@@ -197,23 +198,25 @@ class GoatPitOverlay extends Overlay
 			Point at = pit.getCanvasTextLocation(graphics, state.label(), 0);
 			if (at != null)
 			{
-				OverlayUtil.renderTextLocation(graphics, at, state.label(), config.textColor());
+				OverlayUtil.renderTextLocation(graphics, at, state.label(), config.countLabelColor());
 			}
 		}
 	}
 
 	/**
-	 * The outline color: solid red while the pit is unspiked, otherwise a blend running from the
-	 * needs-spikes color through the partial color to the full color in step with how full it is.
+	 * The outline color: the solid empty-outline color while the pit is unspiked, otherwise a blend
+	 * running from the empty-outline color through the midpoint color to the full-outline color in step
+	 * with how full it is.
 	 */
 	private Color outlineColorFor(GoatPitState state)
 	{
 		if (state.needsSpikes())
 		{
-			return withAlpha(config.needsSpikesColor(), OUTLINE_ALPHA);
+			return withAlpha(config.emptyOutlineColor(), OUTLINE_ALPHA);
 		}
 		float fraction = (float) state.getCount() / state.getCapacity();
-		Color blended = lerp3(config.needsSpikesColor(), config.partialColor(), config.fullColor(), fraction);
+		Color blended = lerp3(
+			config.emptyOutlineColor(), config.midpointOutlineColor(), config.fullOutlineColor(), fraction);
 		return withAlpha(blended, OUTLINE_ALPHA);
 	}
 
