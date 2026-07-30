@@ -131,6 +131,20 @@ final class GoatIds
 	 */
 	static final int SPIKES_VARBIT_OVERRIDE = 15724;
 
+	/**
+	 * Spot-anim (graphic) a goat carries while it is being lured toward the pit by a telegrab. Confirmed
+	 * in-game: it appears on a goat the moment it is grabbed and clears when the goat lands, and the game
+	 * never shows it on more than {@link #MAX_GOATS_IN_TRANSIT} goats at once.
+	 */
+	static final int IN_TRANSIT_SPOTANIM = 144;
+
+	/**
+	 * How many goats can be lured toward the pit at once. The trap only takes two in transit, so a third
+	 * grab will not land until one of the two falls in. Matches the OSRS Wiki's "2 will fall into the
+	 * trap".
+	 */
+	static final int MAX_GOATS_IN_TRANSIT = 2;
+
 	private GoatIds()
 	{
 		throw new AssertionError("constants holder");
