@@ -35,6 +35,7 @@ import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.events.PostMenuSort;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -76,6 +77,9 @@ public class GoatIndicatorsPlugin extends Plugin
 
 	@Inject
 	private GoatCatchCounter catchCounter;
+
+	@Inject
+	private GoatMenuSwapper menuSwapper;
 
 	@Override
 	protected void startUp()
@@ -124,6 +128,13 @@ public class GoatIndicatorsPlugin extends Plugin
 			return ((NPC) interacting).getIndex();
 		}
 		return -1;
+	}
+
+	/** Reorders the menu after the client sorts it, so a stray click near a full pit or a prod cannot misfire. */
+	@Subscribe
+	public void onPostMenuSort(PostMenuSort event)
+	{
+		menuSwapper.onPostMenuSort();
 	}
 
 	@Subscribe

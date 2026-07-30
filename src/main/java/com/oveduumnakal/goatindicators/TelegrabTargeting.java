@@ -61,6 +61,21 @@ final class TelegrabTargeting
 	}
 
 	/**
+	 * Whether the pit is effectively full for the purpose of a fresh lure: the goats already in it plus
+	 * those in transit toward it have reached its capacity, so another cast would be wasted. This is a
+	 * stricter test than {@code isFull()} — it counts the goats still on their way in.
+	 *
+	 * @param goatsInPit     goats currently in the pit
+	 * @param goatsInTransit goats currently being lured toward the pit
+	 * @param limit          the pit's capacity
+	 * @return true when the pit's count plus in-transit goats meet or exceed the capacity
+	 */
+	static boolean effectivelyFull(int goatsInPit, int goatsInTransit, int limit)
+	{
+		return goatsInPit + goatsInTransit >= limit;
+	}
+
+	/**
 	 * Whether the goat is on the opposite side of the pit from the player, so a grab lures it across the
 	 * pit and into the trap. The player's position picks the axis: whichever pit edge they stand beyond
 	 * becomes the cut line, and only goats at or past the pit on that axis qualify. A player level with
