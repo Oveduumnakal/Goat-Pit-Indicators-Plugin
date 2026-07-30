@@ -198,6 +198,19 @@ public interface GoatIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "pitCountStyle",
+		name = "Goats in Pit Style",
+		description = "How the goat count is drawn when shown: as the X / N text, as a progress bar that "
+			+ "fills as the pit does, or as a bar with the count over it.",
+		section = labelsSection,
+		position = 2
+	)
+	default PitCountStyle pitCountStyle()
+	{
+		return PitCountStyle.TEXT;
+	}
+
+	@ConfigItem(
 		keyName = "inTransitPosition",
 		name = "Show Goats in Transit",
 		description = "Where to draw a running count of goats currently being lured toward the pit (e.g. In "
@@ -205,7 +218,7 @@ public interface GoatIndicatorsConfig extends Config
 			+ "under the pit count, or one of the pit's compass points. On the same compass point as the "
 			+ "total caught, it stacks under the total.",
 		section = labelsSection,
-		position = 2
+		position = 3
 	)
 	default InTransitPosition inTransitPosition()
 	{
@@ -219,7 +232,7 @@ public interface GoatIndicatorsConfig extends Config
 			+ "compass points. The game keeps no total of its own, so the plugin counts every catch and "
 			+ "keeps the tally across logins and restarts.",
 		section = labelsSection,
-		position = 3
+		position = 4
 	)
 	default TotalCaughtPosition totalCaughtPosition()
 	{
@@ -231,7 +244,7 @@ public interface GoatIndicatorsConfig extends Config
 		name = "Total Prefix",
 		description = "What precedes the total-caught number: nothing, a \"Total: \" label, or the goat icon.",
 		section = labelsSection,
-		position = 4
+		position = 5
 	)
 	default TotalPrefix totalPrefix()
 	{
@@ -244,7 +257,7 @@ public interface GoatIndicatorsConfig extends Config
 		name = "Count Label Color",
 		description = "Color of the goat count and \"Add Spikes\" text.",
 		section = labelsSection,
-		position = 5
+		position = 6
 	)
 	default Color countLabelColor()
 	{
@@ -257,7 +270,7 @@ public interface GoatIndicatorsConfig extends Config
 		name = "Total Label Color",
 		description = "Color of the total-caught text.",
 		section = labelsSection,
-		position = 6
+		position = 7
 	)
 	default Color totalLabelColor()
 	{

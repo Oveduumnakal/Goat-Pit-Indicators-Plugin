@@ -64,6 +64,11 @@ class GoatPitOverlay extends Overlay
 	private static final int OUTLINE_ALPHA = 220;
 	private static final String ADD_SPIKES_TEXT = "Add Spikes";
 
+	/** Progress bar dimensions in pixels, and the translucent backing drawn behind the fill. */
+	private static final int BAR_WIDTH = 48;
+	private static final int BAR_HEIGHT = 9;
+	private static final Color BAR_BACKGROUND = new Color(0, 0, 0, 150);
+
 	/** Height in pixels the goat icon is scaled to for the total-caught label. */
 	private static final int ICON_HEIGHT = 16;
 
@@ -321,14 +326,70 @@ class GoatPitOverlay extends Overlay
 			}
 			return;
 		}
-		if (config.showCount())
+		if (!config.showCount())
 		{
-			Point at = pit.getCanvasTextLocation(graphics, state.label(), 0);
-			if (at != null)
-			{
-				drawText(graphics, at, state.label(), config.countLabelColor());
-			}
+			return;
 		}
+		PitCountStyle style = config.pitCountStyle();
+		if (style.showsBar())
+		{
+			drawProgressBar(graphics, pit, state, style.showsText());
+			return;
+		}
+		Point at = pit.getCanvasTextLocation(graphics, state.label(), 0);
+		if (at != null)
+		{
+			drawText(graphics, at, state.label(), config.countLabelColor());
+		}
+	}
+
+	/**
+	 * Draws a horizontal progress bar centred on the pit, filled from empty to full in step with the
+	 * count and coloured with the same red-through-green gradient as the outline, so the bar reads as the
+	 * pit's fill at a glance. When {@code withText} is set the {@code X / N} count is drawn over the bar.
+	 */
+	private void drawProgressBar(Graphics2D graphics, GameObject pit, GoatPitState state, boolean withText)
+	{
+		Point at = pit.getCanvasTextLocation(graphics, state.label(), 0);
+		if (at == null)
+		{
+			return;
+		}
+		FontMetrics metrics = graphics.getFontMetrics();
+		int centerX = at.getX() + metrics.stringWidth(state.label()) / 2;
+		int left = centerX - BAR_WIDTH / 2;
+		int top = at.getY() - metrics.getAscent() / 2 - BAR_HEIGHT / 2;
+		float fraction = state.getCapacity() == 0 ? 0.0f
+			: Math.max(0.0f, Math.min(1.0f, (float) state.getCount() / state.getCapacity()));
+		Color progress = progressColor(state);
+		graphics.setColor(BAR_BACKGROUND);
+		graphics.fillRect(left, top, BAR_WIDTH, BAR_HEIGHT);
+		graphics.setColor(progress);
+		graphics.fillRect(left, top, Math.round(BAR_WIDTH * fraction), BAR_HEIGHT);
+		graphics.setColor(withAlpha(progress, OUTLINE_ALPHA));
+		graphics.setStroke(OUTLINE);
+		graphics.drawRect(left, top, BAR_WIDTH, BAR_HEIGHT);
+		if (withText)
+		{
+			int textX = left + (BAR_WIDTH - metrics.stringWidth(state.label())) / 2;
+			int textY = top + (BAR_HEIGHT + metrics.getAscent() - metrics.getDescent()) / 2;
+			drawText(graphics, new Point(textX, textY), state.label(), config.countLabelColor());
+		}
+	}
+
+	/**
+	 * The progress bar's fill color: the solid empty-outline color while the pit is unspiked, otherwise the
+	 * same red-through-green gradient the outline uses, at full opacity so the fill reads clearly.
+	 */
+	private Color progressColor(GoatPitState state)
+	{
+		if (state.needsSpikes())
+		{
+			return config.emptyOutlineColor();
+		}
+		float fraction = (float) state.getCount() / state.getCapacity();
+		return lerp3(
+			config.emptyOutlineColor(), config.midpointOutlineColor(), config.fullOutlineColor(), fraction);
 	}
 
 	/**
