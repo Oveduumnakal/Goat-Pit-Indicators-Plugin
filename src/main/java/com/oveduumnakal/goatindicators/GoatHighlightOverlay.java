@@ -142,12 +142,17 @@ class GoatHighlightOverlay extends Overlay
 	}
 
 	/**
-	 * Whether this goat should glow: it is a goat, in cast range of the player, and on the far side of
-	 * at least one catching pit.
+	 * Whether this goat should glow: it is a goat, not already in transit, in cast range of the player,
+	 * and on the far side of at least one catching pit. A goat mid-transit cannot be grabbed again, so it
+	 * is excluded to avoid inviting a wasted cast.
 	 */
 	private boolean isTelegrabTarget(NPC npc, WorldPoint playerLocation, List<GameObject> catchingPits)
 	{
 		if (npc == null || !GoatPitTracker.matchesGoatName(npc.getName()))
+		{
+			return false;
+		}
+		if (npc.hasSpotAnim(GoatIds.IN_TRANSIT_SPOTANIM))
 		{
 			return false;
 		}
