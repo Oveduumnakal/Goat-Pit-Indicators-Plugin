@@ -61,15 +61,17 @@ class GoatHighlightOverlay extends Overlay
 	private final Client client;
 	private final GoatIndicatorsConfig config;
 	private final GoatPitTracker tracker;
+	private final GoatTransitTracker transitTracker;
 	private final TelekineticGrab telekineticGrab;
 
 	@Inject
 	GoatHighlightOverlay(Client client, GoatIndicatorsConfig config, GoatPitTracker tracker,
-		TelekineticGrab telekineticGrab)
+		GoatTransitTracker transitTracker, TelekineticGrab telekineticGrab)
 	{
 		this.client = client;
 		this.config = config;
 		this.tracker = tracker;
+		this.transitTracker = transitTracker;
 		this.telekineticGrab = telekineticGrab;
 		setLayer(OverlayLayer.ABOVE_SCENE);
 		setPosition(OverlayPosition.DYNAMIC);
@@ -93,7 +95,7 @@ class GoatHighlightOverlay extends Overlay
 			return null;
 		}
 		List<GameObject> catchingPits = catchingPits();
-		if (catchingPits.isEmpty() || TelegrabTargeting.atTransitCap(inTransitGoats()))
+		if (catchingPits.isEmpty() || TelegrabTargeting.atTransitCap(transitTracker.inTransitCount()))
 		{
 			return null;
 		}
@@ -105,25 +107,6 @@ class GoatHighlightOverlay extends Overlay
 			}
 		}
 		return null;
-	}
-
-	/**
-	 * Counts goats currently being lured toward a pit, spotted by the in-transit graphic. Once this hits
-	 * the cap no further goat will land, so the highlight goes quiet until one falls in.
-	 */
-	private int inTransitGoats()
-	{
-		int count = 0;
-		for (NPC npc : client.getTopLevelWorldView().npcs())
-		{
-			if (npc != null
-				&& GoatPitTracker.matchesGoatName(npc.getName())
-				&& npc.hasSpotAnim(GoatIds.IN_TRANSIT_SPOTANIM))
-			{
-				count++;
-			}
-		}
-		return count;
 	}
 
 	/** The pits that can still take a goat: spiked and not yet full. */
@@ -142,12 +125,17 @@ class GoatHighlightOverlay extends Overlay
 	}
 
 	/**
-	 * Whether this goat should glow: it is a goat, in cast range of the player, and on the far side of
-	 * at least one catching pit.
+	 * Whether this goat should glow: it is a goat, not already in transit, in cast range of the player,
+	 * and on the far side of at least one catching pit. A goat mid-transit cannot be grabbed again, so it
+	 * is excluded to avoid inviting a wasted cast.
 	 */
 	private boolean isTelegrabTarget(NPC npc, WorldPoint playerLocation, List<GameObject> catchingPits)
 	{
 		if (npc == null || !GoatPitTracker.matchesGoatName(npc.getName()))
+		{
+			return false;
+		}
+		if (transitTracker.isInTransit(npc.getIndex()))
 		{
 			return false;
 		}
