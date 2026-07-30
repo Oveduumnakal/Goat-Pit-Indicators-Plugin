@@ -139,6 +139,14 @@ final class GoatIds
 	static final int IN_TRANSIT_SPOTANIM = 144;
 
 	/**
+	 * Animation a lured goat plays after the telegrab lands: it walks up to the pit and jumps in. Confirmed
+	 * in-game to follow {@link #IN_TRANSIT_SPOTANIM} on the same goat and clear back to idle once it has
+	 * fallen in. The goat is still committed to the pit during this phase, so it counts as in transit even
+	 * though the flight spot-anim is already gone.
+	 */
+	static final int IN_TRANSIT_ANIM = 14463;
+
+	/**
 	 * How many goats can be lured toward the pit at once. The trap only takes two in transit, so a third
 	 * grab will not land until one of the two falls in. Matches the OSRS Wiki's "2 will fall into the
 	 * trap".

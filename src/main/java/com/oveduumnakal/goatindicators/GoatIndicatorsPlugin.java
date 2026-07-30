@@ -31,6 +31,7 @@ import net.runelite.api.GameState;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -68,6 +69,9 @@ public class GoatIndicatorsPlugin extends Plugin
 	private GoatPitTracker tracker;
 
 	@Inject
+	private GoatTransitTracker transitTracker;
+
+	@Inject
 	private GoatCatchCounter catchCounter;
 
 	@Override
@@ -88,7 +92,15 @@ public class GoatIndicatorsPlugin extends Plugin
 		overlayManager.remove(overlay);
 		overlayManager.remove(highlightOverlay);
 		tracker.clear();
+		transitTracker.clear();
 		catchCounter.suspend();
+	}
+
+	/** Advances the in-transit tracker once per tick so the highlight can bridge a lured goat's walk phase. */
+	@Subscribe
+	public void onGameTick(GameTick event)
+	{
+		transitTracker.onTick(client.getTopLevelWorldView().npcs());
 	}
 
 	@Subscribe
@@ -148,6 +160,7 @@ public class GoatIndicatorsPlugin extends Plugin
 		if (state == GameState.LOADING || state == GameState.HOPPING || state == GameState.LOGIN_SCREEN)
 		{
 			tracker.clear();
+			transitTracker.clear();
 			catchCounter.suspend();
 		}
 	}
