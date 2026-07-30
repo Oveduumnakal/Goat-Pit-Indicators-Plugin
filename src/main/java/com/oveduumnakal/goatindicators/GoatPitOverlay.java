@@ -165,8 +165,8 @@ class GoatPitOverlay extends Overlay
 	}
 
 	/**
-	 * The footprint fill colour, or {@code null} to leave the pit unfilled. A full pit fills green; a
-	 * spikes-needed pit fills with the needs-spikes colour; every in-between state is outline only.
+	 * The footprint fill color, or {@code null} to leave the pit unfilled. A full pit fills green; a
+	 * spikes-needed pit fills with the needs-spikes color; every in-between state is outline only.
 	 */
 	private Color fillColorFor(GoatPitState state)
 	{
@@ -203,8 +203,8 @@ class GoatPitOverlay extends Overlay
 	}
 
 	/**
-	 * The outline colour: solid red while the pit is unspiked, otherwise a blend running from the
-	 * needs-spikes colour through the partial colour to the full colour in step with how full it is.
+	 * The outline color: solid red while the pit is unspiked, otherwise a blend running from the
+	 * needs-spikes color through the partial color to the full color in step with how full it is.
 	 */
 	private Color outlineColorFor(GoatPitState state)
 	{
@@ -223,7 +223,7 @@ class GoatPitOverlay extends Overlay
 	}
 
 	/**
-	 * Blends across three colour stops — {@code from} at 0, {@code mid} at 0.5, {@code to} at 1 —
+	 * Blends across three color stops — {@code from} at 0, {@code mid} at 0.5, {@code to} at 1 —
 	 * ignoring alpha; {@code fraction} is clamped to 0..1.
 	 */
 	private static Color lerp3(Color from, Color mid, Color to, float fraction)
@@ -236,7 +236,7 @@ class GoatPitOverlay extends Overlay
 		return lerp(mid, to, (f - 0.5f) * 2.0f);
 	}
 
-	/** Linearly blends two colours, ignoring their alpha; {@code fraction} is clamped to 0..1. */
+	/** Linearly blends two colors, ignoring their alpha; {@code fraction} is clamped to 0..1. */
 	private static Color lerp(Color from, Color to, float fraction)
 	{
 		float f = Math.max(0.0f, Math.min(1.0f, fraction));

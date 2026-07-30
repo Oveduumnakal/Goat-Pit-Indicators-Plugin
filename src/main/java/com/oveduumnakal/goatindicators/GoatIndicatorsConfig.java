@@ -31,7 +31,7 @@ import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.Range;
 
-/** Settings for the goat pit overlay: what is drawn, and in which colours. */
+/** Settings for the goat pit overlay: what is drawn, and in which colors. */
 @ConfigGroup(GoatIndicatorsConfig.GROUP)
 public interface GoatIndicatorsConfig extends Config
 {
@@ -41,7 +41,7 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "showOverlay",
 		name = "Show pit overlay",
-		description = "Draw the coloured fill over goat pits in the scene.",
+		description = "Draw the colored fill over goat pits in the scene.",
 		position = 1
 	)
 	default boolean showOverlay()
@@ -64,7 +64,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "totalCaughtPosition",
 		name = "Show total caught",
 		description = "Where to draw the lifetime total of goats caught on the pit: off, or one of its "
-			+ "four corners. The game keeps no total of its own, so the plugin counts every catch and "
+			+ "compass points. The game keeps no total of its own, so the plugin counts every catch and "
 			+ "keeps the tally across logins and restarts.",
 		position = 3
 	)
@@ -110,7 +110,7 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "fullColor",
 		name = "Full",
-		description = "Fill colour for a pit that is full.",
+		description = "Fill color for a pit that is full.",
 		position = 7
 	)
 	default Color fullColor()
@@ -122,7 +122,7 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "partialColor",
 		name = "Partly full",
-		description = "Fill colour for a pit that is neither full nor waiting on spikes.",
+		description = "Fill color for a pit that is neither full nor waiting on spikes.",
 		position = 8
 	)
 	default Color partialColor()
@@ -134,7 +134,7 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "needsSpikesColor",
 		name = "Needs spikes",
-		description = "Fill colour for an empty pit with no spikes set.",
+		description = "Fill color for an empty pit with no spikes set.",
 		position = 9
 	)
 	default Color needsSpikesColor()
@@ -146,7 +146,7 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "textColor",
 		name = "Label",
-		description = "Colour of the count and \"Add Spikes\" text.",
+		description = "Color of the count and \"Add Spikes\" text.",
 		position = 10
 	)
 	default Color textColor()
@@ -164,5 +164,29 @@ public interface GoatIndicatorsConfig extends Config
 	default int maxDrawDistance()
 	{
 		return 32;
+	}
+
+	@ConfigItem(
+		keyName = "highlightTelegrab",
+		name = "Highlight telegrab?",
+		description = "Glow an outline on goats you can telegrab into a spiked, non-full pit from where "
+			+ "you stand, when you can cast Telekinetic Grab.",
+		position = 12
+	)
+	default boolean highlightTelegrab()
+	{
+		return true;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = "telegrabColor",
+		name = "Telegrab color",
+		description = "Outline color for telegrabbable goats.",
+		position = 13
+	)
+	default Color telegrabColor()
+	{
+		return new Color(255, 0, 202, 255);
 	}
 }

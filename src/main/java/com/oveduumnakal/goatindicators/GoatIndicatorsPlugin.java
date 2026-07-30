@@ -62,6 +62,9 @@ public class GoatIndicatorsPlugin extends Plugin
 	private GoatPitOverlay overlay;
 
 	@Inject
+	private GoatHighlightOverlay highlightOverlay;
+
+	@Inject
 	private GoatPitTracker tracker;
 
 	@Inject
@@ -71,6 +74,7 @@ public class GoatIndicatorsPlugin extends Plugin
 	protected void startUp()
 	{
 		overlayManager.add(overlay);
+		overlayManager.add(highlightOverlay);
 		catchCounter.restore(loadPersistedTotal());
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
@@ -82,6 +86,7 @@ public class GoatIndicatorsPlugin extends Plugin
 	protected void shutDown()
 	{
 		overlayManager.remove(overlay);
+		overlayManager.remove(highlightOverlay);
 		tracker.clear();
 		catchCounter.suspend();
 	}
