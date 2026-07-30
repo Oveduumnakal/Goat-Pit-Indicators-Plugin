@@ -28,7 +28,8 @@ nothing on our side is outstanding.
   the hub's 48x72 max), source kept at `docs/icon-source.png`. Four overlay
   screenshots in `docs/images/`, shown in the README (merged via PR #5, issue #3).
 - **Build GREEN**: `./gradlew build` passes compile, tests, `check-style.py`,
-  javadoc, no warnings.
+  javadoc, no warnings. CI on `R-1.0.1` — both **Release** and **Build**
+  workflows completed success.
 - **In-game discovery DONE** — real ids confirmed, overlay verified live.
 - **GitHub repo LIVE**: https://github.com/Oveduumnakal/Goat-Pit-Indicators-Plugin
   — `main` pushed, 11 labels, Discussions on.
@@ -72,9 +73,10 @@ set to these ids; `PIT_OBJECT_IDS = {62343}`.
 
 - Outline always drawn; colour runs **red → gold → green** with the count.
 - Unspiked pit: solid red outline.
-- Full (20/20): green fill.
-- Empty **and** unspiked (`0/20`): red fill + "Add Spikes" text, count hidden.
-- Every other state: outline only + `n / 20`.
+- Full (`n/n`, e.g. 20/20): green fill.
+- Empty **and** unspiked (`0/n`): red fill + "Add Spikes" text, count hidden.
+- Every other state: outline only + `n / N`, where `N` is the capacity for the
+  player's Hunter level (16/18/20/22/24 at 60/70/77/85/93+).
 - Config toggles **Full: outline only** / **Needs spikes: outline only** suppress
   those two fills.
 - Default colours: full `#AF00FF00`, partial `#AFFFDD00`, needs-spikes `#4BFF0000`.
@@ -96,16 +98,17 @@ firehose to the count range. Left in as a maintenance aid; safe to ship off.
 
 | File | Role |
 |---|---|
-| `GoatIds.java` | Ids/varbits: pit object `62343`, count `15725`, spikes `15724`, capacity 20 |
+| `GoatIds.java` | Ids/varbits: pit object `62343`, count `15725`, spikes `15724`; `capacityForHunterLevel` (16→24) |
 | `GoatPitState.java` | Count + spiked, clamped; `isFull` / `needsSpikes` (= unspiked) / `label()` |
 | `GoatPitTracker.java` | Collects pit game objects, reads count/spikes from the varbits |
 | `GoatPitDiscovery.java` | Debug-only id/varbit logging |
 | `GoatIndicatorsConfig.java` | Toggles, outline-only options, colours, draw distance, debug flag |
-| `GoatPitOverlay.java` | Footprint outline (red→gold→green), fills, `n / 20` + "Add Spikes" |
+| `GoatPitOverlay.java` | Footprint outline (red→gold→green), fills, `n / N` + "Add Spikes" |
 | `GoatIndicatorsPlugin.java` | Wiring, event subscriptions, overlay add/remove |
 
-Tests: `GoatPitStateTest`, `GoatPitTrackerTest` (JUnit 4, no Mockito — decision
-logic is in static package-private methods so `Client` never needs stubbing).
+Tests: `GoatPitStateTest`, `GoatPitTrackerTest`, `GoatIdsTest` (the last covers
+the Hunter-level → capacity table). JUnit 4, no Mockito — decision logic is in
+static package-private methods so `Client` never needs stubbing.
 
 ## Not done
 
