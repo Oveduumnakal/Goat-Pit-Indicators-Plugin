@@ -51,18 +51,23 @@ public class GoatIndicatorsPlugin extends Plugin
 	private GoatPitOverlay overlay;
 
 	@Inject
+	private GoatHighlightOverlay highlightOverlay;
+
+	@Inject
 	private GoatPitTracker tracker;
 
 	@Override
 	protected void startUp()
 	{
 		overlayManager.add(overlay);
+		overlayManager.add(highlightOverlay);
 	}
 
 	@Override
 	protected void shutDown()
 	{
 		overlayManager.remove(overlay);
+		overlayManager.remove(highlightOverlay);
 		tracker.clear();
 	}
 

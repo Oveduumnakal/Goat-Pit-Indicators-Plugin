@@ -152,4 +152,28 @@ public interface GoatIndicatorsConfig extends Config
 	{
 		return 32;
 	}
+
+	@ConfigItem(
+		keyName = "highlightTelegrab",
+		name = "Highlight telegrab?",
+		description = "Glow a purple outline on goats you can telegrab into a spiked, non-full pit from "
+			+ "where you stand, when you can cast Telekinetic Grab.",
+		position = 11
+	)
+	default boolean highlightTelegrab()
+	{
+		return true;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = "telegrabColor",
+		name = "Telegrab colour",
+		description = "Outline colour for telegrabbable goats.",
+		position = 12
+	)
+	default Color telegrabColor()
+	{
+		return new Color(231, 0, 255, 161);
+	}
 }
