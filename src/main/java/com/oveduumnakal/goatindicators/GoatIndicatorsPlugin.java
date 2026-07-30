@@ -26,10 +26,12 @@ package com.oveduumnakal.goatindicators;
 
 import com.google.inject.Provides;
 import javax.inject.Inject;
+import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -45,6 +47,9 @@ import net.runelite.client.ui.overlay.OverlayManager;
 public class GoatIndicatorsPlugin extends Plugin
 {
 	@Inject
+	private Client client;
+
+	@Inject
 	private OverlayManager overlayManager;
 
 	@Inject
@@ -53,10 +58,18 @@ public class GoatIndicatorsPlugin extends Plugin
 	@Inject
 	private GoatPitTracker tracker;
 
+	@Inject
+	private GoatCatchCounter catchCounter;
+
 	@Override
 	protected void startUp()
 	{
 		overlayManager.add(overlay);
+		catchCounter.reset();
+		if (client.getGameState() == GameState.LOGGED_IN)
+		{
+			catchCounter.seed(client.getVarbitValue(GoatIds.COUNT_VARBIT_OVERRIDE));
+		}
 	}
 
 	@Override
@@ -64,6 +77,7 @@ public class GoatIndicatorsPlugin extends Plugin
 	{
 		overlayManager.remove(overlay);
 		tracker.clear();
+		catchCounter.suspend();
 	}
 
 	@Subscribe
@@ -79,16 +93,38 @@ public class GoatIndicatorsPlugin extends Plugin
 	}
 
 	/**
-	 * Drops every tracked pit when the scene is torn down. Object despawn events do not always fire
-	 * on a world hop, so without this the overlay would keep drawing pits that are no longer there.
+	 * Feeds count-varbit changes to the catch counter. Only the pit's count varbit matters; every other
+	 * varbit change is ignored.
+	 */
+	@Subscribe
+	public void onVarbitChanged(VarbitChanged event)
+	{
+		if (event.getVarbitId() == GoatIds.COUNT_VARBIT_OVERRIDE)
+		{
+			catchCounter.onCountChanged(event.getValue());
+		}
+	}
+
+	/**
+	 * Drops every tracked pit when the scene is torn down, and keeps the catch counter's baseline in
+	 * step with login state. Object despawn events do not always fire on a world hop, so without the
+	 * clear the overlay would keep drawing pits that are no longer there. The counter is seeded from the
+	 * live count varbit on login so a pit that is already part-full is not counted as fresh catches, and
+	 * suspended on teardown so the reload does not either.
 	 */
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
 		GameState state = event.getGameState();
+		if (state == GameState.LOGGED_IN)
+		{
+			catchCounter.seed(client.getVarbitValue(GoatIds.COUNT_VARBIT_OVERRIDE));
+			return;
+		}
 		if (state == GameState.LOADING || state == GameState.HOPPING || state == GameState.LOGIN_SCREEN)
 		{
 			tracker.clear();
+			catchCounter.suspend();
 		}
 	}
 

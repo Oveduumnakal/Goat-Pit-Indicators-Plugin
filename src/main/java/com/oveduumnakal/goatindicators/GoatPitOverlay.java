@@ -63,13 +63,16 @@ class GoatPitOverlay extends Overlay
 	private final Client client;
 	private final GoatIndicatorsConfig config;
 	private final GoatPitTracker tracker;
+	private final GoatCatchCounter catchCounter;
 
 	@Inject
-	GoatPitOverlay(Client client, GoatIndicatorsConfig config, GoatPitTracker tracker)
+	GoatPitOverlay(Client client, GoatIndicatorsConfig config, GoatPitTracker tracker,
+		GoatCatchCounter catchCounter)
 	{
 		this.client = client;
 		this.config = config;
 		this.tracker = tracker;
+		this.catchCounter = catchCounter;
 		setLayer(OverlayLayer.ABOVE_SCENE);
 		setPosition(OverlayPosition.DYNAMIC);
 	}
@@ -121,6 +124,33 @@ class GoatPitOverlay extends Overlay
 		graphics.setStroke(OUTLINE);
 		graphics.draw(footprint);
 		renderLabels(graphics, pit, state);
+		renderTotalCaught(graphics, pit);
+	}
+
+	/**
+	 * Draws the session catch total on the pit's north-east tile in Stockpile short form, so it sits
+	 * clear of the centred count. North is +y and east is +x, so the north-east tile is the pit's
+	 * {@code (maxX, maxY)} corner.
+	 */
+	private void renderTotalCaught(Graphics2D graphics, GameObject pit)
+	{
+		if (!config.showTotalCaught())
+		{
+			return;
+		}
+		Point min = pit.getSceneMinLocation();
+		Point max = pit.getSceneMaxLocation();
+		if (min == null || max == null)
+		{
+			return;
+		}
+		String text = ShortFormat.value(catchCounter.getTotal());
+		LocalPoint northEast = LocalPoint.fromScene(max.getX(), max.getY(), pit.getWorldView());
+		Point at = Perspective.getCanvasTextLocation(client, graphics, northEast, text, 0);
+		if (at != null)
+		{
+			OverlayUtil.renderTextLocation(graphics, at, text, config.textColor());
+		}
 	}
 
 	/**
