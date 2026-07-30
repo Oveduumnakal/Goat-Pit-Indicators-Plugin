@@ -70,19 +70,24 @@ class GoatPitOverlay extends Overlay
 	/** Gap in pixels between the goat icon and the total number. */
 	private static final int ICON_GAP = 2;
 
+	/** How high above the pit tile the in-transit count floats, so it clears the centred count. */
+	private static final int IN_TRANSIT_HEIGHT = 100;
+
 	private final Client client;
 	private final GoatIndicatorsConfig config;
 	private final GoatPitTracker tracker;
+	private final GoatTransitTracker transitTracker;
 	private final GoatCatchCounter catchCounter;
 	private final BufferedImage totalIcon;
 
 	@Inject
 	GoatPitOverlay(Client client, GoatIndicatorsConfig config, GoatPitTracker tracker,
-		GoatCatchCounter catchCounter)
+		GoatTransitTracker transitTracker, GoatCatchCounter catchCounter)
 	{
 		this.client = client;
 		this.config = config;
 		this.tracker = tracker;
+		this.transitTracker = transitTracker;
 		this.catchCounter = catchCounter;
 		this.totalIcon = loadTotalIcon();
 		setLayer(OverlayLayer.ABOVE_SCENE);
@@ -136,7 +141,27 @@ class GoatPitOverlay extends Overlay
 		graphics.setStroke(OUTLINE);
 		graphics.draw(footprint);
 		renderLabels(graphics, pit, state);
+		renderInTransit(graphics, pit);
 		renderTotalCaught(graphics, pit);
+	}
+
+	/**
+	 * Draws the current in-transit goat count above the pit, e.g. {@code "In transit: 1 / 2"}, so the player
+	 * can see at a glance how close they are to the two-goat lure cap. This is the same count the highlight
+	 * uses to fall silent once the cap is reached.
+	 */
+	private void renderInTransit(Graphics2D graphics, GameObject pit)
+	{
+		if (!config.showInTransit())
+		{
+			return;
+		}
+		String text = "In transit: " + transitTracker.inTransitCount() + " / " + GoatIds.MAX_GOATS_IN_TRANSIT;
+		Point at = pit.getCanvasTextLocation(graphics, text, IN_TRANSIT_HEIGHT);
+		if (at != null)
+		{
+			drawText(graphics, at, text, config.countLabelColor());
+		}
 	}
 
 	/**
