@@ -61,10 +61,23 @@ public interface GoatIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "totalCaughtPosition",
+		name = "Show total caught",
+		description = "Where to draw the lifetime total of goats caught on the pit: off, or one of its "
+			+ "compass points. The game keeps no total of its own, so the plugin counts every catch and "
+			+ "keeps the tally across logins and restarts.",
+		position = 3
+	)
+	default TotalCaughtPosition totalCaughtPosition()
+	{
+		return TotalCaughtPosition.SOUTH_EAST;
+	}
+
+	@ConfigItem(
 		keyName = "showAddSpikes",
 		name = "Show \"Add Spikes\"",
 		description = "Label an empty, unspiked pit so it is obvious it needs spikes before it will catch anything.",
-		position = 3
+		position = 4
 	)
 	default boolean showAddSpikes()
 	{
@@ -75,7 +88,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "fullOutlineOnly",
 		name = "Full: outline only",
 		description = "Draw a full pit with just its outline, leaving the footprint unfilled.",
-		position = 4
+		position = 5
 	)
 	default boolean fullOutlineOnly()
 	{
@@ -86,7 +99,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "spikesOutlineOnly",
 		name = "Needs spikes: outline only",
 		description = "Draw a spikes-needed pit with just its outline, leaving the footprint unfilled.",
-		position = 5
+		position = 6
 	)
 	default boolean spikesOutlineOnly()
 	{
@@ -98,7 +111,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "fullColor",
 		name = "Full",
 		description = "Fill color for a pit that is full.",
-		position = 6
+		position = 7
 	)
 	default Color fullColor()
 	{
@@ -110,7 +123,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "partialColor",
 		name = "Partly full",
 		description = "Fill color for a pit that is neither full nor waiting on spikes.",
-		position = 7
+		position = 8
 	)
 	default Color partialColor()
 	{
@@ -122,7 +135,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "needsSpikesColor",
 		name = "Needs spikes",
 		description = "Fill color for an empty pit with no spikes set.",
-		position = 8
+		position = 9
 	)
 	default Color needsSpikesColor()
 	{
@@ -134,7 +147,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "textColor",
 		name = "Label",
 		description = "Color of the count and \"Add Spikes\" text.",
-		position = 9
+		position = 10
 	)
 	default Color textColor()
 	{
@@ -146,7 +159,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "maxDrawDistance",
 		name = "Draw distance",
 		description = "Stop drawing the overlay for pits further away than this many tiles.",
-		position = 10
+		position = 11
 	)
 	default int maxDrawDistance()
 	{
@@ -158,7 +171,7 @@ public interface GoatIndicatorsConfig extends Config
 		name = "Highlight telegrab?",
 		description = "Glow an outline on goats you can telegrab into a spiked, non-full pit from where "
 			+ "you stand, when you can cast Telekinetic Grab.",
-		position = 11
+		position = 12
 	)
 	default boolean highlightTelegrab()
 	{
@@ -170,7 +183,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "telegrabColor",
 		name = "Telegrab color",
 		description = "Outline color for telegrabbable goats.",
-		position = 12
+		position = 13
 	)
 	default Color telegrabColor()
 	{
