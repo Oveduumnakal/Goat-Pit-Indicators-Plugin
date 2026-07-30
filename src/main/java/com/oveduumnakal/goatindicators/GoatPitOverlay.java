@@ -24,8 +24,10 @@
  */
 package com.oveduumnakal.goatindicators;
 
+import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
@@ -42,7 +44,6 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
-import net.runelite.client.ui.overlay.OverlayUtil;
 
 /**
  * Draws each loaded goat pit as an outlined footprint carrying its {@code X / N} count, where
@@ -151,7 +152,7 @@ class GoatPitOverlay extends Overlay
 		Point at = Perspective.getCanvasTextLocation(client, graphics, tile, text, 0);
 		if (at != null)
 		{
-			OverlayUtil.renderTextLocation(graphics, at, text, config.totalLabelColor());
+			drawText(graphics, at, text, config.totalLabelColor());
 		}
 	}
 
@@ -189,7 +190,7 @@ class GoatPitOverlay extends Overlay
 			Point at = pit.getCanvasTextLocation(graphics, ADD_SPIKES_TEXT, 0);
 			if (at != null)
 			{
-				OverlayUtil.renderTextLocation(graphics, at, ADD_SPIKES_TEXT, config.countLabelColor());
+				drawText(graphics, at, ADD_SPIKES_TEXT, config.countLabelColor());
 			}
 			return;
 		}
@@ -198,9 +199,26 @@ class GoatPitOverlay extends Overlay
 			Point at = pit.getCanvasTextLocation(graphics, state.label(), 0);
 			if (at != null)
 			{
-				OverlayUtil.renderTextLocation(graphics, at, state.label(), config.countLabelColor());
+				drawText(graphics, at, state.label(), config.countLabelColor());
 			}
 		}
+	}
+
+	/**
+	 * Draws label text with its own drop shadow, honouring the color's alpha. The built-in overlay text
+	 * helper leaves the shadow opaque, so a translucent label never actually looks translucent; here both
+	 * the shadow and the glyphs are drawn under an {@link AlphaComposite} keyed to the color's alpha, so
+	 * the whole label fades together and alpha 0 is fully invisible.
+	 */
+	private static void drawText(Graphics2D graphics, Point at, String text, Color color)
+	{
+		Composite original = graphics.getComposite();
+		graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, color.getAlpha() / 255.0f));
+		graphics.setColor(Color.BLACK);
+		graphics.drawString(text, at.getX() + 1, at.getY() + 1);
+		graphics.setColor(new Color(color.getRGB()));
+		graphics.drawString(text, at.getX(), at.getY());
+		graphics.setComposite(original);
 	}
 
 	/**
