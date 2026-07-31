@@ -54,6 +54,13 @@ public class GoatIndicatorsPlugin extends Plugin
 	/** Config key holding the lifetime goats-caught total, so it survives logouts and plugin toggles. */
 	private static final String TOTAL_CAUGHT_KEY = "totalCaught";
 
+	/**
+	 * Game ticks to wait after login (or plugin start) before seeding the catch counter's baseline from
+	 * the live count varbit. Two ticks give the pit's count varbit time to settle after a world hop, so
+	 * its value is read once rather than caught mid-reload.
+	 */
+	private static final int SEED_SETTLE_TICKS = 2;
+
 	@Inject
 	private Client client;
 
@@ -81,16 +88,19 @@ public class GoatIndicatorsPlugin extends Plugin
 	@Inject
 	private GoatMenuSwapper menuSwapper;
 
+	/**
+	 * Ticks left before the catch counter is seeded from the live count varbit, or {@code 0} when no seed
+	 * is pending. Set on plugin start and on login; counted down in {@link #onGameTick(GameTick)}.
+	 */
+	private int seedCountdown;
+
 	@Override
 	protected void startUp()
 	{
 		overlayManager.add(overlay);
 		overlayManager.add(highlightOverlay);
 		catchCounter.restore(loadPersistedTotal());
-		if (client.getGameState() == GameState.LOGGED_IN)
-		{
-			catchCounter.seed(client.getVarbitValue(GoatIds.COUNT_VARBIT_OVERRIDE));
-		}
+		scheduleSeed();
 	}
 
 	@Override
@@ -101,17 +111,37 @@ public class GoatIndicatorsPlugin extends Plugin
 		tracker.clear();
 		transitTracker.clear();
 		catchCounter.suspend();
+		seedCountdown = 0;
+	}
+
+	/**
+	 * Arms a deferred seed of the catch counter's baseline. The varbit is read later from
+	 * {@link #onGameTick(GameTick)} rather than here, for two reasons: plugin start-up can run off the
+	 * client thread, where reading the client throws and leaves the plugin unusable until a restart; and
+	 * the instant a world hop finishes the count varbit still holds a stale value, so seeding then makes
+	 * the pit's real count arrive as a burst of phantom catches. Waiting a couple of settled ticks and
+	 * reading on the game thread avoids both.
+	 */
+	private void scheduleSeed()
+	{
+		seedCountdown = SEED_SETTLE_TICKS;
 	}
 
 	/**
 	 * Advances the in-transit tracker once per tick so the highlight can bridge a lured goat's walk phase.
 	 * The NPC the local player is interacting with is passed through so the tracker can attribute a fresh
-	 * flight to the player's own grab, keeping other players' lured goats off the two-in-transit cap.
+	 * flight to the player's own grab, keeping other players' lured goats off the two-in-transit cap. Also
+	 * runs any pending catch-counter seed once the count varbit has had a couple of ticks to settle; the
+	 * counter ignores varbit changes while unseeded, so a world hop's reload does not count.
 	 */
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
 		transitTracker.onTick(client.getTopLevelWorldView().npcs(), localTargetIndex());
+		if (seedCountdown > 0 && --seedCountdown == 0)
+		{
+			catchCounter.seed(client.getVarbitValue(GoatIds.COUNT_VARBIT_OVERRIDE));
+		}
 	}
 
 	/** The index of the NPC the local player is interacting with, or {@code -1} when it is not an NPC. */
@@ -178,9 +208,10 @@ public class GoatIndicatorsPlugin extends Plugin
 	/**
 	 * Drops every tracked pit when the scene is torn down, and keeps the catch counter's baseline in
 	 * step with login state. Object despawn events do not always fire on a world hop, so without the
-	 * clear the overlay would keep drawing pits that are no longer there. The counter is seeded from the
-	 * live count varbit on login so a pit that is already part-full is not counted as fresh catches, and
-	 * suspended on teardown so the reload does not either.
+	 * clear the overlay would keep drawing pits that are no longer there. On login the counter's seed is
+	 * scheduled a couple of ticks out (see {@link #scheduleSeed()}) so a pit that is already part-full is
+	 * not counted as fresh catches; on teardown it is suspended and any pending seed cancelled, so the
+	 * reload does not count either.
 	 */
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
@@ -188,7 +219,7 @@ public class GoatIndicatorsPlugin extends Plugin
 		GameState state = event.getGameState();
 		if (state == GameState.LOGGED_IN)
 		{
-			catchCounter.seed(client.getVarbitValue(GoatIds.COUNT_VARBIT_OVERRIDE));
+			scheduleSeed();
 			return;
 		}
 		if (state == GameState.LOADING || state == GameState.HOPPING || state == GameState.LOGIN_SCREEN)
@@ -196,6 +227,7 @@ public class GoatIndicatorsPlugin extends Plugin
 			tracker.clear();
 			transitTracker.clear();
 			catchCounter.suspend();
+			seedCountdown = 0;
 		}
 	}
 
