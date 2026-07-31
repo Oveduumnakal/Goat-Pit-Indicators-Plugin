@@ -54,18 +54,6 @@ final class TelegrabTargeting
 	}
 
 	/**
-	 * Whether the pit already has its full complement of goats in transit, so there is no point luring
-	 * another until one lands.
-	 *
-	 * @param inTransitCount how many goats are currently being lured toward the pit
-	 * @return true when the in-transit cap is reached
-	 */
-	static boolean atTransitCap(int inTransitCount)
-	{
-		return inTransitCount >= GoatIds.MAX_GOATS_IN_TRANSIT;
-	}
-
-	/**
 	 * Whether the goat is on the opposite side of the pit from the player, so a grab lures it across the
 	 * pit and into the trap. The player's position picks the axis: whichever pit edge they stand beyond
 	 * becomes the cut line, and only goats at or past the pit on that axis qualify. A player level with

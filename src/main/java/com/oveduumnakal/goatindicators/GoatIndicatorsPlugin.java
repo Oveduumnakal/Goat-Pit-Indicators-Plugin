@@ -26,8 +26,11 @@ package com.oveduumnakal.goatindicators;
 
 import com.google.inject.Provides;
 import javax.inject.Inject;
+import net.runelite.api.Actor;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.NPC;
+import net.runelite.api.Player;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
@@ -96,11 +99,31 @@ public class GoatIndicatorsPlugin extends Plugin
 		catchCounter.suspend();
 	}
 
-	/** Advances the in-transit tracker once per tick so the highlight can bridge a lured goat's walk phase. */
+	/**
+	 * Advances the in-transit tracker once per tick so the highlight can bridge a lured goat's walk phase.
+	 * The NPC the local player is interacting with is passed through so the tracker can attribute a fresh
+	 * flight to the player's own grab, keeping other players' lured goats off the two-in-transit cap.
+	 */
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
-		transitTracker.onTick(client.getTopLevelWorldView().npcs());
+		transitTracker.onTick(client.getTopLevelWorldView().npcs(), localTargetIndex());
+	}
+
+	/** The index of the NPC the local player is interacting with, or {@code -1} when it is not an NPC. */
+	private int localTargetIndex()
+	{
+		Player localPlayer = client.getLocalPlayer();
+		if (localPlayer == null)
+		{
+			return -1;
+		}
+		Actor interacting = localPlayer.getInteracting();
+		if (interacting instanceof NPC)
+		{
+			return ((NPC) interacting).getIndex();
+		}
+		return -1;
 	}
 
 	@Subscribe

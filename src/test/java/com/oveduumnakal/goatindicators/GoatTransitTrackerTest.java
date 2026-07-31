@@ -25,7 +25,9 @@
 package com.oveduumnakal.goatindicators;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import com.oveduumnakal.goatindicators.GoatTransitTracker.Phase;
 import org.junit.Test;
 
@@ -75,5 +77,30 @@ public class GoatTransitTrackerTest
 	public void freshFlightOutranksAStaleWalk()
 	{
 		assertEquals(Phase.FLIGHT, GoatTransitTracker.nextPhase(Phase.LURED, true, false));
+	}
+
+	@Test
+	public void ownFlightIsAttributedToTheLocalPlayer()
+	{
+		assertTrue(GoatTransitTracker.ownedThisTick(Phase.FLIGHT, true));
+	}
+
+	@Test
+	public void anotherPlayersFlightIsNotOwned()
+	{
+		assertFalse(GoatTransitTracker.ownedThisTick(Phase.FLIGHT, false));
+	}
+
+	@Test
+	public void walkAndJumpDoNotEstablishOwnership()
+	{
+		assertFalse(GoatTransitTracker.ownedThisTick(Phase.LURED, true));
+		assertFalse(GoatTransitTracker.ownedThisTick(Phase.JUMPING, true));
+	}
+
+	@Test
+	public void anIdleGoatIsNeverOwned()
+	{
+		assertFalse(GoatTransitTracker.ownedThisTick(null, true));
 	}
 }
