@@ -85,11 +85,12 @@ class GoatTransitTracker
 	private static final int PROD_WINDOW_TICKS = 2;
 
 	/**
-	 * Ticks a prodded goat is held in transit after its last prod reaction before being dropped. The walk to
-	 * the pit off a single prod can run tens of ticks (~30 observed in-game), so this is generous; a fresh
-	 * prod or the jump-in refreshes it, and the goat clears the instant it is caught (despawns) regardless.
+	 * Ticks a prodded goat is held in transit after its last prod reaction before being dropped — about three
+	 * seconds. A goat prodded into the pit is caught within a tick or two and clears the instant it despawns,
+	 * so this only governs a goat that was prodded but not caught, which loses interest after a couple of
+	 * seconds; a fresh prod refreshes it.
 	 */
-	private static final int MAX_PRODDED_TICKS = 40;
+	private static final int MAX_PRODDED_TICKS = 5;
 
 	private final Map<Integer, Phase> phases = new HashMap<>();
 	private final Map<Integer, Integer> luredTicks = new HashMap<>();
