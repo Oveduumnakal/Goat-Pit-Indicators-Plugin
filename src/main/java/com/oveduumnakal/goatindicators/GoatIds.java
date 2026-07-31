@@ -146,18 +146,10 @@ final class GoatIds
 	static final int IN_TRANSIT_ANIM = 14463;
 
 	/**
-	 * Animation the local player plays when prodding a goat with a Cattleprod. Confirmed in-game: it fires
-	 * one tick before the prodded goat's own {@link #PROD_REACT_ANIM} reaction, so it attributes a prod to
-	 * the local player.
+	 * Animation the local player plays when prodding a goat with a Cattleprod. Used to mark the goat the
+	 * player is interacting with as prodded toward the pit, so it counts as in transit.
 	 */
 	static final int LOCAL_PROD_ANIM = 14450;
-
-	/**
-	 * Animation a goat plays the moment it is prodded with a Cattleprod. Confirmed in-game to fire ~1 tick
-	 * after the player's {@link #LOCAL_PROD_ANIM}; it marks the start of a prodded goat's trip to the pit,
-	 * the prod equivalent of the lure's {@link #IN_TRANSIT_SPOTANIM} flight.
-	 */
-	static final int PROD_REACT_ANIM = 14461;
 
 	private GoatIds()
 	{
