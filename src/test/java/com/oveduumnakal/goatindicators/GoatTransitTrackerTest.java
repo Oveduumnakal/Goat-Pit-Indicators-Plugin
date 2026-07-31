@@ -103,4 +103,22 @@ public class GoatTransitTrackerTest
 	{
 		assertFalse(GoatTransitTracker.ownedThisTick(null, true));
 	}
+
+	@Test
+	public void aProdReactionInTheWindowStartsProdTransit()
+	{
+		assertTrue(GoatTransitTracker.startsProdTransit(GoatIds.PROD_REACT_ANIM, true));
+	}
+
+	@Test
+	public void aProdReactionOutsideTheWindowIsNotLocal()
+	{
+		assertFalse(GoatTransitTracker.startsProdTransit(GoatIds.PROD_REACT_ANIM, false));
+	}
+
+	@Test
+	public void anIdleGoatDoesNotStartProdTransit()
+	{
+		assertFalse(GoatTransitTracker.startsProdTransit(-1, true));
+	}
 }

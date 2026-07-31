@@ -157,10 +157,9 @@ class GoatPitOverlay extends Overlay
 	}
 
 	/**
-	 * Draws the current in-transit goat count on the pit, e.g. {@code "In transit: 1 / 2"}, so the player
-	 * can see at a glance how close they are to the two-goat lure cap. This is the same count the highlight
-	 * uses to fall silent once the cap is reached. The placement follows the configured
-	 * {@link InTransitPosition}.
+	 * Draws the current in-transit goat count on the pit, e.g. {@code "In transit: 2"}, so the player can see
+	 * at a glance how many of their goats — lured or prodded — are on their way in. The placement follows the
+	 * configured {@link InTransitPosition}.
 	 */
 	private void renderInTransit(Graphics2D graphics, GameObject pit)
 	{
@@ -169,7 +168,7 @@ class GoatPitOverlay extends Overlay
 		{
 			return;
 		}
-		String text = "In transit: " + transitTracker.inTransitCount() + " / " + GoatIds.MAX_GOATS_IN_TRANSIT;
+		String text = "In transit: " + transitTracker.inTransitCount();
 		Point at = inTransitAnchor(graphics, pit, position, text);
 		if (at != null)
 		{

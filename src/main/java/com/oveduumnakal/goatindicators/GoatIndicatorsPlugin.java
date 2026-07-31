@@ -137,11 +137,18 @@ public class GoatIndicatorsPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
-		transitTracker.onTick(client.getTopLevelWorldView().npcs(), localTargetIndex());
+		transitTracker.onTick(client.getTopLevelWorldView().npcs(), localTargetIndex(), localProdding());
 		if (seedCountdown > 0 && --seedCountdown == 0)
 		{
 			catchCounter.seed(client.getVarbitValue(GoatIds.COUNT_VARBIT_OVERRIDE));
 		}
+	}
+
+	/** Whether the local player is playing the Cattleprod animation this tick, marking a prod of a goat. */
+	private boolean localProdding()
+	{
+		Player localPlayer = client.getLocalPlayer();
+		return localPlayer != null && localPlayer.getAnimation() == GoatIds.LOCAL_PROD_ANIM;
 	}
 
 	/** The index of the NPC the local player is interacting with, or {@code -1} when it is not an NPC. */

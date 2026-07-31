@@ -46,8 +46,14 @@ import net.runelite.api.NPC;
  * transit. The tracker therefore also records ownership: a goat becomes the local player's when it enters
  * flight while the local player is (or was last tick) interacting with it — telegrab sets that interaction,
  * a plain walk-here click does not. The whole-scene phase set drives the highlight suppression (any goat mid-
- * lure cannot be grabbed, whoever cast it), while the owned subset drives the two-in-transit cap and count,
- * so other players' grabs no longer push the local player to their limit.
+ * lure cannot be grabbed, whoever cast it), while the owned subset drives the in-transit count, so other
+ * players' grabs no longer push the local player's tally up.
+ *
+ * <p>Cattle-prodded goats are tracked too, but only for the count. A goat plays {@link GoatIds#PROD_REACT_ANIM}
+ * the moment it is prodded; when that lands within a couple of ticks of the local player's own
+ * {@link GoatIds#LOCAL_PROD_ANIM} it is taken as the local player's, and held in transit until it jumps in,
+ * despawns, or {@link #MAX_PRODDED_TICKS} pass without a fresh prod. Prodding carries no distinguishing
+ * graphic during the walk (like a lure) and no cap, so the count folds lured and prodded goats into one total.
  */
 @Singleton
 class GoatTransitTracker
@@ -72,11 +78,26 @@ class GoatTransitTracker
 	 */
 	private static final int MAX_LURED_TICKS = 10;
 
+	/**
+	 * Ticks a prod attribution window stays open after the local player's prod animation, so the prodded
+	 * goat's own reaction one tick later is still credited to the local player.
+	 */
+	private static final int PROD_WINDOW_TICKS = 2;
+
+	/**
+	 * Ticks a prodded goat is held in transit after its last prod reaction before being dropped. The walk to
+	 * the pit off a single prod can run tens of ticks (~30 observed in-game), so this is generous; a fresh
+	 * prod or the jump-in refreshes it, and the goat clears the instant it is caught (despawns) regardless.
+	 */
+	private static final int MAX_PRODDED_TICKS = 40;
+
 	private final Map<Integer, Phase> phases = new HashMap<>();
 	private final Map<Integer, Integer> luredTicks = new HashMap<>();
+	private final Map<Integer, Integer> proddedTicks = new HashMap<>();
 	private final Set<Integer> present = new HashSet<>();
 	private final Set<Integer> owned = new HashSet<>();
 	private int prevLocalTarget = -1;
+	private int prodWindow;
 
 	/**
 	 * Advances every goat's phase by one tick from the live scene. Goats that have despawned since the last
@@ -85,9 +106,12 @@ class GoatTransitTracker
 	 * @param npcs             the world's current NPCs
 	 * @param localTargetIndex the index of the NPC the local player is interacting with this tick, or
 	 *                         {@code -1} if none — used to attribute a flight to the local player's own grab
+	 * @param localProdding    whether the local player is playing the Cattleprod animation this tick, opening
+	 *                         the window in which a goat's prod reaction is credited to the local player
 	 */
-	void onTick(Iterable<? extends NPC> npcs, int localTargetIndex)
+	void onTick(Iterable<? extends NPC> npcs, int localTargetIndex, boolean localProdding)
 	{
+		prodWindow = localProdding ? PROD_WINDOW_TICKS : Math.max(0, prodWindow - 1);
 		present.clear();
 		for (NPC npc : npcs)
 		{
@@ -97,13 +121,16 @@ class GoatTransitTracker
 			}
 			int index = npc.getIndex();
 			present.add(index);
+			int animation = npc.getAnimation();
 			boolean flying = npc.hasSpotAnim(GoatIds.IN_TRANSIT_SPOTANIM);
-			boolean jumping = npc.getAnimation() == GoatIds.IN_TRANSIT_ANIM;
+			boolean jumping = animation == GoatIds.IN_TRANSIT_ANIM;
 			boolean localTargeted = index == localTargetIndex || index == prevLocalTarget;
 			advance(index, flying, jumping, localTargeted);
+			advanceProd(index, animation, jumping);
 		}
 		phases.keySet().retainAll(present);
 		luredTicks.keySet().retainAll(present);
+		proddedTicks.keySet().retainAll(present);
 		owned.retainAll(phases.keySet());
 		prevLocalTarget = localTargetIndex;
 	}
@@ -137,6 +164,55 @@ class GoatTransitTracker
 			return;
 		}
 		phases.put(index, next);
+	}
+
+	/**
+	 * Tracks a prodded goat's trip to the pit for the in-transit count. A goat playing
+	 * {@link GoatIds#PROD_REACT_ANIM} while the prod window is open is (re)armed as the local player's for
+	 * {@link #MAX_PRODDED_TICKS}; otherwise a goat already tracked ages by one tick, its timer refreshed
+	 * while it plays the jump-in, and drops once the timer runs out. Prodded goats are held apart from the
+	 * lure {@link #phases} so they never affect highlight suppression.
+	 *
+	 * @param index     the goat's NPC index
+	 * @param animation the goat's animation this tick
+	 * @param jumping   whether the goat is playing the jump-in animation this tick
+	 */
+	private void advanceProd(int index, int animation, boolean jumping)
+	{
+		if (startsProdTransit(animation, prodWindow > 0))
+		{
+			proddedTicks.put(index, MAX_PRODDED_TICKS);
+			return;
+		}
+		if (!proddedTicks.containsKey(index))
+		{
+			return;
+		}
+		if (jumping)
+		{
+			proddedTicks.put(index, MAX_PRODDED_TICKS);
+			return;
+		}
+		int left = proddedTicks.get(index) - 1;
+		if (left <= 0)
+		{
+			proddedTicks.remove(index);
+			return;
+		}
+		proddedTicks.put(index, left);
+	}
+
+	/**
+	 * Whether this tick starts (or refreshes) a prodded goat's transit: the goat is playing its prod-reaction
+	 * animation and the local player prodded within the attribution window.
+	 *
+	 * @param animation      the goat's animation this tick
+	 * @param prodWindowOpen whether the local player's prod window is still open
+	 * @return true when the goat is a fresh local prod
+	 */
+	static boolean startsProdTransit(int animation, boolean prodWindowOpen)
+	{
+		return animation == GoatIds.PROD_REACT_ANIM && prodWindowOpen;
 	}
 
 	/**
@@ -189,13 +265,15 @@ class GoatTransitTracker
 	}
 
 	/**
-	 * How many of the local player's own goats are committed to a pit, for the two-in-transit cap. Other
-	 * players' lured goats share the flight graphic but are excluded here, so a busy pit does not push the
-	 * local player to their cap.
+	 * How many of the local player's own goats are committed to a pit — those it lured plus those it
+	 * prodded, counted once each. Other players' lured goats share the flight graphic but are excluded, so a
+	 * busy pit does not inflate the local player's tally.
 	 */
 	int inTransitCount()
 	{
-		return owned.size();
+		Set<Integer> committed = new HashSet<>(owned);
+		committed.addAll(proddedTicks.keySet());
+		return committed.size();
 	}
 
 	/** Forgets every tracked goat, for when the scene is torn down. */
@@ -203,8 +281,10 @@ class GoatTransitTracker
 	{
 		phases.clear();
 		luredTicks.clear();
+		proddedTicks.clear();
 		present.clear();
 		owned.clear();
 		prevLocalTarget = -1;
+		prodWindow = 0;
 	}
 }
