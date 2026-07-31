@@ -26,6 +26,7 @@ package com.oveduumnakal.goatindicators;
 
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -59,6 +60,9 @@ class GoatHighlightOverlay extends Overlay
 {
 	private static final Stroke GLOW_STROKE = new BasicStroke(2.0f);
 
+	/** Alpha for the in-transit hull fill: 25% of full opacity, per the feature's 0.25 alpha. */
+	private static final int IN_TRANSIT_FILL_ALPHA = (int) Math.round(255 * 0.25);
+
 	private final Client client;
 	private final GoatIndicatorsConfig config;
 	private final GoatPitTracker tracker;
@@ -81,25 +85,55 @@ class GoatHighlightOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
+		Player player = client.getLocalPlayer();
+		if (player == null || player.getWorldLocation() == null)
+		{
+			return null;
+		}
+		drawInTransitFills(graphics);
+		drawGrabbableHighlights(graphics, player);
+		return null;
+	}
+
+	/**
+	 * Fills the hull of each goat currently in transit with the telegrab color at a low alpha, so the goats
+	 * the player has lured stay visually tracked across their whole flight and walk to the pit. This runs
+	 * regardless of whether a fresh grab is possible — a goat already committed is worth marking even when
+	 * the pit is full or the player is out of runes. The solid outline is reserved for grabbable goats, so
+	 * an in-transit goat is filled, never outlined.
+	 */
+	private void drawInTransitFills(Graphics2D graphics)
+	{
+		if (!config.fillInTransit())
+		{
+			return;
+		}
+		for (NPC npc : client.getTopLevelWorldView().npcs())
+		{
+			if (npc != null && GoatPitTracker.matchesGoatName(npc.getName())
+				&& transitTracker.isInTransit(npc.getIndex()))
+			{
+				drawFill(graphics, npc);
+			}
+		}
+	}
+
+	/**
+	 * Outlines every goat worth grabbing right now, breathing at Stockpile's glow rate. Silent unless the
+	 * player can cast a lure and a nearby pit still has room.
+	 */
+	private void drawGrabbableHighlights(Graphics2D graphics, Player player)
+	{
 		if (!config.highlightTelegrab() || !lureSpells.canLure())
 		{
-			return null;
-		}
-		Player player = client.getLocalPlayer();
-		if (player == null)
-		{
-			return null;
-		}
-		WorldPoint playerLocation = player.getWorldLocation();
-		if (playerLocation == null)
-		{
-			return null;
+			return;
 		}
 		List<GameObject> catchingPits = catchingPits();
 		if (catchingPits.isEmpty())
 		{
-			return null;
+			return;
 		}
+		WorldPoint playerLocation = player.getWorldLocation();
 		for (NPC npc : client.getTopLevelWorldView().npcs())
 		{
 			if (isTelegrabTarget(npc, player, playerLocation, catchingPits))
@@ -107,7 +141,6 @@ class GoatHighlightOverlay extends Overlay
 				drawGlow(graphics, npc);
 			}
 		}
-		return null;
 	}
 
 	/** The pits that can still take a goat: spiked and not yet full. */
@@ -194,6 +227,19 @@ class GoatHighlightOverlay extends Overlay
 		return TelegrabTargeting.oppositeSideOfPit(
 			baseX + min.getX(), baseY + min.getY(), baseX + max.getX(), baseY + max.getY(),
 			playerLocation.getX(), playerLocation.getY(), goatLocation.getX(), goatLocation.getY());
+	}
+
+	/** Fills the goat's clickbox with the telegrab color at {@link #IN_TRANSIT_FILL_ALPHA}, no outline. */
+	private void drawFill(Graphics2D graphics, NPC npc)
+	{
+		Shape hull = npc.getConvexHull();
+		if (hull == null)
+		{
+			return;
+		}
+		Color base = config.telegrabColor();
+		graphics.setColor(new Color(base.getRed(), base.getGreen(), base.getBlue(), IN_TRANSIT_FILL_ALPHA));
+		graphics.fill(hull);
 	}
 
 	/** Draws the goat's clickbox outline with no fill, breathing at Stockpile's glow rate. */

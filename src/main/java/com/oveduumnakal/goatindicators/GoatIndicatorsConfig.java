@@ -109,6 +109,19 @@ public interface GoatIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "fillInTransit",
+		name = "Fill In-Transit Goats",
+		description = "Fill the hull of each goat currently being lured toward the pit with the telegrab "
+			+ "color at 25% alpha, so you can track the goats you have in transit.",
+		section = indicatorsSection,
+		position = 4
+	)
+	default boolean fillInTransit()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "emptyOutlineColor",
 		name = "Empty Outline",
 		description = "Outline color for an empty or unspiked pit, and the low end of the fill gradient. "
