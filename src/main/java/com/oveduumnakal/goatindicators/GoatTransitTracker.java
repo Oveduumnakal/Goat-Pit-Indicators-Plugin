@@ -79,10 +79,11 @@ class GoatTransitTracker
 	private static final int MAX_LURED_TICKS = 10;
 
 	/**
-	 * Ticks a prod attribution window stays open after the local player's prod animation, so the prodded
-	 * goat's own reaction one tick later is still credited to the local player.
+	 * Ticks a prod attribution window stays open after the local player's prod animation. A prodded goat's
+	 * reaction lands 2-4 ticks after the player's prod (measured in-game), so the window must outlast that gap
+	 * for the reaction to be credited to the local player.
 	 */
-	private static final int PROD_WINDOW_TICKS = 2;
+	private static final int PROD_WINDOW_TICKS = 6;
 
 	/**
 	 * Ticks a prodded goat is held in transit after its last prod reaction before being dropped — about three
