@@ -26,15 +26,6 @@ public class TelegrabTargetingTest
 		assertFalse(TelegrabTargeting.withinCastRange(-1));
 	}
 
-	@Test
-	public void transitCapIsReachedAtTwoGoats()
-	{
-		assertFalse(TelegrabTargeting.atTransitCap(0));
-		assertFalse(TelegrabTargeting.atTransitCap(1));
-		assertTrue(TelegrabTargeting.atTransitCap(2));
-		assertTrue(TelegrabTargeting.atTransitCap(3));
-	}
-
 	/**
 	 * Mirrors the account holder's diagram: a 3x3 pit with the player one tile south of it. Goats level
 	 * with the pit or north of it are targets; anything on the player's (south) side is not.

@@ -95,7 +95,7 @@ class GoatHighlightOverlay extends Overlay
 			return null;
 		}
 		List<GameObject> catchingPits = catchingPits();
-		if (catchingPits.isEmpty() || TelegrabTargeting.atTransitCap(transitTracker.inTransitCount()))
+		if (catchingPits.isEmpty())
 		{
 			return null;
 		}
