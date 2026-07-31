@@ -321,7 +321,8 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "swapWalkWhenProd",
 		name = "\"Walk here\" First With Prod",
-		description = "While a Cattleprod is equipped, move \"Walk here\" to the top of the menu so movement "
+		description = "While a Cattleprod is equipped and the pit is effectively full (goats in it plus goats "
+			+ "in transit have reached its capacity), move \"Walk here\" to the top of the menu so movement "
 			+ "takes priority as you prod goats along.",
 		section = miscSection,
 		position = 3

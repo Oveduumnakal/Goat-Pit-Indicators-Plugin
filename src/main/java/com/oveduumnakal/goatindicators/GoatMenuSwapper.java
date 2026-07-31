@@ -42,9 +42,11 @@ import net.runelite.api.gameval.ItemID;
  * <p>Two independent swaps, each toggleable in config. When the player points a luring spell — Telekinetic
  * Grab or Dark Lure — at a goat but the pit is effectively full (goats in it plus goats in transit have
  * reached its capacity), {@code "Cancel"} is moved to the top of the menu so the cast cannot fire by
- * accident. Separately, while a Cattleprod is equipped, {@code "Walk here"} is moved to the top so a click
- * near a goat walks instead of interacting. Run every frame from {@link GoatIndicatorsPlugin} on
- * {@code PostMenuSort}, so it fixes both the left-click default and the right-click ordering.
+ * accident. Separately, and under the same effectively-full condition, while a Cattleprod is equipped
+ * {@code "Walk here"} is moved to the top so a click near a goat walks instead of interacting. Both swaps
+ * only apply once a pit is full, so an in-progress catch is left alone. Run every frame from
+ * {@link GoatIndicatorsPlugin} on {@code PostMenuSort}, so it fixes both the left-click default and the
+ * right-click ordering.
  */
 @Singleton
 class GoatMenuSwapper
@@ -79,7 +81,7 @@ class GoatMenuSwapper
 			return;
 		}
 		MenuEntry promote = null;
-		if (config.swapWalkWhenProd() && cattleprodEquipped())
+		if (config.swapWalkWhenProd() && cattleprodEquipped() && noCatchingPitHasRoom())
 		{
 			promote = firstOfType(entries, MenuAction.WALK);
 		}
