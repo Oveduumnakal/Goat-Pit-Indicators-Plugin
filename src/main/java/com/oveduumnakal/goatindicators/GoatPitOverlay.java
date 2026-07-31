@@ -70,9 +70,6 @@ class GoatPitOverlay extends Overlay
 	/** Gap in pixels between the goat icon and the total number. */
 	private static final int ICON_GAP = 2;
 
-	/** How high above the pit tile the in-transit count floats, so it clears the centred count. */
-	private static final int IN_TRANSIT_HEIGHT = 100;
-
 	private final Client client;
 	private final GoatIndicatorsConfig config;
 	private final GoatPitTracker tracker;
@@ -146,22 +143,63 @@ class GoatPitOverlay extends Overlay
 	}
 
 	/**
-	 * Draws the current in-transit goat count above the pit, e.g. {@code "In transit: 1 / 2"}, so the player
+	 * Draws the current in-transit goat count on the pit, e.g. {@code "In transit: 1 / 2"}, so the player
 	 * can see at a glance how close they are to the two-goat lure cap. This is the same count the highlight
-	 * uses to fall silent once the cap is reached.
+	 * uses to fall silent once the cap is reached. The placement follows the configured
+	 * {@link InTransitPosition}.
 	 */
 	private void renderInTransit(Graphics2D graphics, GameObject pit)
 	{
-		if (!config.showInTransit())
+		InTransitPosition position = config.inTransitPosition();
+		if (!position.isDrawn())
 		{
 			return;
 		}
 		String text = "In transit: " + transitTracker.inTransitCount() + " / " + GoatIds.MAX_GOATS_IN_TRANSIT;
-		Point at = pit.getCanvasTextLocation(graphics, text, IN_TRANSIT_HEIGHT);
+		Point at = inTransitAnchor(graphics, pit, position, text);
 		if (at != null)
 		{
 			drawText(graphics, at, text, config.countLabelColor());
 		}
+	}
+
+	/**
+	 * The canvas point the in-transit line is drawn at. The centre placement sits one line under the pit
+	 * count; a compass placement sits on that pit tile, dropped one line under the total-caught label when
+	 * both share the tile so the two stack instead of overlapping.
+	 */
+	private Point inTransitAnchor(Graphics2D graphics, GameObject pit, InTransitPosition position, String text)
+	{
+		if (position.isCenter())
+		{
+			Point at = pit.getCanvasTextLocation(graphics, text, 0);
+			return at == null ? null : belowLine(graphics, at);
+		}
+		Point min = pit.getSceneMinLocation();
+		Point max = pit.getSceneMaxLocation();
+		if (min == null || max == null)
+		{
+			return null;
+		}
+		int sceneX = position.sceneX(min.getX(), max.getX());
+		int sceneY = position.sceneY(min.getY(), max.getY());
+		LocalPoint tile = LocalPoint.fromScene(sceneX, sceneY, pit.getWorldView());
+		Point at = Perspective.getCanvasTextLocation(client, graphics, tile, text, 0);
+		if (at == null)
+		{
+			return null;
+		}
+		if (position.sharesTileWith(config.totalCaughtPosition()))
+		{
+			return belowLine(graphics, at);
+		}
+		return at;
+	}
+
+	/** Shifts a canvas point down by one text line so a second label stacks under the first. */
+	private static Point belowLine(Graphics2D graphics, Point at)
+	{
+		return new Point(at.getX(), at.getY() + graphics.getFontMetrics().getHeight());
 	}
 
 	/**
