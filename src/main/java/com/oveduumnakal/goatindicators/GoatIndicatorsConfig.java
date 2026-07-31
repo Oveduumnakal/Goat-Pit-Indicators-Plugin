@@ -199,7 +199,7 @@ public interface GoatIndicatorsConfig extends Config
 
 	@ConfigItem(
 		keyName = "pitCountStyle",
-		name = "Goats in Pit Style",
+		name = "Pit Indicator Style",
 		description = "How the goat count is drawn when shown: as the X / N text, as a progress bar that "
 			+ "fills as the pit does, or as a bar with the count over it.",
 		section = labelsSection,

@@ -66,7 +66,7 @@ class GoatPitOverlay extends Overlay
 
 	/** Progress bar dimensions in pixels, and the translucent backing drawn behind the fill. */
 	private static final int BAR_WIDTH = 48;
-	private static final int BAR_HEIGHT = 9;
+	private static final int BAR_HEIGHT = 16;
 	private static final Color BAR_BACKGROUND = new Color(0, 0, 0, 150);
 
 	/** Height in pixels the goat icon is scaled to for the total-caught label. */
