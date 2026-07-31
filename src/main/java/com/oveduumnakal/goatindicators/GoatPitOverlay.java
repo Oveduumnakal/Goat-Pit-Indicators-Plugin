@@ -81,6 +81,7 @@ class GoatPitOverlay extends Overlay
 	private final GoatTransitTracker transitTracker;
 	private final GoatCatchCounter catchCounter;
 	private final BufferedImage totalIcon;
+	private final BufferedImage inTransitIcon;
 
 	@Inject
 	GoatPitOverlay(Client client, GoatIndicatorsConfig config, GoatPitTracker tracker,
@@ -91,7 +92,8 @@ class GoatPitOverlay extends Overlay
 		this.tracker = tracker;
 		this.transitTracker = transitTracker;
 		this.catchCounter = catchCounter;
-		this.totalIcon = loadTotalIcon();
+		this.totalIcon = loadIcon("goat_head.png");
+		this.inTransitIcon = loadIcon("in_transit_icon.png");
 		setLayer(OverlayLayer.ABOVE_SCENE);
 		setPosition(OverlayPosition.DYNAMIC);
 	}
@@ -158,7 +160,8 @@ class GoatPitOverlay extends Overlay
 
 	/**
 	 * Draws the current in-transit goat count on the pit, e.g. {@code "In transit: 2"}, so the player can see
-	 * at a glance how many of their goats — lured or prodded — are on their way in. The placement follows the
+	 * at a glance how many of their goats — lured or prodded — are on their way in. The number is preceded by
+	 * the configured {@link InTransitPrefix} (nothing, an "In transit: " label, or the icon) and placed by the
 	 * configured {@link InTransitPosition}.
 	 */
 	private void renderInTransit(Graphics2D graphics, GameObject pit)
@@ -168,12 +171,36 @@ class GoatPitOverlay extends Overlay
 		{
 			return;
 		}
-		String text = "In transit: " + transitTracker.inTransitCount();
+		InTransitPrefix prefix = config.inTransitPrefix();
+		String text = inTransitText(prefix, transitTracker.inTransitCount());
 		Point at = inTransitAnchor(graphics, pit, position, text);
-		if (at != null)
+		if (at == null)
 		{
-			drawText(graphics, at, text, config.countLabelColor());
+			return;
 		}
+		Color color = config.countLabelColor();
+		if (prefix == InTransitPrefix.ICON && inTransitIcon != null)
+		{
+			drawIconBefore(graphics, at, inTransitIcon, color);
+		}
+		drawText(graphics, at, text, color);
+	}
+
+	/**
+	 * The in-transit label text for the configured prefix. "Text" prepends {@code "In transit: "}; "None" and
+	 * "Icon" show the bare number (the icon draws separately, to the left of the number).
+	 *
+	 * @param prefix the configured in-transit prefix
+	 * @param count  the number of goats in transit
+	 * @return the label text to draw
+	 */
+	private static String inTransitText(InTransitPrefix prefix, int count)
+	{
+		if (prefix == InTransitPrefix.TEXT)
+		{
+			return "In transit: " + count;
+		}
+		return Integer.toString(count);
 	}
 
 	/**
@@ -242,9 +269,9 @@ class GoatPitOverlay extends Overlay
 			return;
 		}
 		Color color = config.totalLabelColor();
-		if (drawIcon())
+		if (config.totalPrefix() == TotalPrefix.ICON && totalIcon != null)
 		{
-			drawTotalIcon(graphics, at, color);
+			drawIconBefore(graphics, at, totalIcon, color);
 		}
 		drawText(graphics, at, text, color);
 	}
@@ -265,31 +292,30 @@ class GoatPitOverlay extends Overlay
 		return number;
 	}
 
-	/** Whether the goat icon should precede the total: the prefix is set to icon and the icon loaded. */
-	private boolean drawIcon()
-	{
-		return config.totalPrefix() == TotalPrefix.ICON && totalIcon != null;
-	}
-
 	/**
-	 * Draws the goat icon just left of the total number, vertically centred on the text and faded to the
-	 * label color's alpha so it matches the number.
+	 * Draws an icon just left of a label, vertically centred on the text and faded to the label color's
+	 * alpha so it matches the number.
+	 *
+	 * @param graphics the overlay graphics
+	 * @param at       the label's canvas anchor (the icon sits to its left)
+	 * @param icon     the icon to draw
+	 * @param color    the label color, whose alpha the icon is faded to
 	 */
-	private void drawTotalIcon(Graphics2D graphics, Point at, Color color)
+	private static void drawIconBefore(Graphics2D graphics, Point at, BufferedImage icon, Color color)
 	{
 		FontMetrics metrics = graphics.getFontMetrics();
-		int iconX = at.getX() - totalIcon.getWidth() - ICON_GAP;
-		int iconY = at.getY() - metrics.getAscent() / 2 - totalIcon.getHeight() / 2;
+		int iconX = at.getX() - icon.getWidth() - ICON_GAP;
+		int iconY = at.getY() - metrics.getAscent() / 2 - icon.getHeight() / 2;
 		Composite original = graphics.getComposite();
 		graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, color.getAlpha() / 255.0f));
-		graphics.drawImage(totalIcon, iconX, iconY, null);
+		graphics.drawImage(icon, iconX, iconY, null);
 		graphics.setComposite(original);
 	}
 
-	/** Loads the goat icon from resources and scales it to {@link #ICON_HEIGHT}, or null if missing. */
-	private static BufferedImage loadTotalIcon()
+	/** Loads an icon from resources and scales it to {@link #ICON_HEIGHT}, or null if missing. */
+	private static BufferedImage loadIcon(String resource)
 	{
-		BufferedImage raw = ImageUtil.loadImageResource(GoatPitOverlay.class, "goat_head.png");
+		BufferedImage raw = ImageUtil.loadImageResource(GoatPitOverlay.class, resource);
 		if (raw == null)
 		{
 			return null;
