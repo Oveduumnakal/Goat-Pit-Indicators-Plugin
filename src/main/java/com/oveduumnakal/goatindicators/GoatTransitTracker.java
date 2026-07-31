@@ -49,11 +49,12 @@ import net.runelite.api.NPC;
  * lure cannot be grabbed, whoever cast it), while the owned subset drives the in-transit count, so other
  * players' grabs no longer push the local player's tally up.
  *
- * <p>Cattle-prodded goats are tracked too, but only for the count. A goat plays {@link GoatIds#PROD_REACT_ANIM}
- * the moment it is prodded; when that lands within a couple of ticks of the local player's own
- * {@link GoatIds#LOCAL_PROD_ANIM} it is taken as the local player's, and held in transit until it jumps in,
- * despawns, or {@link #MAX_PRODDED_TICKS} pass without a fresh prod. Prodding carries no distinguishing
- * graphic during the walk (like a lure) and no cap, so the count folds lured and prodded goats into one total.
+ * <p>Cattle-prodded goats are tracked too, but only for the count. The goat the local player is interacting
+ * with while playing the prod animation ({@link GoatIds#LOCAL_PROD_ANIM}) is taken as theirs and held in
+ * transit until it jumps in, despawns, or {@link #MAX_PRODDED_TICKS} pass without a fresh prod. The goat's own
+ * reaction animation proved too unreliable to arm from, whereas the interaction target is set the instant the
+ * prod lands. Prodding carries no distinguishing graphic during the walk (like a lure) and no cap, so the
+ * count folds lured and prodded goats into one total.
  */
 @Singleton
 class GoatTransitTracker
@@ -79,17 +80,10 @@ class GoatTransitTracker
 	private static final int MAX_LURED_TICKS = 10;
 
 	/**
-	 * Ticks a prod attribution window stays open after the local player's prod animation. A prodded goat's
-	 * reaction lands 2-4 ticks after the player's prod (measured in-game), so the window must outlast that gap
-	 * for the reaction to be credited to the local player.
-	 */
-	private static final int PROD_WINDOW_TICKS = 6;
-
-	/**
-	 * Ticks a prodded goat is held in transit after its last prod reaction before being dropped — about three
-	 * seconds. A goat prodded into the pit is caught within a tick or two and clears the instant it despawns,
-	 * so this only governs a goat that was prodded but not caught, which loses interest after a couple of
-	 * seconds; a fresh prod refreshes it.
+	 * Ticks a prodded goat is held in transit after the last prod before being dropped — about three seconds.
+	 * A goat prodded into the pit is caught within a tick or two and clears the instant it despawns, so this
+	 * only governs a goat that was prodded but not caught, which loses interest after a couple of seconds; a
+	 * fresh prod refreshes it.
 	 */
 	private static final int MAX_PRODDED_TICKS = 5;
 
@@ -99,7 +93,6 @@ class GoatTransitTracker
 	private final Set<Integer> present = new HashSet<>();
 	private final Set<Integer> owned = new HashSet<>();
 	private int prevLocalTarget = -1;
-	private int prodWindow;
 
 	/**
 	 * Advances every goat's phase by one tick from the live scene. Goats that have despawned since the last
@@ -108,12 +101,11 @@ class GoatTransitTracker
 	 * @param npcs             the world's current NPCs
 	 * @param localTargetIndex the index of the NPC the local player is interacting with this tick, or
 	 *                         {@code -1} if none — used to attribute a flight to the local player's own grab
-	 * @param localProdding    whether the local player is playing the Cattleprod animation this tick, opening
-	 *                         the window in which a goat's prod reaction is credited to the local player
+	 * @param localProdding    whether the local player is playing the Cattleprod animation this tick, marking
+	 *                         the goat they are interacting with as prodded toward the pit
 	 */
 	void onTick(Iterable<? extends NPC> npcs, int localTargetIndex, boolean localProdding)
 	{
-		prodWindow = localProdding ? PROD_WINDOW_TICKS : Math.max(0, prodWindow - 1);
 		present.clear();
 		for (NPC npc : npcs)
 		{
@@ -127,8 +119,9 @@ class GoatTransitTracker
 			boolean flying = npc.hasSpotAnim(GoatIds.IN_TRANSIT_SPOTANIM);
 			boolean jumping = animation == GoatIds.IN_TRANSIT_ANIM;
 			boolean localTargeted = index == localTargetIndex || index == prevLocalTarget;
+			boolean freshlyProdded = localProdding && localTargeted;
 			advance(index, flying, jumping, localTargeted);
-			advanceProd(index, animation, jumping);
+			advanceProd(index, freshlyProdded, jumping);
 		}
 		phases.keySet().retainAll(present);
 		luredTicks.keySet().retainAll(present);
@@ -169,19 +162,19 @@ class GoatTransitTracker
 	}
 
 	/**
-	 * Tracks a prodded goat's trip to the pit for the in-transit count. A goat playing
-	 * {@link GoatIds#PROD_REACT_ANIM} while the prod window is open is (re)armed as the local player's for
-	 * {@link #MAX_PRODDED_TICKS}; otherwise a goat already tracked ages by one tick, its timer refreshed
-	 * while it plays the jump-in, and drops once the timer runs out. Prodded goats are held apart from the
-	 * lure {@link #phases} so they never affect highlight suppression.
+	 * Tracks a prodded goat's trip to the pit for the in-transit count. A goat the local player is prodding
+	 * this tick (interacting with while playing the prod animation) is (re)armed as theirs for
+	 * {@link #MAX_PRODDED_TICKS}; otherwise a goat already tracked ages by one tick, its timer refreshed while
+	 * it plays the jump-in, and drops once the timer runs out. Prodded goats are held apart from the lure
+	 * {@link #phases} so they never affect highlight suppression.
 	 *
-	 * @param index     the goat's NPC index
-	 * @param animation the goat's animation this tick
-	 * @param jumping   whether the goat is playing the jump-in animation this tick
+	 * @param index          the goat's NPC index
+	 * @param freshlyProdded whether the local player is prodding this goat this tick
+	 * @param jumping        whether the goat is playing the jump-in animation this tick
 	 */
-	private void advanceProd(int index, int animation, boolean jumping)
+	private void advanceProd(int index, boolean freshlyProdded, boolean jumping)
 	{
-		if (startsProdTransit(animation, prodWindow > 0))
+		if (freshlyProdded)
 		{
 			proddedTicks.put(index, MAX_PRODDED_TICKS);
 			return;
@@ -202,19 +195,6 @@ class GoatTransitTracker
 			return;
 		}
 		proddedTicks.put(index, left);
-	}
-
-	/**
-	 * Whether this tick starts (or refreshes) a prodded goat's transit: the goat is playing its prod-reaction
-	 * animation and the local player prodded within the attribution window.
-	 *
-	 * @param animation      the goat's animation this tick
-	 * @param prodWindowOpen whether the local player's prod window is still open
-	 * @return true when the goat is a fresh local prod
-	 */
-	static boolean startsProdTransit(int animation, boolean prodWindowOpen)
-	{
-		return animation == GoatIds.PROD_REACT_ANIM && prodWindowOpen;
 	}
 
 	/**
@@ -287,6 +267,5 @@ class GoatTransitTracker
 		present.clear();
 		owned.clear();
 		prevLocalTarget = -1;
-		prodWindow = 0;
 	}
 }
