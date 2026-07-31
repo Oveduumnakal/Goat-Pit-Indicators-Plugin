@@ -33,6 +33,7 @@ import net.runelite.api.EnumID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
 
 /**
@@ -41,11 +42,20 @@ import net.runelite.api.gameval.VarbitID;
  * <p>Every lure spell pays in runes, and each counts them the same way, so the inventory-plus-pouch lookup
  * lives here once rather than being copied into {@link TelekineticGrab} and {@link DarkLure}. The pouch is
  * read through the standard type/quantity varbit pairs (three standard slots plus the divine fourth) mapped
- * to item ids by the {@link EnumID#RUNEPOUCH_RUNE} enum.
+ * to item ids by the {@link EnumID#RUNEPOUCH_RUNE} enum, but only when a rune pouch is actually carried:
+ * those varbits keep their last values after the pouch is banked, so reading them unconditionally would
+ * count runes the player no longer has.
  */
 @Singleton
 class SpellRunes
 {
+	/** Rune-pouch item ids whose presence in the inventory means the pouch varbits can be trusted. */
+	private static final Set<Integer> RUNE_POUCH_IDS = Set.of(
+		ItemID.BH_RUNE_POUCH,
+		ItemID.BH_RUNE_POUCH_TROUVER,
+		ItemID.DIVINE_RUNE_POUCH,
+		ItemID.DIVINE_RUNE_POUCH_TROUVER);
+
 	/** Rune-pouch type/quantity varbit pairs, covering the standard (1-3) and divine (4th) pouches. */
 	private static final int[] POUCH_TYPE_VARBITS =
 	{
@@ -104,6 +114,10 @@ class SpellRunes
 
 	private boolean pouchHas(int runeId)
 	{
+		if (!pouchCarried())
+		{
+			return false;
+		}
 		EnumComposition runeMap = client.getEnum(EnumID.RUNEPOUCH_RUNE);
 		if (runeMap == null)
 		{
@@ -117,6 +131,30 @@ class SpellRunes
 				continue;
 			}
 			if (runeMap.getIntValue(type) == runeId)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Whether a rune pouch (regular, divine, or a trouver-locked variant) is in the inventory. The pouch
+	 * varbits keep their last values after the pouch is banked, so they are only trusted while the pouch is
+	 * actually carried.
+	 *
+	 * @return true when a rune pouch item is held in the inventory
+	 */
+	private boolean pouchCarried()
+	{
+		ItemContainer inventory = client.getItemContainer(InventoryID.INV);
+		if (inventory == null)
+		{
+			return false;
+		}
+		for (Item item : inventory.getItems())
+		{
+			if (item != null && RUNE_POUCH_IDS.contains(item.getId()))
 			{
 				return true;
 			}
