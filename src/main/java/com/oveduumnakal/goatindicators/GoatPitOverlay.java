@@ -256,7 +256,9 @@ class GoatPitOverlay extends Overlay
 	 */
 	private String totalCaughtText()
 	{
-		String number = ShortFormat.value(catchCounter.getTotal());
+		String number = config.fullTotalCount()
+			? ShortFormat.exact(catchCounter.getTotal())
+			: ShortFormat.value(catchCounter.getTotal());
 		if (config.totalPrefix() == TotalPrefix.TEXT)
 		{
 			return "Total: " + number;

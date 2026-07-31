@@ -68,6 +68,18 @@ final class ShortFormat
 	}
 
 	/**
+	 * The exact value as grouped digits, e.g. {@code 1,012} or {@code 1,234,567}, for players who want
+	 * the precise total rather than the compact {@link #value(long) short form}.
+	 *
+	 * @param value the number to format
+	 * @return its full grouped-digit string form
+	 */
+	static String exact(long value)
+	{
+		return GROUPED.format(value);
+	}
+
+	/**
 	 * Formats a scaled mantissa in {@code [1, 1000)} to 3 significant figures, dropping any trailing
 	 * zeros and a dangling decimal point.
 	 *
