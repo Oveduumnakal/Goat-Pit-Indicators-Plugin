@@ -99,10 +99,6 @@ class GoatPitOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!config.showOverlay())
-		{
-			return null;
-		}
 		Player player = client.getLocalPlayer();
 		if (player == null)
 		{
@@ -127,12 +123,28 @@ class GoatPitOverlay extends Overlay
 		{
 			return;
 		}
+		GoatPitState state = tracker.stateOf(pit);
+		if (config.showOverlay())
+		{
+			drawColorIndicators(graphics, pit, state);
+		}
+		renderLabels(graphics, pit, state);
+		renderInTransit(graphics, pit);
+		renderTotalCaught(graphics, pit);
+	}
+
+	/**
+	 * Draws the colored outline and reminder fill over the pit footprint. Gated on the "Show Color
+	 * Indicators" toggle, separately from the text labels so the count, total and in-transit lines can
+	 * still be shown with the coloring turned off.
+	 */
+	private void drawColorIndicators(Graphics2D graphics, GameObject pit, GoatPitState state)
+	{
 		Area footprint = footprintOf(pit);
 		if (footprint == null || footprint.isEmpty())
 		{
 			return;
 		}
-		GoatPitState state = tracker.stateOf(pit);
 		Color fill = fillColorFor(state);
 		if (fill != null)
 		{
@@ -142,9 +154,6 @@ class GoatPitOverlay extends Overlay
 		graphics.setColor(outlineColorFor(state));
 		graphics.setStroke(OUTLINE);
 		graphics.draw(footprint);
-		renderLabels(graphics, pit, state);
-		renderInTransit(graphics, pit);
-		renderTotalCaught(graphics, pit);
 	}
 
 	/**

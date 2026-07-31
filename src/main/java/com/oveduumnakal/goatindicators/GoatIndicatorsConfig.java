@@ -74,7 +74,8 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "showOverlay",
 		name = "Show Color Indicators",
-		description = "Draw the colored outline and fills over goat pits in the scene.",
+		description = "Draw the colored outline and fills over goat pits in the scene. The text labels (goat "
+			+ "count, total caught, in transit) have their own toggles and still show with this off.",
 		section = indicatorsSection,
 		position = 1
 	)
