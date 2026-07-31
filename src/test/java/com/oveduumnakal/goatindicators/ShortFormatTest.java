@@ -41,4 +41,12 @@ public class ShortFormatTest
 		assertEquals("-1.7K", ShortFormat.value(-1_700));
 		assertEquals("-42", ShortFormat.value(-42));
 	}
+
+	@Test
+	public void exactGivesTheFullGroupedNumber()
+	{
+		assertEquals("0", ShortFormat.exact(0));
+		assertEquals("1,012", ShortFormat.exact(1_012));
+		assertEquals("1,234,567", ShortFormat.exact(1_234_567));
+	}
 }

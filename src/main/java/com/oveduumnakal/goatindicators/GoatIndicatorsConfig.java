@@ -251,13 +251,26 @@ public interface GoatIndicatorsConfig extends Config
 		return TotalPrefix.ICON;
 	}
 
+	@ConfigItem(
+		keyName = "fullTotalCount",
+		name = "Full Total Count",
+		description = "Show the total caught as its exact grouped number (e.g. 1,012) instead of the compact "
+			+ "short form (e.g. 1K).",
+		section = labelsSection,
+		position = 6
+	)
+	default boolean fullTotalCount()
+	{
+		return false;
+	}
+
 	@Alpha
 	@ConfigItem(
 		keyName = "countLabelColor",
 		name = "Count Label Color",
 		description = "Color of the goat count and \"Add Spikes\" text.",
 		section = labelsSection,
-		position = 6
+		position = 7
 	)
 	default Color countLabelColor()
 	{
@@ -270,7 +283,7 @@ public interface GoatIndicatorsConfig extends Config
 		name = "Total Label Color",
 		description = "Color of the total-caught text.",
 		section = labelsSection,
-		position = 7
+		position = 8
 	)
 	default Color totalLabelColor()
 	{
