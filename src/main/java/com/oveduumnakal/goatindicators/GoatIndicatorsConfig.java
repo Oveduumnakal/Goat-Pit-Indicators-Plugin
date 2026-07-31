@@ -226,13 +226,26 @@ public interface GoatIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "inTransitPrefix",
+		name = "In Transit Prefix",
+		description = "What precedes the in-transit number: nothing, an \"In transit: \" label, or the "
+			+ "in-transit icon.",
+		section = labelsSection,
+		position = 4
+	)
+	default InTransitPrefix inTransitPrefix()
+	{
+		return InTransitPrefix.ICON;
+	}
+
+	@ConfigItem(
 		keyName = "totalCaughtPosition",
 		name = "Show Total Caught",
 		description = "Where to draw the lifetime total of goats caught on the pit: off, or one of its "
 			+ "compass points. The game keeps no total of its own, so the plugin counts every catch and "
 			+ "keeps the tally across logins and restarts.",
 		section = labelsSection,
-		position = 4
+		position = 5
 	)
 	default TotalCaughtPosition totalCaughtPosition()
 	{
@@ -244,7 +257,7 @@ public interface GoatIndicatorsConfig extends Config
 		name = "Total Prefix",
 		description = "What precedes the total-caught number: nothing, a \"Total: \" label, or the goat icon.",
 		section = labelsSection,
-		position = 5
+		position = 6
 	)
 	default TotalPrefix totalPrefix()
 	{
@@ -257,7 +270,7 @@ public interface GoatIndicatorsConfig extends Config
 		name = "Count Label Color",
 		description = "Color of the goat count and \"Add Spikes\" text.",
 		section = labelsSection,
-		position = 6
+		position = 7
 	)
 	default Color countLabelColor()
 	{
@@ -270,7 +283,7 @@ public interface GoatIndicatorsConfig extends Config
 		name = "Total Label Color",
 		description = "Color of the total-caught text.",
 		section = labelsSection,
-		position = 7
+		position = 8
 	)
 	default Color totalLabelColor()
 	{
