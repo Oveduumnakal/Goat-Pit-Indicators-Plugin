@@ -20,6 +20,16 @@ public class TelegrabTargetingTest
 	}
 
 	@Test
+	public void effectivelyFullCountsPitAndTransitTogether()
+	{
+		assertFalse(TelegrabTargeting.effectivelyFull(18, 1, 20));
+		assertTrue(TelegrabTargeting.effectivelyFull(18, 2, 20));
+		assertTrue(TelegrabTargeting.effectivelyFull(19, 2, 20));
+		assertTrue(TelegrabTargeting.effectivelyFull(20, 0, 20));
+		assertFalse(TelegrabTargeting.effectivelyFull(0, 0, 16));
+	}
+
+	@Test
 	public void crossPlaneDistanceIsOutOfRange()
 	{
 		assertFalse(TelegrabTargeting.withinCastRange(Integer.MAX_VALUE));

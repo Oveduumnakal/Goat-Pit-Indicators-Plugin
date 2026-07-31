@@ -289,4 +289,31 @@ public interface GoatIndicatorsConfig extends Config
 	{
 		return 32;
 	}
+
+	@ConfigItem(
+		keyName = "swapCancelWhenFull",
+		name = "\"Cancel\" First When Full",
+		description = "When you click a goat to cast a luring spell but the pit is effectively full (goats in "
+			+ "it plus goats in transit have reached its capacity), move \"Cancel\" to the top of the menu so "
+			+ "a stray click does not waste a cast.",
+		section = miscSection,
+		position = 2
+	)
+	default boolean swapCancelWhenFull()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "swapWalkWhenProd",
+		name = "\"Walk here\" First With Prod",
+		description = "While a Cattleprod is equipped, move \"Walk here\" to the top of the menu so movement "
+			+ "takes priority as you prod goats along.",
+		section = miscSection,
+		position = 3
+	)
+	default boolean swapWalkWhenProd()
+	{
+		return true;
+	}
 }
