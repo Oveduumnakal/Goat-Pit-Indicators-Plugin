@@ -47,13 +47,13 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 
 /**
- * Glows a purple clickbox outline over every goat that is worth telegrabbing into a pit right now.
+ * Glows a purple clickbox outline over every goat that is worth luring into a pit right now.
  *
- * <p>A goat is highlighted only when all of these hold: the player can cast Telekinetic Grab (level,
- * spellbook, runes); a nearby pit has spikes and is not yet full; the goat is within the spell's
- * 10-tile reach; and the goat sits on the far side of that pit from the player, so a grab lures it
- * across the pit into the trap. The outline is the goat's convex hull with no fill, breathing at
- * Stockpile's glow rate.
+ * <p>A goat is highlighted only when all of these hold: the player can cast a lure spell — Telekinetic
+ * Grab or Dark Lure (level, spellbook, runes); a nearby pit has spikes and is not yet full; the goat is
+ * within the spell's 10-tile reach; and the goat sits on the far side of that pit from the player, so a
+ * cast lures it across the pit into the trap. The outline is the goat's convex hull with no fill,
+ * breathing at Stockpile's glow rate.
  */
 class GoatHighlightOverlay extends Overlay
 {
@@ -63,17 +63,17 @@ class GoatHighlightOverlay extends Overlay
 	private final GoatIndicatorsConfig config;
 	private final GoatPitTracker tracker;
 	private final GoatTransitTracker transitTracker;
-	private final TelekineticGrab telekineticGrab;
+	private final LureSpells lureSpells;
 
 	@Inject
 	GoatHighlightOverlay(Client client, GoatIndicatorsConfig config, GoatPitTracker tracker,
-		GoatTransitTracker transitTracker, TelekineticGrab telekineticGrab)
+		GoatTransitTracker transitTracker, LureSpells lureSpells)
 	{
 		this.client = client;
 		this.config = config;
 		this.tracker = tracker;
 		this.transitTracker = transitTracker;
-		this.telekineticGrab = telekineticGrab;
+		this.lureSpells = lureSpells;
 		setLayer(OverlayLayer.ABOVE_SCENE);
 		setPosition(OverlayPosition.DYNAMIC);
 	}
@@ -81,7 +81,7 @@ class GoatHighlightOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!config.highlightTelegrab() || !telekineticGrab.canCast())
+		if (!config.highlightTelegrab() || !lureSpells.canLure())
 		{
 			return null;
 		}
