@@ -33,6 +33,7 @@ import net.runelite.api.ItemContainer;
 import net.runelite.api.Menu;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
+import net.runelite.api.NPC;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 
@@ -81,7 +82,7 @@ class GoatMenuSwapper
 			return;
 		}
 		MenuEntry promote = null;
-		if (config.swapWalkWhenProd() && cattleprodEquipped() && noCatchingPitHasRoom())
+		if (config.swapWalkWhenProd() && cattleprodEquipped() && goatEntryPresent(entries) && noCatchingPitHasRoom())
 		{
 			promote = firstOfType(entries, MenuAction.WALK);
 		}
@@ -127,6 +128,24 @@ class GoatMenuSwapper
 		{
 			if (entry.getType() == MenuAction.WIDGET_TARGET_ON_NPC
 				&& GoatPitTracker.matchesGoatName(entry.getTarget()))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Whether the menu contains an entry for a goat NPC, so the Walk-here swap only fires while a goat is
+	 * under the cursor rather than on any tile or object. Reads the entry's NPC directly, which keeps the
+	 * pit (a game object) from counting even though its name also contains "goat".
+	 */
+	private static boolean goatEntryPresent(MenuEntry[] entries)
+	{
+		for (MenuEntry entry : entries)
+		{
+			NPC npc = entry.getNpc();
+			if (npc != null && GoatPitTracker.matchesGoatName(npc.getName()))
 			{
 				return true;
 			}
