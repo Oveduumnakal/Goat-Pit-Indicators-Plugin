@@ -133,25 +133,31 @@ final class GoatIds
 
 	/**
 	 * Spot-anim (graphic) a goat carries while it is being lured toward the pit by a telegrab. Confirmed
-	 * in-game: it appears on a goat the moment it is grabbed and clears when the goat lands, and the game
-	 * never shows it on more than {@link #MAX_GOATS_IN_TRANSIT} goats at once.
+	 * in-game: it appears on a goat the moment it is grabbed and clears when the goat lands.
 	 */
 	static final int IN_TRANSIT_SPOTANIM = 144;
 
 	/**
-	 * Animation a lured goat plays after the telegrab lands: it walks up to the pit and jumps in. Confirmed
-	 * in-game to follow {@link #IN_TRANSIT_SPOTANIM} on the same goat and clear back to idle once it has
-	 * fallen in. The goat is still committed to the pit during this phase, so it counts as in transit even
-	 * though the flight spot-anim is already gone.
+	 * Animation a committed goat plays as it jumps into the pit, whether it was lured or prodded there.
+	 * Confirmed in-game to follow {@link #IN_TRANSIT_SPOTANIM} on a lured goat and clear back to idle once
+	 * it has fallen in. The goat is still committed to the pit during this phase, so it counts as in transit
+	 * even though the flight spot-anim is already gone.
 	 */
 	static final int IN_TRANSIT_ANIM = 14463;
 
 	/**
-	 * How many goats can be lured toward the pit at once. The trap only takes two in transit, so a third
-	 * grab will not land until one of the two falls in. Matches the OSRS Wiki's "2 will fall into the
-	 * trap".
+	 * Animation the local player plays when prodding a goat with a Cattleprod. Confirmed in-game: it fires
+	 * one tick before the prodded goat's own {@link #PROD_REACT_ANIM} reaction, so it attributes a prod to
+	 * the local player.
 	 */
-	static final int MAX_GOATS_IN_TRANSIT = 2;
+	static final int LOCAL_PROD_ANIM = 14450;
+
+	/**
+	 * Animation a goat plays the moment it is prodded with a Cattleprod. Confirmed in-game to fire ~1 tick
+	 * after the player's {@link #LOCAL_PROD_ANIM}; it marks the start of a prodded goat's trip to the pit,
+	 * the prod equivalent of the lure's {@link #IN_TRANSIT_SPOTANIM} flight.
+	 */
+	static final int PROD_REACT_ANIM = 14461;
 
 	private GoatIds()
 	{

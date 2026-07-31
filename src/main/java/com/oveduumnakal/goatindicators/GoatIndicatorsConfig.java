@@ -214,10 +214,9 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "inTransitPosition",
 		name = "Show Goats in Transit",
-		description = "Where to draw a running count of goats currently being lured toward the pit (e.g. In "
-			+ "transit: 1 / 2), so you can see how close you are to the two-goat lure cap: off, centered "
-			+ "under the pit count, or one of the pit's compass points. On the same compass point as the "
-			+ "total caught, it stacks under the total.",
+		description = "Where to draw a running count of your goats currently on their way into the pit, lured "
+			+ "or prodded (e.g. In transit: 2): off, centered under the pit count, or one of the pit's compass "
+			+ "points. On the same compass point as the total caught, it stacks under the total.",
 		section = labelsSection,
 		position = 3
 	)
