@@ -252,26 +252,13 @@ public interface GoatIndicatorsConfig extends Config
 		return TotalPrefix.ICON;
 	}
 
-	@ConfigItem(
-		keyName = "fullTotalCount",
-		name = "Full Total Count",
-		description = "Show the total caught as its exact grouped number (e.g. 1,012) instead of the compact "
-			+ "short form (e.g. 1K).",
-		section = labelsSection,
-		position = 6
-	)
-	default boolean fullTotalCount()
-	{
-		return false;
-	}
-
 	@Alpha
 	@ConfigItem(
 		keyName = "countLabelColor",
 		name = "Count Label Color",
 		description = "Color of the goat count and \"Add Spikes\" text.",
 		section = labelsSection,
-		position = 7
+		position = 6
 	)
 	default Color countLabelColor()
 	{
@@ -284,11 +271,24 @@ public interface GoatIndicatorsConfig extends Config
 		name = "Total Label Color",
 		description = "Color of the total-caught text.",
 		section = labelsSection,
-		position = 8
+		position = 7
 	)
 	default Color totalLabelColor()
 	{
 		return Color.WHITE;
+	}
+
+	@ConfigItem(
+		keyName = "goatTotalFormat",
+		name = "Goat Total Format",
+		description = "How the lifetime total caught is written: Short for the compact form (e.g. 1K), or Full "
+			+ "for the exact number (e.g. 1,012).",
+		section = miscSection,
+		position = 1
+	)
+	default TotalCountFormat goatTotalFormat()
+	{
+		return TotalCountFormat.SHORT;
 	}
 
 	@Range(min = 1, max = 104)
@@ -297,7 +297,7 @@ public interface GoatIndicatorsConfig extends Config
 		name = "Draw Distance",
 		description = "Stop drawing the overlay for pits further away than this many tiles.",
 		section = miscSection,
-		position = 1
+		position = 2
 	)
 	default int maxDrawDistance()
 	{
@@ -311,7 +311,7 @@ public interface GoatIndicatorsConfig extends Config
 			+ "it plus goats in transit have reached its capacity), move \"Cancel\" to the top of the menu so "
 			+ "a stray click does not waste a cast.",
 		section = miscSection,
-		position = 2
+		position = 3
 	)
 	default boolean swapCancelWhenFull()
 	{
@@ -325,7 +325,7 @@ public interface GoatIndicatorsConfig extends Config
 			+ "in transit have reached its capacity), move \"Walk here\" to the top of the menu so movement "
 			+ "takes priority as you prod goats along.",
 		section = miscSection,
-		position = 3
+		position = 4
 	)
 	default boolean swapWalkWhenProd()
 	{
