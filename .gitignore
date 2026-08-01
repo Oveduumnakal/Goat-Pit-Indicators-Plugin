@@ -10,3 +10,6 @@ nbproject/
 /.claude
 
 HANDOFF.md
+
+scripts/__pycache__/
+*.pyc
