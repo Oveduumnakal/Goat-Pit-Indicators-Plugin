@@ -68,6 +68,7 @@ class GoatPitOverlay extends Overlay
 	private static final Stroke OUTLINE = new BasicStroke(2.0f);
 	private static final int OUTLINE_ALPHA = 220;
 	private static final String ADD_SPIKES_TEXT = "Add Spikes";
+	private static final String TAKE_SPIKE_TEXT = "Take Spike";
 
 	/** Progress bar dimensions in pixels, and the translucent backing drawn behind the fill. */
 	private static final int BAR_WIDTH = 48;
@@ -183,7 +184,7 @@ class GoatPitOverlay extends Overlay
 		}
 	}
 
-	/** Draws the spike reminder fill and empty-outline color over a supply object's footprint. */
+	/** Draws the spike reminder fill, empty-outline color, and a "Take Spike" label over a supply's footprint. */
 	private void drawSupplyOutline(Graphics2D graphics, GameObject supply)
 	{
 		Area footprint = footprintOf(supply);
@@ -200,6 +201,10 @@ class GoatPitOverlay extends Overlay
 		graphics.setColor(withAlpha(config.emptyOutlineColor(), OUTLINE_ALPHA));
 		graphics.setStroke(OUTLINE);
 		graphics.draw(footprint);
+
+		Point at = supply.getCanvasTextLocation(graphics, TAKE_SPIKE_TEXT, 0);
+		if (at != null)
+			drawText(graphics, at, TAKE_SPIKE_TEXT, config.countLabelColor());
 	}
 
 	/** Whether any loaded pit is empty and unspiked, so it is currently prompting for spikes. */
