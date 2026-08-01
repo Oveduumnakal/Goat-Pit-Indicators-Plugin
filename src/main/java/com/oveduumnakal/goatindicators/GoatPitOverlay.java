@@ -37,6 +37,7 @@ import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.inject.Inject;
+
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
 import net.runelite.api.Perspective;
@@ -189,6 +190,7 @@ class GoatPitOverlay extends Overlay
 			graphics.setColor(fill);
 			graphics.fill(footprint);
 		}
+
 		graphics.setColor(outlineColorFor(state));
 		graphics.setStroke(OUTLINE);
 		graphics.draw(footprint);
@@ -247,6 +249,7 @@ class GoatPitOverlay extends Overlay
 			Point at = pit.getCanvasTextLocation(graphics, text, 0);
 			return at == null ? null : belowLine(graphics, at);
 		}
+
 		Point min = pit.getSceneMinLocation();
 		Point max = pit.getSceneMaxLocation();
 		if (min == null || max == null)
@@ -304,6 +307,7 @@ class GoatPitOverlay extends Overlay
 			int idx = Math.min(STATIC_ICON_FRAME, totalIconFrames.length - 1);
 			drawIconBefore(graphics, at, totalIconFrames[idx], color, 1.0f, 0);
 		}
+
 		drawText(graphics, at, text, color);
 	}
 
@@ -460,6 +464,7 @@ class GoatPitOverlay extends Overlay
 			else
 				result[i] = ImageUtil.resizeImage(frame, scaledWidth, height);
 		}
+
 		return result;
 	}
 
@@ -509,6 +514,7 @@ class GoatPitOverlay extends Overlay
 
 			return;
 		}
+
 		if (!config.showCount())
 			return;
 
@@ -518,6 +524,7 @@ class GoatPitOverlay extends Overlay
 			drawProgressBar(graphics, pit, state, style.showsText());
 			return;
 		}
+
 		Point at = pit.getCanvasTextLocation(graphics, state.label(), 0);
 		if (at != null)
 			drawText(graphics, at, state.label(), config.countLabelColor());
@@ -653,6 +660,7 @@ class GoatPitOverlay extends Overlay
 					area.add(new Area(poly));
 			}
 		}
+
 		return area;
 	}
 

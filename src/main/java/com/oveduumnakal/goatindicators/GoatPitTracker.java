@@ -31,6 +31,7 @@ import java.util.Locale;
 import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
 import net.runelite.api.NPC;
@@ -159,6 +160,7 @@ class GoatPitTracker
 			if (action != null && action.toLowerCase(Locale.ROOT).contains(GoatIds.ADD_SPIKES_ACTION))
 				return false;
 		}
+
 		return true;
 	}
 
@@ -170,6 +172,7 @@ class GoatPitTracker
 			ObjectComposition base = client.getObjectDefinition(pit.getId());
 			varbit = base == null ? -1 : base.getVarbitId();
 		}
+
 		if (varbit >= 0)
 			return client.getVarbitValue(varbit);
 
@@ -229,6 +232,7 @@ class GoatPitTracker
 			if (x >= min.getX() && x <= max.getX() && y >= min.getY() && y <= max.getY())
 				count++;
 		}
+
 		return count;
 	}
 

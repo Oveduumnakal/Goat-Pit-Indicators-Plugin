@@ -34,6 +34,7 @@ import java.awt.Stroke;
 import java.util.ArrayList;
 import java.util.List;
 import javax.inject.Inject;
+
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
 import net.runelite.api.NPC;
@@ -101,6 +102,7 @@ class GoatHighlightOverlay extends Overlay
 			if (isTelegrabTarget(npc, player, playerLocation, catchingPits))
 				drawGlow(graphics, npc);
 		}
+
 		return null;
 	}
 
@@ -114,6 +116,7 @@ class GoatHighlightOverlay extends Overlay
 			if (!state.isFull() && !state.needsSpikes())
 				catching.add(pit);
 		}
+
 		return catching;
 	}
 
@@ -145,6 +148,7 @@ class GoatHighlightOverlay extends Overlay
 			if (isAcrossPit(pit, playerLocation, goatLocation))
 				return true;
 		}
+
 		return false;
 	}
 

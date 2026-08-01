@@ -27,6 +27,7 @@ package com.oveduumnakal.goatindicators;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import net.runelite.api.Client;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
@@ -121,6 +122,7 @@ class TelekineticGrab
 			if (item != null && AIR_STAVES.contains(item.getId()))
 				return true;
 		}
+
 		return false;
 	}
 }

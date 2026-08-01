@@ -24,8 +24,10 @@
  */
 package com.oveduumnakal.goatindicators;
 
-import com.google.inject.Provides;
 import javax.inject.Inject;
+
+import com.google.inject.Provides;
+
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -252,6 +254,7 @@ public class GoatIndicatorsPlugin extends Plugin
 			scheduleSeed();
 			return;
 		}
+
 		if (state == GameState.LOADING || state == GameState.HOPPING || state == GameState.LOGIN_SCREEN)
 		{
 			tracker.clear();

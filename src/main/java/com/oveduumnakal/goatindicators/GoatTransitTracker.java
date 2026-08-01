@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import javax.inject.Singleton;
+
 import net.runelite.api.NPC;
 
 /**
@@ -122,6 +123,7 @@ class GoatTransitTracker
 			advance(index, flying, jumping, localTargeted);
 			advanceProd(index, freshlyProdded, jumping);
 		}
+
 		phases.keySet().retainAll(present);
 		luredTicks.keySet().retainAll(present);
 		proddedTicks.keySet().retainAll(present);
@@ -177,6 +179,7 @@ class GoatTransitTracker
 			proddedTicks.put(index, MAX_PRODDED_TICKS);
 			return;
 		}
+
 		if (!proddedTicks.containsKey(index))
 			return;
 
@@ -185,12 +188,14 @@ class GoatTransitTracker
 			proddedTicks.put(index, MAX_PRODDED_TICKS);
 			return;
 		}
+
 		int left = proddedTicks.get(index) - 1;
 		if (left <= 0)
 		{
 			proddedTicks.remove(index);
 			return;
 		}
+
 		proddedTicks.put(index, left);
 	}
 

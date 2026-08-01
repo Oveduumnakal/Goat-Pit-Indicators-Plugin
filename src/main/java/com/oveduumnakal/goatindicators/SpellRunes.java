@@ -27,6 +27,7 @@ package com.oveduumnakal.goatindicators;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import net.runelite.api.Client;
 import net.runelite.api.EnumComposition;
 import net.runelite.api.EnumID;
@@ -86,6 +87,7 @@ class SpellRunes
 			if (has(runeId))
 				return true;
 		}
+
 		return false;
 	}
 
@@ -104,6 +106,7 @@ class SpellRunes
 			if (item != null && item.getId() == itemId && item.getQuantity() > 0)
 				return true;
 		}
+
 		return false;
 	}
 
@@ -125,6 +128,7 @@ class SpellRunes
 			if (runeMap.getIntValue(type) == runeId)
 				return true;
 		}
+
 		return false;
 	}
 
@@ -146,6 +150,7 @@ class SpellRunes
 			if (item != null && RUNE_POUCH_IDS.contains(item.getId()))
 				return true;
 		}
+
 		return false;
 	}
 }

@@ -99,6 +99,7 @@ final class ShortFormat
 			if (s.endsWith("."))
 				s = s.substring(0, s.length() - 1);
 		}
+
 		return s;
 	}
 }

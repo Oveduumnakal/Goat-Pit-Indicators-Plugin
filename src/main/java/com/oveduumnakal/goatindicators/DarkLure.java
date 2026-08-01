@@ -26,6 +26,7 @@ package com.oveduumnakal.goatindicators;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import net.runelite.api.Client;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;

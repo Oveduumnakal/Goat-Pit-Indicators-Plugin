@@ -26,6 +26,7 @@ package com.oveduumnakal.goatindicators;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
 import net.runelite.api.Item;
@@ -90,6 +91,7 @@ class GoatMenuSwapper
 			if (cancel != null)
 				promote = cancel;
 		}
+
 		if (promote != null)
 			menu.setMenuEntries(promoteToTop(entries, promote));
 	}
@@ -102,6 +104,7 @@ class GoatMenuSwapper
 			if (entry.getType() == type)
 				return entry;
 		}
+
 		return null;
 	}
 
@@ -121,6 +124,7 @@ class GoatMenuSwapper
 					&& GoatPitTracker.matchesGoatName(entry.getTarget()))
 				return true;
 		}
+
 		return false;
 	}
 
@@ -137,6 +141,7 @@ class GoatMenuSwapper
 			if (npc != null && GoatPitTracker.matchesGoatName(npc.getName()))
 				return true;
 		}
+
 		return false;
 	}
 
@@ -159,6 +164,7 @@ class GoatMenuSwapper
 			if (!TelegrabTargeting.effectivelyFull(state.getCount(), inTransit, state.getCapacity()))
 				return false;
 		}
+
 		return sawCatchingPit;
 	}
 
@@ -174,6 +180,7 @@ class GoatMenuSwapper
 			if (item != null && item.getId() == ItemID.CATTLEPROD)
 				return true;
 		}
+
 		return false;
 	}
 
@@ -190,6 +197,7 @@ class GoatMenuSwapper
 			if (entry != promote)
 				reordered[index++] = entry;
 		}
+
 		reordered[index] = promote;
 		return reordered;
 	}
