@@ -203,7 +203,7 @@ class GoatPitOverlay extends Overlay
 	}
 
 	/** Whether any loaded pit is empty and unspiked, so it is currently prompting for spikes. */
-	private boolean anyPitNeedsSpikes()
+	boolean anyPitNeedsSpikes()
 	{
 		for (GameObject pit : tracker.getPits())
 		{
@@ -215,7 +215,7 @@ class GoatPitOverlay extends Overlay
 	}
 
 	/** Whether the player is carrying spikes, so they can re-line a pit without visiting the supply. */
-	private boolean playerHasSpikes()
+	boolean playerHasSpikes()
 	{
 		ItemContainer inventory = client.getItemContainer(InventoryID.INV);
 		if (inventory == null)
