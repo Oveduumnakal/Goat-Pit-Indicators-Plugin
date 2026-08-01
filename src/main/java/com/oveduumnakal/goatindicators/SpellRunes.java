@@ -84,9 +84,7 @@ class SpellRunes
 		for (int runeId : runeIds)
 		{
 			if (has(runeId))
-			{
 				return true;
-			}
 		}
 		return false;
 	}
@@ -99,15 +97,12 @@ class SpellRunes
 	private static boolean containerHas(ItemContainer container, int itemId)
 	{
 		if (container == null)
-		{
 			return false;
-		}
+
 		for (Item item : container.getItems())
 		{
 			if (item != null && item.getId() == itemId && item.getQuantity() > 0)
-			{
 				return true;
-			}
 		}
 		return false;
 	}
@@ -115,25 +110,20 @@ class SpellRunes
 	private boolean pouchHas(int runeId)
 	{
 		if (!pouchCarried())
-		{
 			return false;
-		}
+
 		EnumComposition runeMap = client.getEnum(EnumID.RUNEPOUCH_RUNE);
 		if (runeMap == null)
-		{
 			return false;
-		}
+
 		for (int slot = 0; slot < POUCH_TYPE_VARBITS.length; slot++)
 		{
 			int type = client.getVarbitValue(POUCH_TYPE_VARBITS[slot]);
 			if (type <= 0 || client.getVarbitValue(POUCH_QUANTITY_VARBITS[slot]) <= 0)
-			{
 				continue;
-			}
+
 			if (runeMap.getIntValue(type) == runeId)
-			{
 				return true;
-			}
 		}
 		return false;
 	}
@@ -149,15 +139,12 @@ class SpellRunes
 	{
 		ItemContainer inventory = client.getItemContainer(InventoryID.INV);
 		if (inventory == null)
-		{
 			return false;
-		}
+
 		for (Item item : inventory.getItems())
 		{
 			if (item != null && RUNE_POUCH_IDS.contains(item.getId()))
-			{
 				return true;
-			}
 		}
 		return false;
 	}

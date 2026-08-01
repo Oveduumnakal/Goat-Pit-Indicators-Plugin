@@ -71,21 +71,17 @@ final class GoatIds
 	static int capacityForHunterLevel(int hunterLevel)
 	{
 		if (hunterLevel >= 93)
-		{
 			return 24;
-		}
+
 		if (hunterLevel >= 85)
-		{
 			return 22;
-		}
+
 		if (hunterLevel >= 77)
-		{
 			return 20;
-		}
+
 		if (hunterLevel >= 70)
-		{
 			return 18;
-		}
+
 		return MIN_CAPACITY;
 	}
 

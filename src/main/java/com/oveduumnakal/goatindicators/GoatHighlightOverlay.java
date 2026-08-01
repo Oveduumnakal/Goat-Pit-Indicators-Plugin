@@ -82,30 +82,24 @@ class GoatHighlightOverlay extends Overlay
 	public Dimension render(Graphics2D graphics)
 	{
 		if (!config.highlightTelegrab() || !lureSpells.canLure())
-		{
 			return null;
-		}
+
 		Player player = client.getLocalPlayer();
 		if (player == null)
-		{
 			return null;
-		}
+
 		WorldPoint playerLocation = player.getWorldLocation();
 		if (playerLocation == null)
-		{
 			return null;
-		}
+
 		List<GameObject> catchingPits = catchingPits();
 		if (catchingPits.isEmpty())
-		{
 			return null;
-		}
+
 		for (NPC npc : client.getTopLevelWorldView().npcs())
 		{
 			if (isTelegrabTarget(npc, player, playerLocation, catchingPits))
-			{
 				drawGlow(graphics, npc);
-			}
 		}
 		return null;
 	}
@@ -118,9 +112,7 @@ class GoatHighlightOverlay extends Overlay
 		{
 			GoatPitState state = tracker.stateOf(pit);
 			if (!state.isFull() && !state.needsSpikes())
-			{
 				catching.add(pit);
-			}
 		}
 		return catching;
 	}
@@ -136,28 +128,22 @@ class GoatHighlightOverlay extends Overlay
 		List<GameObject> catchingPits)
 	{
 		if (npc == null || !GoatPitTracker.matchesGoatName(npc.getName()))
-		{
 			return false;
-		}
+
 		if (transitTracker.isInTransit(npc.getIndex()))
-		{
 			return false;
-		}
+
 		WorldPoint goatLocation = npc.getWorldLocation();
 		if (goatLocation == null || !TelegrabTargeting.withinCastRange(playerLocation.distanceTo(goatLocation)))
-		{
 			return false;
-		}
+
 		if (!hasLineOfSight(player, npc))
-		{
 			return false;
-		}
+
 		for (GameObject pit : catchingPits)
 		{
 			if (isAcrossPit(pit, playerLocation, goatLocation))
-			{
 				return true;
-			}
 		}
 		return false;
 	}
@@ -173,9 +159,8 @@ class GoatHighlightOverlay extends Overlay
 		WorldArea playerArea = player.getWorldArea();
 		WorldArea goatArea = npc.getWorldArea();
 		if (playerArea == null || goatArea == null)
-		{
 			return false;
-		}
+
 		return playerArea.hasLineOfSightTo(client.getTopLevelWorldView(), goatArea);
 	}
 
@@ -186,9 +171,8 @@ class GoatHighlightOverlay extends Overlay
 		Point max = pit.getSceneMaxLocation();
 		WorldView worldView = pit.getWorldView();
 		if (min == null || max == null || worldView == null || goatLocation.getPlane() != pit.getPlane())
-		{
 			return false;
-		}
+
 		int baseX = worldView.getBaseX();
 		int baseY = worldView.getBaseY();
 		return TelegrabTargeting.oppositeSideOfPit(
@@ -201,9 +185,8 @@ class GoatHighlightOverlay extends Overlay
 	{
 		Shape hull = npc.getConvexHull();
 		if (hull == null)
-		{
 			return;
-		}
+
 		Composite original = graphics.getComposite();
 		graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Pulse.alpha()));
 		graphics.setColor(config.telegrabColor());

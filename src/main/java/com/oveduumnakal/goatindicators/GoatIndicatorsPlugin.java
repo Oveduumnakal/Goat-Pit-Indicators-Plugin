@@ -124,14 +124,12 @@ public class GoatIndicatorsPlugin extends Plugin
 		Boolean migrated = configManager.getConfiguration(
 			GoatIndicatorsConfig.GROUP, ANIMATED_MIGRATION_KEY, boolean.class);
 		if (Boolean.TRUE.equals(migrated))
-		{
 			return;
-		}
+
 		String stored = configManager.getConfiguration(GoatIndicatorsConfig.GROUP, TOTAL_PREFIX_KEY);
 		if (TotalPrefix.ICON.name().equals(stored))
-		{
 			configManager.setConfiguration(GoatIndicatorsConfig.GROUP, TOTAL_PREFIX_KEY, TotalPrefix.ANIMATED);
-		}
+
 		configManager.setConfiguration(GoatIndicatorsConfig.GROUP, ANIMATED_MIGRATION_KEY, true);
 	}
 
@@ -171,9 +169,7 @@ public class GoatIndicatorsPlugin extends Plugin
 	{
 		transitTracker.onTick(client.getTopLevelWorldView().npcs(), localTargetIndex(), localProdding());
 		if (seedCountdown > 0 && --seedCountdown == 0)
-		{
 			catchCounter.seed(client.getVarbitValue(GoatIds.COUNT_VARBIT_OVERRIDE));
-		}
 	}
 
 	/** Whether the local player is playing the Cattleprod animation this tick, marking a prod of a goat. */
@@ -188,14 +184,12 @@ public class GoatIndicatorsPlugin extends Plugin
 	{
 		Player localPlayer = client.getLocalPlayer();
 		if (localPlayer == null)
-		{
 			return -1;
-		}
+
 		Actor interacting = localPlayer.getInteracting();
 		if (interacting instanceof NPC)
-		{
 			return ((NPC) interacting).getIndex();
-		}
+
 		return -1;
 	}
 
@@ -226,15 +220,12 @@ public class GoatIndicatorsPlugin extends Plugin
 	public void onVarbitChanged(VarbitChanged event)
 	{
 		if (event.getVarbitId() != GoatIds.COUNT_VARBIT_OVERRIDE)
-		{
 			return;
-		}
+
 		int before = catchCounter.getTotal();
 		catchCounter.onCountChanged(event.getValue());
 		if (catchCounter.getTotal() != before)
-		{
 			configManager.setConfiguration(GoatIndicatorsConfig.GROUP, TOTAL_CAUGHT_KEY, catchCounter.getTotal());
-		}
 	}
 
 	/** Reads the persisted lifetime total, defaulting to zero when none is stored yet. */

@@ -110,9 +110,8 @@ class GoatTransitTracker
 		for (NPC npc : npcs)
 		{
 			if (npc == null || !GoatPitTracker.matchesGoatName(npc.getName()))
-			{
 				continue;
-			}
+
 			int index = npc.getIndex();
 			present.add(index);
 			int animation = npc.getAnimation();
@@ -136,9 +135,8 @@ class GoatTransitTracker
 		Phase prev = phases.get(index);
 		Phase next = nextPhase(prev, flying, jumping);
 		if (ownedThisTick(next, localTargeted))
-		{
 			owned.add(index);
-		}
+
 		if (next == Phase.LURED)
 		{
 			int age = (prev == Phase.LURED ? luredTicks.getOrDefault(index, 0) : 0) + 1;
@@ -180,9 +178,8 @@ class GoatTransitTracker
 			return;
 		}
 		if (!proddedTicks.containsKey(index))
-		{
 			return;
-		}
+
 		if (jumping)
 		{
 			proddedTicks.put(index, MAX_PRODDED_TICKS);
@@ -223,17 +220,14 @@ class GoatTransitTracker
 	static Phase nextPhase(Phase prev, boolean flying, boolean jumping)
 	{
 		if (flying)
-		{
 			return Phase.FLIGHT;
-		}
+
 		if (jumping)
-		{
 			return Phase.JUMPING;
-		}
+
 		if (prev == Phase.FLIGHT || prev == Phase.LURED)
-		{
 			return Phase.LURED;
-		}
+
 		return null;
 	}
 

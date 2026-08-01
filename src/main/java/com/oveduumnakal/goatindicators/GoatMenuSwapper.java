@@ -78,26 +78,20 @@ class GoatMenuSwapper
 		Menu menu = client.getMenu();
 		MenuEntry[] entries = menu.getMenuEntries();
 		if (entries.length < 2)
-		{
 			return;
-		}
+
 		MenuEntry promote = null;
 		if (config.swapWalkWhenProd() && cattleprodEquipped() && goatEntryPresent(entries) && noCatchingPitHasRoom())
-		{
 			promote = firstOfType(entries, MenuAction.WALK);
-		}
+
 		if (config.swapCancelWhenFull() && castOnGoatPresent(entries) && noCatchingPitHasRoom())
 		{
 			MenuEntry cancel = firstOfType(entries, MenuAction.CANCEL);
 			if (cancel != null)
-			{
 				promote = cancel;
-			}
 		}
 		if (promote != null)
-		{
 			menu.setMenuEntries(promoteToTop(entries, promote));
-		}
 	}
 
 	/** The first entry of the given action in menu order, or {@code null} if the menu has none. */
@@ -106,9 +100,7 @@ class GoatMenuSwapper
 		for (MenuEntry entry : entries)
 		{
 			if (entry.getType() == type)
-			{
 				return entry;
-			}
 		}
 		return null;
 	}
@@ -121,16 +113,13 @@ class GoatMenuSwapper
 	private boolean castOnGoatPresent(MenuEntry[] entries)
 	{
 		if (!lureSpells.canLure())
-		{
 			return false;
-		}
+
 		for (MenuEntry entry : entries)
 		{
 			if (entry.getType() == MenuAction.WIDGET_TARGET_ON_NPC
-				&& GoatPitTracker.matchesGoatName(entry.getTarget()))
-			{
+					&& GoatPitTracker.matchesGoatName(entry.getTarget()))
 				return true;
-			}
 		}
 		return false;
 	}
@@ -146,9 +135,7 @@ class GoatMenuSwapper
 		{
 			NPC npc = entry.getNpc();
 			if (npc != null && GoatPitTracker.matchesGoatName(npc.getName()))
-			{
 				return true;
-			}
 		}
 		return false;
 	}
@@ -166,14 +153,11 @@ class GoatMenuSwapper
 		{
 			GoatPitState state = tracker.stateOf(pit);
 			if (state.needsSpikes())
-			{
 				continue;
-			}
+
 			sawCatchingPit = true;
 			if (!TelegrabTargeting.effectivelyFull(state.getCount(), inTransit, state.getCapacity()))
-			{
 				return false;
-			}
 		}
 		return sawCatchingPit;
 	}
@@ -183,15 +167,12 @@ class GoatMenuSwapper
 	{
 		ItemContainer worn = client.getItemContainer(InventoryID.WORN);
 		if (worn == null)
-		{
 			return false;
-		}
+
 		for (Item item : worn.getItems())
 		{
 			if (item != null && item.getId() == ItemID.CATTLEPROD)
-			{
 				return true;
-			}
 		}
 		return false;
 	}
@@ -207,9 +188,7 @@ class GoatMenuSwapper
 		for (MenuEntry entry : entries)
 		{
 			if (entry != promote)
-			{
 				reordered[index++] = entry;
-			}
 		}
 		reordered[index] = promote;
 		return reordered;

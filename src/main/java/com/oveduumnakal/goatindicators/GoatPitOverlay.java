@@ -145,18 +145,15 @@ class GoatPitOverlay extends Overlay
 	{
 		Player player = client.getLocalPlayer();
 		if (player == null)
-		{
 			return null;
-		}
+
 		WorldPoint playerLocation = player.getWorldLocation();
 		if (playerLocation == null)
-		{
 			return null;
-		}
+
 		for (GameObject pit : tracker.getPits())
-		{
 			renderPit(graphics, pit, playerLocation);
-		}
+
 		return null;
 	}
 
@@ -164,14 +161,12 @@ class GoatPitOverlay extends Overlay
 	{
 		WorldPoint pitLocation = pit.getWorldLocation();
 		if (pitLocation == null || playerLocation.distanceTo(pitLocation) > config.maxDrawDistance())
-		{
 			return;
-		}
+
 		GoatPitState state = tracker.stateOf(pit);
 		if (config.showOverlay())
-		{
 			drawColorIndicators(graphics, pit, state);
-		}
+
 		renderLabels(graphics, pit, state);
 		renderInTransit(graphics, pit);
 		renderTotalCaught(graphics, pit);
@@ -186,9 +181,8 @@ class GoatPitOverlay extends Overlay
 	{
 		Area footprint = footprintOf(pit);
 		if (footprint == null || footprint.isEmpty())
-		{
 			return;
-		}
+
 		Color fill = fillColorFor(state);
 		if (fill != null)
 		{
@@ -210,21 +204,18 @@ class GoatPitOverlay extends Overlay
 	{
 		InTransitPosition position = config.inTransitPosition();
 		if (!position.isDrawn())
-		{
 			return;
-		}
+
 		InTransitPrefix prefix = config.inTransitPrefix();
 		String text = inTransitText(prefix, transitTracker.inTransitCount());
 		Point at = inTransitAnchor(graphics, pit, position, text);
 		if (at == null)
-		{
 			return;
-		}
+
 		Color color = config.countLabelColor();
 		if (prefix == InTransitPrefix.ICON && inTransitIcon != null)
-		{
 			drawIconBefore(graphics, at, inTransitIcon, color, 1.0f, 0);
-		}
+
 		drawText(graphics, at, text, color);
 	}
 
@@ -239,9 +230,8 @@ class GoatPitOverlay extends Overlay
 	private static String inTransitText(InTransitPrefix prefix, int count)
 	{
 		if (prefix == InTransitPrefix.TEXT)
-		{
 			return "In transit: " + count;
-		}
+
 		return Integer.toString(count);
 	}
 
@@ -260,21 +250,18 @@ class GoatPitOverlay extends Overlay
 		Point min = pit.getSceneMinLocation();
 		Point max = pit.getSceneMaxLocation();
 		if (min == null || max == null)
-		{
 			return null;
-		}
+
 		int sceneX = position.sceneX(min.getX(), max.getX());
 		int sceneY = position.sceneY(min.getY(), max.getY());
 		LocalPoint tile = LocalPoint.fromScene(sceneX, sceneY, pit.getWorldView());
 		Point at = Perspective.getCanvasTextLocation(client, graphics, tile, text, 0);
 		if (at == null)
-		{
 			return null;
-		}
+
 		if (position.sharesTileWith(config.totalCaughtPosition()))
-		{
 			return belowLine(graphics, at);
-		}
+
 		return at;
 	}
 
@@ -292,24 +279,21 @@ class GoatPitOverlay extends Overlay
 	{
 		TotalCaughtPosition position = config.totalCaughtPosition();
 		if (position == TotalCaughtPosition.OFF)
-		{
 			return;
-		}
+
 		Point min = pit.getSceneMinLocation();
 		Point max = pit.getSceneMaxLocation();
 		if (min == null || max == null)
-		{
 			return;
-		}
+
 		int sceneX = position.sceneX(min.getX(), max.getX());
 		int sceneY = position.sceneY(min.getY(), max.getY());
 		String text = totalCaughtText();
 		LocalPoint tile = LocalPoint.fromScene(sceneX, sceneY, pit.getWorldView());
 		Point at = Perspective.getCanvasTextLocation(client, graphics, tile, text, 0);
 		if (at == null)
-		{
 			return;
-		}
+
 		Color color = config.totalLabelColor();
 		if (config.totalPrefix() == TotalPrefix.ANIMATED && totalIconFrames != null)
 		{
@@ -333,9 +317,8 @@ class GoatPitOverlay extends Overlay
 			? ShortFormat.exact(catchCounter.getTotal())
 			: ShortFormat.value(catchCounter.getTotal());
 		if (config.totalPrefix() == TotalPrefix.TEXT)
-		{
 			return "Total: " + number;
-		}
+
 		return number;
 	}
 
@@ -420,9 +403,7 @@ class GoatPitOverlay extends Overlay
 			totalPhaseStart += totalPhaseDuration();
 			totalPhase = totalPhase.next();
 			if (totalPhase == AnimPhase.STANDING)
-			{
 				totalStandMs = randomStandMs();
-			}
 		}
 	}
 
@@ -466,9 +447,8 @@ class GoatPitOverlay extends Overlay
 	{
 		BufferedImage raw = ImageUtil.loadImageResource(GoatPitOverlay.class, resource);
 		if (raw == null)
-		{
 			return null;
-		}
+
 		int frameWidth = raw.getWidth() / frames;
 		int scaledWidth = Math.max(1, Math.round(frameWidth * (height / (float) raw.getHeight())));
 		BufferedImage[] result = new BufferedImage[frames];
@@ -476,13 +456,9 @@ class GoatPitOverlay extends Overlay
 		{
 			BufferedImage frame = raw.getSubimage(i * frameWidth, 0, frameWidth, raw.getHeight());
 			if (raw.getHeight() == height)
-			{
 				result[i] = frame;
-			}
 			else
-			{
 				result[i] = ImageUtil.resizeImage(frame, scaledWidth, height);
-			}
 		}
 		return result;
 	}
@@ -492,9 +468,8 @@ class GoatPitOverlay extends Overlay
 	{
 		BufferedImage raw = ImageUtil.loadImageResource(GoatPitOverlay.class, resource);
 		if (raw == null)
-		{
 			return null;
-		}
+
 		int width = Math.max(1, Math.round(raw.getWidth() * (ICON_HEIGHT / (float) raw.getHeight())));
 		return ImageUtil.resizeImage(raw, width, ICON_HEIGHT);
 	}
@@ -516,13 +491,11 @@ class GoatPitOverlay extends Overlay
 	private Color fillColorFor(GoatPitState state)
 	{
 		if (state.isFull())
-		{
 			return config.fullReminderFill();
-		}
+
 		if (promptAddSpikes(state))
-		{
 			return config.spikeReminderFill();
-		}
+
 		return null;
 	}
 
@@ -532,15 +505,13 @@ class GoatPitOverlay extends Overlay
 		{
 			Point at = pit.getCanvasTextLocation(graphics, ADD_SPIKES_TEXT, 0);
 			if (at != null)
-			{
 				drawText(graphics, at, ADD_SPIKES_TEXT, config.countLabelColor());
-			}
+
 			return;
 		}
 		if (!config.showCount())
-		{
 			return;
-		}
+
 		PitCountStyle style = config.pitCountStyle();
 		if (style.showsBar())
 		{
@@ -549,9 +520,7 @@ class GoatPitOverlay extends Overlay
 		}
 		Point at = pit.getCanvasTextLocation(graphics, state.label(), 0);
 		if (at != null)
-		{
 			drawText(graphics, at, state.label(), config.countLabelColor());
-		}
 	}
 
 	/**
@@ -563,9 +532,8 @@ class GoatPitOverlay extends Overlay
 	{
 		Point at = pit.getCanvasTextLocation(graphics, state.label(), 0);
 		if (at == null)
-		{
 			return;
-		}
+
 		FontMetrics metrics = graphics.getFontMetrics();
 		int centerX = at.getX() + metrics.stringWidth(state.label()) / 2;
 		int left = centerX - BAR_WIDTH / 2;
@@ -595,9 +563,8 @@ class GoatPitOverlay extends Overlay
 	private Color progressColor(GoatPitState state)
 	{
 		if (state.needsSpikes())
-		{
 			return config.emptyOutlineColor();
-		}
+
 		float fraction = (float) state.getCount() / state.getCapacity();
 		return lerp3(
 			config.emptyOutlineColor(), config.midpointOutlineColor(), config.fullOutlineColor(), fraction);
@@ -628,9 +595,8 @@ class GoatPitOverlay extends Overlay
 	private Color outlineColorFor(GoatPitState state)
 	{
 		if (state.needsSpikes())
-		{
 			return withAlpha(config.emptyOutlineColor(), OUTLINE_ALPHA);
-		}
+
 		float fraction = (float) state.getCount() / state.getCapacity();
 		Color blended = lerp3(
 			config.emptyOutlineColor(), config.midpointOutlineColor(), config.fullOutlineColor(), fraction);
@@ -650,9 +616,8 @@ class GoatPitOverlay extends Overlay
 	{
 		float f = Math.max(0.0f, Math.min(1.0f, fraction));
 		if (f <= 0.5f)
-		{
 			return lerp(from, mid, f * 2.0f);
-		}
+
 		return lerp(mid, to, (f - 0.5f) * 2.0f);
 	}
 
@@ -675,9 +640,8 @@ class GoatPitOverlay extends Overlay
 		Point min = pit.getSceneMinLocation();
 		Point max = pit.getSceneMaxLocation();
 		if (min == null || max == null)
-		{
 			return null;
-		}
+
 		Area area = new Area();
 		for (int x = min.getX(); x <= max.getX(); x++)
 		{
@@ -686,9 +650,7 @@ class GoatPitOverlay extends Overlay
 				LocalPoint tile = LocalPoint.fromScene(x, y, pit.getWorldView());
 				Polygon poly = Perspective.getCanvasTilePoly(client, tile);
 				if (poly != null)
-				{
 					area.add(new Area(poly));
-				}
 			}
 		}
 		return area;

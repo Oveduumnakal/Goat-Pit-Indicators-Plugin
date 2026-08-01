@@ -96,13 +96,11 @@ final class GoatPitState
 	public boolean equals(Object other)
 	{
 		if (this == other)
-		{
 			return true;
-		}
+
 		if (!(other instanceof GoatPitState))
-		{
 			return false;
-		}
+
 		GoatPitState that = (GoatPitState) other;
 		return count == that.count && spiked == that.spiked && capacity == that.capacity;
 	}

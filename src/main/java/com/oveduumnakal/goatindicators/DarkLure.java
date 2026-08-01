@@ -84,9 +84,8 @@ class DarkLure
 		boolean questComplete)
 	{
 		if (magicLevel < MAGIC_LEVEL || spellbook != ARCEUUS_SPELLBOOK || !questComplete)
-		{
 			return false;
-		}
+
 		return hasDeathRune && hasNatureRune;
 	}
 

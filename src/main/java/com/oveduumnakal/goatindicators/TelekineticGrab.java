@@ -104,9 +104,8 @@ class TelekineticGrab
 		boolean airStaff)
 	{
 		if (magicLevel < MAGIC_LEVEL || spellbook != STANDARD_SPELLBOOK)
-		{
 			return false;
-		}
+
 		return hasLawRune && (hasAirRune || airStaff);
 	}
 
@@ -115,15 +114,12 @@ class TelekineticGrab
 	{
 		ItemContainer worn = client.getItemContainer(InventoryID.WORN);
 		if (worn == null)
-		{
 			return false;
-		}
+
 		for (Item item : worn.getItems())
 		{
 			if (item != null && AIR_STAVES.contains(item.getId()))
-			{
 				return true;
-			}
 		}
 		return false;
 	}
