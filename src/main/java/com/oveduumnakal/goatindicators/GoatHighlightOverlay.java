@@ -155,7 +155,7 @@ class GoatHighlightOverlay extends Overlay
 	 * gain sight instead of grabbing in place. The returned distance drives the closest-to-furthest
 	 * gradient — the smaller it is, the higher the goat's grab priority.
 	 */
-	private int targetPitDistance(NPC npc, Player player, WorldPoint playerLocation,
+	int targetPitDistance(NPC npc, Player player, WorldPoint playerLocation,
 		List<GameObject> catchingPits)
 	{
 		if (npc == null || !GoatPitTracker.matchesGoatName(npc.getName()))
