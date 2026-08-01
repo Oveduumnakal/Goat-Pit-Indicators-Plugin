@@ -255,13 +255,14 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "totalPrefix",
 		name = "Total Prefix",
-		description = "What precedes the total-caught number: nothing, a \"Total: \" label, or the goat icon.",
+		description = "What precedes the total-caught number: nothing, a \"Total: \" label, the leaping-goat "
+			+ "animation, or a static goat icon.",
 		section = labelsSection,
 		position = 6
 	)
 	default TotalPrefix totalPrefix()
 	{
-		return TotalPrefix.ICON;
+		return TotalPrefix.ANIMATED;
 	}
 
 	@Alpha

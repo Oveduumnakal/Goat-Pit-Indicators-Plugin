@@ -35,6 +35,7 @@ import java.awt.Polygon;
 import java.awt.Stroke;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
+import java.util.concurrent.ThreadLocalRandom;
 import javax.inject.Inject;
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
@@ -69,19 +70,58 @@ class GoatPitOverlay extends Overlay
 	private static final int BAR_HEIGHT = 16;
 	private static final Color BAR_BACKGROUND = new Color(0, 0, 0, 150);
 
-	/** Height in pixels the goat icon is scaled to for the total-caught label. */
+	/** Height in pixels icons (in-transit) are scaled to. */
 	private static final int ICON_HEIGHT = 16;
+
+	/** Height in pixels the animated goat icon is scaled to for the total-caught label. */
+	private static final int TOTAL_ICON_HEIGHT = 22;
 
 	/** Gap in pixels between the goat icon and the total number. */
 	private static final int ICON_GAP = 2;
+
+	/** Number of frames in the leaping-goat animation strip. */
+	private static final int TOTAL_ICON_FRAMES = 11;
+
+	/** Leap-strip frame (0-based) shown as the static "Icon" prefix: the goat half in the hole. */
+	private static final int STATIC_ICON_FRAME = 8;
+
+	/** Milliseconds the goat spends walking in from the left before it stands and pauses. */
+	private static final int ANIM_WALK_MS = 800;
+
+	/** Milliseconds between walk-cycle pose swaps (standing frame vs stride frame) while walking in. */
+	private static final int ANIM_WALK_STEP_MS = 107;
+
+	/** Pixels to the left of its resting spot the goat starts its walk-in from. */
+	private static final int ANIM_WALK_DISTANCE = 24;
+
+	/** Milliseconds each leap frame is shown while the animation is playing. */
+	private static final int ANIM_FRAME_MS = 100;
+
+	/** Milliseconds the final hole frame is held before it fades out. */
+	private static final int ANIM_HOLD_MS = 250;
+
+	/** Milliseconds the final hole frame takes to fade from opaque to fully transparent. */
+	private static final int ANIM_FADE_MS = 250;
+
+	/** Shortest time in milliseconds the goat stands still before a leap (2 minutes). */
+	private static final long STAND_MIN_MS = 120_000L;
+
+	/** Longest time in milliseconds the goat stands still before a leap (3.5 minutes). */
+	private static final long STAND_MAX_MS = 210_000L;
 
 	private final Client client;
 	private final GoatIndicatorsConfig config;
 	private final GoatPitTracker tracker;
 	private final GoatTransitTracker transitTracker;
 	private final GoatCatchCounter catchCounter;
-	private final BufferedImage totalIcon;
+	private final BufferedImage[] totalIconFrames;
+	private final BufferedImage totalWalkFrame;
 	private final BufferedImage inTransitIcon;
+
+	/** Current phase of the total-goat animation, its start time, and the current random stand length. */
+	private AnimPhase totalPhase = AnimPhase.STANDING;
+	private long totalPhaseStart = System.currentTimeMillis();
+	private long totalStandMs = randomStandMs();
 
 	@Inject
 	GoatPitOverlay(Client client, GoatIndicatorsConfig config, GoatPitTracker tracker,
@@ -92,7 +132,9 @@ class GoatPitOverlay extends Overlay
 		this.tracker = tracker;
 		this.transitTracker = transitTracker;
 		this.catchCounter = catchCounter;
-		this.totalIcon = loadIcon("goat_head.png");
+		this.totalIconFrames = loadIconStrip("goat_leap_strip.png", TOTAL_ICON_FRAMES, TOTAL_ICON_HEIGHT);
+		BufferedImage[] walk = loadIconStrip("goat_walk.png", 1, TOTAL_ICON_HEIGHT);
+		this.totalWalkFrame = walk == null ? null : walk[0];
 		this.inTransitIcon = loadIcon("in_transit_icon.png");
 		setLayer(OverlayLayer.ABOVE_SCENE);
 		setPosition(OverlayPosition.DYNAMIC);
@@ -181,7 +223,7 @@ class GoatPitOverlay extends Overlay
 		Color color = config.countLabelColor();
 		if (prefix == InTransitPrefix.ICON && inTransitIcon != null)
 		{
-			drawIconBefore(graphics, at, inTransitIcon, color);
+			drawIconBefore(graphics, at, inTransitIcon, color, 1.0f, 0);
 		}
 		drawText(graphics, at, text, color);
 	}
@@ -269,9 +311,14 @@ class GoatPitOverlay extends Overlay
 			return;
 		}
 		Color color = config.totalLabelColor();
-		if (config.totalPrefix() == TotalPrefix.ICON && totalIcon != null)
+		if (config.totalPrefix() == TotalPrefix.ANIMATED && totalIconFrames != null)
 		{
-			drawIconBefore(graphics, at, totalIcon, color);
+			drawTotalIcon(graphics, at, color);
+		}
+		else if (config.totalPrefix() == TotalPrefix.ICON && totalIconFrames != null)
+		{
+			int idx = Math.min(STATIC_ICON_FRAME, totalIconFrames.length - 1);
+			drawIconBefore(graphics, at, totalIconFrames[idx], color, 1.0f, 0);
 		}
 		drawText(graphics, at, text, color);
 	}
@@ -300,16 +347,144 @@ class GoatPitOverlay extends Overlay
 	 * @param at       the label's canvas anchor (the icon sits to its left)
 	 * @param icon     the icon to draw
 	 * @param color    the label color, whose alpha the icon is faded to
+	 * @param fade     an extra opacity multiplier in {@code [0, 1]} for animated fade-outs
+	 * @param xShift   extra pixels to draw the icon left of its resting spot, for the walk-in slide
 	 */
-	private static void drawIconBefore(Graphics2D graphics, Point at, BufferedImage icon, Color color)
+	private static void drawIconBefore(Graphics2D graphics, Point at, BufferedImage icon, Color color, float fade,
+		int xShift)
 	{
 		FontMetrics metrics = graphics.getFontMetrics();
-		int iconX = at.getX() - icon.getWidth() - ICON_GAP;
+		int iconX = at.getX() - icon.getWidth() - ICON_GAP - xShift;
 		int iconY = at.getY() - metrics.getAscent() / 2 - icon.getHeight() / 2;
 		Composite original = graphics.getComposite();
-		graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, color.getAlpha() / 255.0f));
+		float alpha = (color.getAlpha() / 255.0f) * fade;
+		graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
 		graphics.drawImage(icon, iconX, iconY, null);
 		graphics.setComposite(original);
+	}
+
+	/**
+	 * Draws the total goat for the current animation phase. The goat rests on its neutral pose for a
+	 * random 3-to-5-minute stretch, leaps into the hole, holds and fades the hole, then walks back into
+	 * frame from the left before standing again. See {@link #advanceTotalAnim()} for the phase timing.
+	 *
+	 * @param graphics the overlay graphics
+	 * @param at       the total label's canvas anchor (the icon sits to its left)
+	 * @param color    the label color, whose alpha the icon is faded to
+	 */
+	private void drawTotalIcon(Graphics2D graphics, Point at, Color color)
+	{
+		advanceTotalAnim();
+		long localT = System.currentTimeMillis() - totalPhaseStart;
+		int last = totalIconFrames.length - 1;
+		BufferedImage frame;
+		float fade = 1.0f;
+		int xShift = 0;
+		switch (totalPhase)
+		{
+			case LEAPING:
+				frame = totalIconFrames[Math.min((int) (localT / ANIM_FRAME_MS), last)];
+				break;
+			case HOLDING:
+				frame = totalIconFrames[last];
+				break;
+			case FADING:
+				frame = totalIconFrames[last];
+				fade = 1.0f - localT / (float) ANIM_FADE_MS;
+				break;
+			case WALKING_IN:
+				xShift = Math.round(ANIM_WALK_DISTANCE * (1.0f - localT / (float) ANIM_WALK_MS));
+				boolean stride = (localT / ANIM_WALK_STEP_MS) % 2 == 0 && totalWalkFrame != null;
+				frame = stride ? totalWalkFrame : totalIconFrames[0];
+				break;
+			case STANDING:
+			default:
+				frame = totalIconFrames[0];
+				break;
+		}
+		drawIconBefore(graphics, at, frame, color, fade, xShift);
+	}
+
+	/**
+	 * Advances the total-goat animation state machine to the current wall-clock time. Phases run
+	 * STANDING (a random {@link #STAND_MIN_MS}-to-{@link #STAND_MAX_MS} rest on the neutral pose) then
+	 * LEAPING, HOLDING, FADING and WALKING_IN before returning to a freshly-randomised STANDING. The
+	 * loop catches up across any number of elapsed phases, so it stays correct when the overlay was not
+	 * rendered for a while.
+	 */
+	private void advanceTotalAnim()
+	{
+		long now = System.currentTimeMillis();
+		while (now - totalPhaseStart >= totalPhaseDuration())
+		{
+			totalPhaseStart += totalPhaseDuration();
+			totalPhase = totalPhase.next();
+			if (totalPhase == AnimPhase.STANDING)
+			{
+				totalStandMs = randomStandMs();
+			}
+		}
+	}
+
+	/** The duration in milliseconds of the current animation phase. */
+	private long totalPhaseDuration()
+	{
+		switch (totalPhase)
+		{
+			case LEAPING:
+				return (long) totalIconFrames.length * ANIM_FRAME_MS;
+			case HOLDING:
+				return ANIM_HOLD_MS;
+			case FADING:
+				return ANIM_FADE_MS;
+			case WALKING_IN:
+				return ANIM_WALK_MS;
+			case STANDING:
+			default:
+				return totalStandMs;
+		}
+	}
+
+	/** A fresh random standing duration in milliseconds, in {@code [STAND_MIN_MS, STAND_MAX_MS]}. */
+	private static long randomStandMs()
+	{
+		return ThreadLocalRandom.current().nextLong(STAND_MIN_MS, STAND_MAX_MS + 1);
+	}
+
+	/**
+	 * Loads a horizontal sprite strip of equal-width frames. The committed strip is pre-scaled to
+	 * {@code height} with a sharp filter, so frames already at that height are used as-is to keep the
+	 * pixel art crisp; a strip of any other height is scaled here as a fallback. A missing resource
+	 * yields null so the caller falls back to drawing no icon.
+	 *
+	 * @param resource the strip resource name
+	 * @param frames   the number of equal-width frames packed left to right
+	 * @param height   the height in pixels each frame is presented at
+	 * @return the frames at {@code height}, or null if the resource is missing
+	 */
+	private static BufferedImage[] loadIconStrip(String resource, int frames, int height)
+	{
+		BufferedImage raw = ImageUtil.loadImageResource(GoatPitOverlay.class, resource);
+		if (raw == null)
+		{
+			return null;
+		}
+		int frameWidth = raw.getWidth() / frames;
+		int scaledWidth = Math.max(1, Math.round(frameWidth * (height / (float) raw.getHeight())));
+		BufferedImage[] result = new BufferedImage[frames];
+		for (int i = 0; i < frames; i++)
+		{
+			BufferedImage frame = raw.getSubimage(i * frameWidth, 0, frameWidth, raw.getHeight());
+			if (raw.getHeight() == height)
+			{
+				result[i] = frame;
+			}
+			else
+			{
+				result[i] = ImageUtil.resizeImage(frame, scaledWidth, height);
+			}
+		}
+		return result;
 	}
 
 	/** Loads an icon from resources and scales it to {@link #ICON_HEIGHT}, or null if missing. */
@@ -517,5 +692,31 @@ class GoatPitOverlay extends Overlay
 			}
 		}
 		return area;
+	}
+
+	/** Phases of the total-goat animation, cycled in order by {@link #next()}. */
+	private enum AnimPhase
+	{
+		/** The goat rests on its neutral pose for a random interval; its default state. */
+		STANDING,
+
+		/** The goat plays its leap into the hole. */
+		LEAPING,
+
+		/** The hole is held fully opaque on screen. */
+		HOLDING,
+
+		/** The hole fades to fully transparent. */
+		FADING,
+
+		/** The goat walks back into frame from the left. */
+		WALKING_IN;
+
+		/** The next phase in the cycle; WALKING_IN wraps back to STANDING. */
+		private AnimPhase next()
+		{
+			AnimPhase[] values = values();
+			return values[(ordinal() + 1) % values.length];
+		}
 	}
 }
