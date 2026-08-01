@@ -146,6 +146,20 @@ public interface GoatIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "highlightProdable",
+		name = "Highlight Prodable",
+		description = "While a Cattleprod is equipped, outline the goats you can prod into a spiked, non-full "
+			+ "pit and faint-fill the tile to stand on to do it. Takes over the telegrab outline while a "
+			+ "Cattleprod is held; turn off to keep the telegrab highlight instead.",
+		section = indicatorsSection,
+		position = 6
+	)
+	default boolean highlightProdable()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "emptyOutlineColor",
 		name = "Empty Outline",
 		description = "Outline color for an empty or unspiked pit, and the low end of the fill gradient. "
@@ -237,6 +251,33 @@ public interface GoatIndicatorsConfig extends Config
 	default Color telegrabFurthestColor()
 	{
 		return new Color(255, 194, 242, 175);
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = "prodColor",
+		name = "Prod Color",
+		description = "Outline color for prodable goats when a Cattleprod is equipped.",
+		section = colorsSection,
+		position = 8
+	)
+	default Color prodColor()
+	{
+		return new Color(255, 140, 0, 255);
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = "prodStandFill",
+		name = "Prod Stand-Tile Fill",
+		description = "Faint fill for the tile to stand on to prod a highlighted goat into the pit. Set the "
+			+ "alpha to 0 to draw the goat outline only.",
+		section = colorsSection,
+		position = 9
+	)
+	default Color prodStandFill()
+	{
+		return new Color(255, 140, 0, 60);
 	}
 
 	@ConfigItem(

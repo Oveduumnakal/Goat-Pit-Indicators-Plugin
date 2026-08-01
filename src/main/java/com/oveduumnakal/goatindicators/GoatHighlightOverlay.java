@@ -28,6 +28,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.Polygon;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.util.ArrayList;
@@ -36,12 +37,18 @@ import javax.inject.Inject;
 
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
+import net.runelite.api.Item;
+import net.runelite.api.ItemContainer;
 import net.runelite.api.NPC;
+import net.runelite.api.Perspective;
 import net.runelite.api.Player;
 import net.runelite.api.Point;
 import net.runelite.api.WorldView;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.ItemID;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -54,6 +61,11 @@ import net.runelite.client.ui.overlay.OverlayPosition;
  * within the spell's 10-tile reach; and the goat sits on the far side of that pit from the player, so a
  * cast lures it across the pit into the trap. The outline is the goat's convex hull with no fill, drawn
  * steadily at the outline color's own alpha.
+ *
+ * <p>While a Cattleprod is equipped (and the prodable highlight is enabled) this takes over the outline
+ * instead: goats within prod range of a catching pit are outlined in the prod color, and the tile to stand
+ * on to prod each one in — one step beyond the goat away from the pit — is faint-filled. The prod highlight
+ * supersedes the telegrab one so the two never fight over the outline.
  */
 class GoatHighlightOverlay extends Overlay
 {
@@ -81,11 +93,17 @@ class GoatHighlightOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!config.highlightTelegrab() || !lureSpells.canLure())
-			return null;
-
 		Player player = client.getLocalPlayer();
 		if (player == null)
+			return null;
+
+		if (config.highlightProdable() && cattleprodEquipped())
+		{
+			renderProdable(graphics);
+			return null;
+		}
+
+		if (!config.highlightTelegrab() || !lureSpells.canLure())
 			return null;
 
 		WorldPoint playerLocation = player.getWorldLocation();
@@ -121,6 +139,131 @@ class GoatHighlightOverlay extends Overlay
 		}
 
 		return null;
+	}
+
+	/**
+	 * Outlines every prodable goat and faint-fills the tile to stand on to prod it in. A goat is prodable
+	 * when it is within {@link ProdTargeting#MAX_RANGE} tiles of a catching pit and not already committed to
+	 * one. Drawn in place of the telegrab highlight while a Cattleprod is equipped (the caller gates on
+	 * that), so the two never fight over the outline.
+	 */
+	private void renderProdable(Graphics2D graphics)
+	{
+		List<GameObject> catchingPits = catchingPits();
+		if (catchingPits.isEmpty())
+			return;
+
+		for (NPC npc : client.getTopLevelWorldView().npcs())
+		{
+			GameObject pit = prodPitFor(npc, catchingPits);
+			if (pit == null)
+				continue;
+
+			drawStandTile(graphics, npc, pit);
+			drawOutline(graphics, npc, config.prodColor());
+		}
+	}
+
+	/**
+	 * The catching pit a goat can be prodded into, or {@code null} when it cannot. A goat qualifies when it
+	 * is a goat, not already in transit to a pit, and within prod range of at least one catching pit; the
+	 * nearest such pit is returned so the stand tile is measured against the edge the goat is closest to.
+	 */
+	GameObject prodPitFor(NPC npc, List<GameObject> catchingPits)
+	{
+		if (npc == null || !GoatPitTracker.matchesGoatName(npc.getName()))
+			return null;
+
+		if (transitTracker.isInTransit(npc.getIndex()))
+			return null;
+
+		WorldPoint goatLocation = npc.getWorldLocation();
+		if (goatLocation == null)
+			return null;
+
+		GameObject nearest = null;
+		int best = -1;
+		for (GameObject pit : catchingPits)
+		{
+			int distance = prodDistance(pit, goatLocation);
+			if (distance < 0 || !ProdTargeting.withinProdRange(distance))
+				continue;
+
+			if (best < 0 || distance < best)
+			{
+				best = distance;
+				nearest = pit;
+			}
+		}
+
+		return nearest;
+	}
+
+	/**
+	 * The Chebyshev tile distance from a goat to the nearest tile of a pit, or {@code -1} when the pit's
+	 * footprint or plane is unavailable or differs from the goat's.
+	 */
+	private static int prodDistance(GameObject pit, WorldPoint goatLocation)
+	{
+		Point min = pit.getSceneMinLocation();
+		Point max = pit.getSceneMaxLocation();
+		WorldView worldView = pit.getWorldView();
+		if (min == null || max == null || worldView == null || goatLocation.getPlane() != pit.getPlane())
+			return -1;
+
+		int goatSceneX = goatLocation.getX() - worldView.getBaseX();
+		int goatSceneY = goatLocation.getY() - worldView.getBaseY();
+		int nearestX = ProdTargeting.clampToPit(goatSceneX, min.getX(), max.getX());
+		int nearestY = ProdTargeting.clampToPit(goatSceneY, min.getY(), max.getY());
+		return Math.max(Math.abs(goatSceneX - nearestX), Math.abs(goatSceneY - nearestY));
+	}
+
+	/**
+	 * Faint-fills the tile the player stands on to prod this goat into the pit: one tile beyond the goat on
+	 * the side away from the nearest pit tile. Nothing is drawn when the fill is fully transparent or the
+	 * tile is off screen.
+	 */
+	private void drawStandTile(Graphics2D graphics, NPC npc, GameObject pit)
+	{
+		Color fill = config.prodStandFill();
+		if (fill.getAlpha() == 0)
+			return;
+
+		WorldPoint goatLocation = npc.getWorldLocation();
+		WorldView worldView = pit.getWorldView();
+		Point min = pit.getSceneMinLocation();
+		Point max = pit.getSceneMaxLocation();
+		if (goatLocation == null || worldView == null || min == null || max == null)
+			return;
+
+		int goatSceneX = goatLocation.getX() - worldView.getBaseX();
+		int goatSceneY = goatLocation.getY() - worldView.getBaseY();
+		int standX = ProdTargeting.standTile(goatSceneX, ProdTargeting.clampToPit(goatSceneX, min.getX(), max.getX()));
+		int standY = ProdTargeting.standTile(goatSceneY, ProdTargeting.clampToPit(goatSceneY, min.getY(), max.getY()));
+
+		LocalPoint tile = LocalPoint.fromScene(standX, standY, worldView);
+		Polygon poly = Perspective.getCanvasTilePoly(client, tile);
+		if (poly == null)
+			return;
+
+		graphics.setColor(fill);
+		graphics.fill(poly);
+	}
+
+	/** Whether a Cattleprod is in the worn-equipment container, enabling the prodable highlight. */
+	private boolean cattleprodEquipped()
+	{
+		ItemContainer worn = client.getItemContainer(InventoryID.WORN);
+		if (worn == null)
+			return false;
+
+		for (Item item : worn.getItems())
+		{
+			if (item != null && item.getId() == ItemID.CATTLEPROD)
+				return true;
+		}
+
+		return false;
 	}
 
 	/**
