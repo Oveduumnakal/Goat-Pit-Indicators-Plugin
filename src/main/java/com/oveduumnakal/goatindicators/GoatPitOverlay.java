@@ -40,11 +40,14 @@ import javax.inject.Inject;
 
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
+import net.runelite.api.Item;
+import net.runelite.api.ItemContainer;
 import net.runelite.api.Perspective;
 import net.runelite.api.Player;
 import net.runelite.api.Point;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.gameval.InventoryID;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -155,7 +158,76 @@ class GoatPitOverlay extends Overlay
 		for (GameObject pit : tracker.getPits())
 			renderPit(graphics, pit, playerLocation);
 
+		renderSpikeSupplies(graphics, playerLocation);
 		return null;
+	}
+
+	/**
+	 * Outlines the spike supply object when a pit needs lining and the player carries no spikes, so the
+	 * restock point is obvious. Nothing is drawn once the player holds spikes (they can re-line in place)
+	 * or when no pit is prompting for spikes. Uses the same spike-warning fill and empty-outline color as
+	 * the pit, so the supply reads as part of the same "needs spikes" state.
+	 */
+	private void renderSpikeSupplies(Graphics2D graphics, WorldPoint playerLocation)
+	{
+		if (!config.highlightSpikeSupply() || !anyPitNeedsSpikes() || playerHasSpikes())
+			return;
+
+		for (GameObject supply : tracker.getSupplies())
+		{
+			WorldPoint supplyLocation = supply.getWorldLocation();
+			if (supplyLocation == null || playerLocation.distanceTo(supplyLocation) > config.maxDrawDistance())
+				continue;
+
+			drawSupplyOutline(graphics, supply);
+		}
+	}
+
+	/** Draws the spike reminder fill and empty-outline color over a supply object's footprint. */
+	private void drawSupplyOutline(Graphics2D graphics, GameObject supply)
+	{
+		Area footprint = footprintOf(supply);
+		if (footprint == null || footprint.isEmpty())
+			return;
+
+		Color fill = config.spikeReminderFill();
+		if (fill.getAlpha() != 0)
+		{
+			graphics.setColor(fill);
+			graphics.fill(footprint);
+		}
+
+		graphics.setColor(withAlpha(config.emptyOutlineColor(), OUTLINE_ALPHA));
+		graphics.setStroke(OUTLINE);
+		graphics.draw(footprint);
+	}
+
+	/** Whether any loaded pit is empty and unspiked, so it is currently prompting for spikes. */
+	private boolean anyPitNeedsSpikes()
+	{
+		for (GameObject pit : tracker.getPits())
+		{
+			if (promptAddSpikes(tracker.stateOf(pit)))
+				return true;
+		}
+
+		return false;
+	}
+
+	/** Whether the player is carrying spikes, so they can re-line a pit without visiting the supply. */
+	private boolean playerHasSpikes()
+	{
+		ItemContainer inventory = client.getItemContainer(InventoryID.INV);
+		if (inventory == null)
+			return false;
+
+		for (Item item : inventory.getItems())
+		{
+			if (item != null && item.getId() == GoatIds.SPIKES_ITEM_ID && item.getQuantity() > 0)
+				return true;
+		}
+
+		return false;
 	}
 
 	private void renderPit(Graphics2D graphics, GameObject pit, WorldPoint playerLocation)

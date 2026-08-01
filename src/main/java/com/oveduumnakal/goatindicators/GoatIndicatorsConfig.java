@@ -133,6 +133,19 @@ public interface GoatIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "highlightSpikeSupply",
+		name = "Highlight Spike Supply",
+		description = "Outline the spike supply object when a pit needs lining and you are carrying no "
+			+ "spikes, so the restock point is obvious. Uses the same spike-warning colors as the pit.",
+		section = indicatorsSection,
+		position = 5
+	)
+	default boolean highlightSpikeSupply()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "emptyOutlineColor",
 		name = "Empty Outline",
 		description = "Outline color for an empty or unspiked pit, and the low end of the fill gradient. "

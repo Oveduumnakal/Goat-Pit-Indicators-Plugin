@@ -58,33 +58,44 @@ import net.runelite.api.coords.WorldPoint;
 class GoatPitTracker
 {
 	private final Map<Long, GameObject> pits = new LinkedHashMap<>();
+	private final Map<Long, GameObject> supplies = new LinkedHashMap<>();
 
 	@Inject
 	private Client client;
 
-	/** Records a newly spawned object if it is a goat pit. */
+	/** Records a newly spawned object if it is a goat pit or a spike supply. */
 	void onSpawn(GameObject object)
 	{
 		if (isPit(object))
 			pits.put(object.getHash(), object);
+		else if (isSupply(object))
+			supplies.put(object.getHash(), object);
 	}
 
 	/** Drops an object that has left the scene. */
 	void onDespawn(GameObject object)
 	{
 		pits.remove(object.getHash());
+		supplies.remove(object.getHash());
 	}
 
-	/** Forgets every tracked pit, for a world hop or a scene reload. */
+	/** Forgets every tracked object, for a world hop or a scene reload. */
 	void clear()
 	{
 		pits.clear();
+		supplies.clear();
 	}
 
 	/** Every goat pit currently loaded in the scene. */
 	Collection<GameObject> getPits()
 	{
 		return Collections.unmodifiableCollection(pits.values());
+	}
+
+	/** Every spike supply object currently loaded in the scene. */
+	Collection<GameObject> getSupplies()
+	{
+		return Collections.unmodifiableCollection(supplies.values());
 	}
 
 	/**
@@ -137,6 +148,27 @@ class GoatPitTracker
 	static boolean matchesPitName(String name)
 	{
 		return name != null && name.toLowerCase(Locale.ROOT).contains(GoatIds.PIT_NAME_FRAGMENT);
+	}
+
+	private boolean isSupply(GameObject object)
+	{
+		if (object == null)
+			return false;
+
+		if (!GoatIds.SPIKE_SUPPLY_OBJECT_IDS.isEmpty())
+			return GoatIds.SPIKE_SUPPLY_OBJECT_IDS.contains(object.getId());
+
+		ObjectComposition base = client.getObjectDefinition(object.getId());
+		if (base == null)
+			return false;
+
+		return matchesSupplyName(base.getName());
+	}
+
+	/** Whether an object name identifies the spike supply. Package-private so it can be tested directly. */
+	static boolean matchesSupplyName(String name)
+	{
+		return name != null && name.toLowerCase(Locale.ROOT).contains(GoatIds.SPIKE_SUPPLY_NAME_FRAGMENT);
 	}
 
 	/** Whether an NPC name identifies a goat. Package-private so it can be tested directly. */
