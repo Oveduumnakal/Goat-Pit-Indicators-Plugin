@@ -76,6 +76,26 @@ final class TelegrabTargeting
 	}
 
 	/**
+	 * A goat's position along the closest-to-furthest highlight gradient: {@code 0} at the nearest
+	 * grabbable goat, {@code 1} at the furthest, interpolated in between by tile distance to the pit. When
+	 * every grabbable goat sits the same distance out (including the single-goat case) all share the
+	 * nearest end, so one grabbable goat glows the closest color rather than an arbitrary midpoint.
+	 *
+	 * @param distance the goat's tile distance to its pit
+	 * @param nearest  the smallest such distance among all grabbable goats
+	 * @param farthest the largest such distance among all grabbable goats
+	 * @return the gradient position in {@code [0, 1]}
+	 */
+	static float priorityFraction(int distance, int nearest, int farthest)
+	{
+		if (farthest <= nearest)
+			return 0.0f;
+
+		float f = (distance - nearest) / (float) (farthest - nearest);
+		return Math.max(0.0f, Math.min(1.0f, f));
+	}
+
+	/**
 	 * Whether the goat is on the opposite side of the pit from the player, so a grab lures it across the
 	 * pit and into the trap. The player's position picks the axis: whichever pit edge they stand beyond
 	 * becomes the cut line, and only goats at or past the pit on that axis qualify. A player level with

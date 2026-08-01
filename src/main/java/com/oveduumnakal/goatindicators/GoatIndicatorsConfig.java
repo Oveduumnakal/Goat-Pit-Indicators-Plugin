@@ -177,14 +177,31 @@ public interface GoatIndicatorsConfig extends Config
 	@Alpha
 	@ConfigItem(
 		keyName = "telegrabColor",
-		name = "Telegrab Color",
-		description = "Outline color for telegrabbable goats.",
+		name = "Telegrab Closest",
+		description = "Outline color for the closest telegrabbable goat — the highest-priority grab. Goats "
+			+ "further from the pit fade toward the \"Telegrab Furthest\" color. Set both the same for a "
+			+ "single flat highlight color.",
 		section = colorsSection,
 		position = 6
 	)
 	default Color telegrabColor()
 	{
 		return new Color(255, 0, 202, 255);
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = "telegrabFurthestColor",
+		name = "Telegrab Furthest",
+		description = "Outline color for the furthest telegrabbable goat — the lowest-priority grab. Goats "
+			+ "nearer the pit shade toward the \"Telegrab Closest\" color. Set both the same for a single "
+			+ "flat highlight color.",
+		section = colorsSection,
+		position = 7
+	)
+	default Color telegrabFurthestColor()
+	{
+		return new Color(90, 0, 72, 255);
 	}
 
 	@ConfigItem(
