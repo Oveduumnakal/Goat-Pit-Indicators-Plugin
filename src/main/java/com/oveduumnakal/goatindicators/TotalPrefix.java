@@ -33,7 +33,10 @@ public enum TotalPrefix
 	/** The number prefixed with "Total: ". */
 	TEXT("Text"),
 
-	/** The number prefixed with the goat icon. */
+	/** The number prefixed with the full leaping-goat animation. */
+	ANIMATED("Animated"),
+
+	/** The number prefixed with a static goat icon (the goat half in the hole). */
 	ICON("Icon");
 
 	private final String label;

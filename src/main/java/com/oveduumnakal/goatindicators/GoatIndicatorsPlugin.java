@@ -54,6 +54,15 @@ public class GoatIndicatorsPlugin extends Plugin
 	/** Config key holding the lifetime goats-caught total, so it survives logouts and plugin toggles. */
 	private static final String TOTAL_CAUGHT_KEY = "totalCaught";
 
+	/** Config key for the total-caught prefix, so the one-time animated migration can read and rewrite it. */
+	private static final String TOTAL_PREFIX_KEY = "totalPrefix";
+
+	/**
+	 * Config key flagging that the one-time "Icon becomes Animated" migration has run, so a user who later
+	 * chooses Icon on purpose is left alone.
+	 */
+	private static final String ANIMATED_MIGRATION_KEY = "animatedMigrationDone";
+
 	/**
 	 * Game ticks to wait after login (or plugin start) before seeding the catch counter's baseline from
 	 * the live count varbit. Two ticks give the pit's count varbit time to settle after a world hop, so
@@ -97,10 +106,33 @@ public class GoatIndicatorsPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
+		migrateIconPrefixToAnimated();
 		overlayManager.add(overlay);
 		overlayManager.add(highlightOverlay);
 		catchCounter.restore(loadPersistedTotal());
 		scheduleSeed();
+	}
+
+	/**
+	 * Moves users off the old "Icon" total prefix onto the new "Animated" one, exactly once. Before the
+	 * animation existed, Icon was the default, so a saved value of Icon is almost always the old default
+	 * rather than a deliberate choice. This runs a single time (guarded by {@link #ANIMATED_MIGRATION_KEY})
+	 * and only rewrites an explicit Icon value, so anyone who picks Icon on purpose afterwards keeps it.
+	 */
+	private void migrateIconPrefixToAnimated()
+	{
+		Boolean migrated = configManager.getConfiguration(
+			GoatIndicatorsConfig.GROUP, ANIMATED_MIGRATION_KEY, boolean.class);
+		if (Boolean.TRUE.equals(migrated))
+		{
+			return;
+		}
+		String stored = configManager.getConfiguration(GoatIndicatorsConfig.GROUP, TOTAL_PREFIX_KEY);
+		if (TotalPrefix.ICON.name().equals(stored))
+		{
+			configManager.setConfiguration(GoatIndicatorsConfig.GROUP, TOTAL_PREFIX_KEY, TotalPrefix.ANIMATED);
+		}
+		configManager.setConfiguration(GoatIndicatorsConfig.GROUP, ANIMATED_MIGRATION_KEY, true);
 	}
 
 	@Override
