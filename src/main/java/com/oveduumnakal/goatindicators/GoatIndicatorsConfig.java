@@ -100,12 +100,26 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "highlightTelegrab",
 		name = "Highlight Telegrabbable",
-		description = "Glow an outline on goats you can telegrab into a spiked, non-full pit from where "
+		description = "Outline goats you can telegrab into a spiked, non-full pit from where "
 			+ "you stand, when you can cast Telekinetic Grab.",
 		section = indicatorsSection,
 		position = 3
 	)
 	default boolean highlightTelegrab()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "telegrabGradient",
+		name = "Near/Far Gradient",
+		description = "Shade each telegrabbable goat's outline from the \"Telegrab Closest\" color (nearest "
+			+ "the pit) to the \"Telegrab Furthest\" color. Off draws every target in the \"Telegrab Closest\" "
+			+ "color instead.",
+		section = indicatorsSection,
+		position = 4
+	)
+	default boolean telegrabGradient()
 	{
 		return true;
 	}
@@ -201,7 +215,7 @@ public interface GoatIndicatorsConfig extends Config
 	)
 	default Color telegrabFurthestColor()
 	{
-		return new Color(90, 0, 72, 255);
+		return new Color(255, 194, 242, 175);
 	}
 
 	@ConfigItem(

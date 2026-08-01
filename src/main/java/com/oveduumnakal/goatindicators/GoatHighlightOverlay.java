@@ -24,10 +24,8 @@
  */
 package com.oveduumnakal.goatindicators;
 
-import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Shape;
@@ -49,17 +47,17 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 
 /**
- * Glows a purple clickbox outline over every goat that is worth luring into a pit right now.
+ * Draws a purple clickbox outline over every goat that is worth luring into a pit right now.
  *
  * <p>A goat is highlighted only when all of these hold: the player can cast a lure spell — Telekinetic
  * Grab or Dark Lure (level, spellbook, runes); a nearby pit has spikes and is not yet full; the goat is
  * within the spell's 10-tile reach; and the goat sits on the far side of that pit from the player, so a
- * cast lures it across the pit into the trap. The outline is the goat's convex hull with no fill,
- * breathing at Stockpile's glow rate.
+ * cast lures it across the pit into the trap. The outline is the goat's convex hull with no fill, drawn
+ * steadily at the outline color's own alpha.
  */
 class GoatHighlightOverlay extends Overlay
 {
-	private static final Stroke GLOW_STROKE = new BasicStroke(2.0f);
+	private static final Stroke OUTLINE_STROKE = new BasicStroke(2.0f);
 
 	private final Client client;
 	private final GoatIndicatorsConfig config;
@@ -115,11 +113,11 @@ class GoatHighlightOverlay extends Overlay
 		}
 
 		Color closest = config.telegrabColor();
-		Color furthest = config.telegrabFurthestColor();
+		Color furthest = config.telegrabGradient() ? config.telegrabFurthestColor() : closest;
 		for (int i = 0; i < targets.size(); i++)
 		{
 			float fraction = TelegrabTargeting.priorityFraction(distances.get(i), nearest, farthest);
-			drawGlow(graphics, targets.get(i), lerp(closest, furthest, fraction));
+			drawOutline(graphics, targets.get(i), lerp(closest, furthest, fraction));
 		}
 
 		return null;
@@ -218,19 +216,16 @@ class GoatHighlightOverlay extends Overlay
 			playerLocation.getX(), playerLocation.getY(), goatLocation.getX(), goatLocation.getY());
 	}
 
-	/** Draws the goat's clickbox outline in the given color with no fill, breathing at Stockpile's glow rate. */
-	private void drawGlow(Graphics2D graphics, NPC npc, Color color)
+	/** Draws the goat's clickbox outline steadily in the given color with no fill, at the color's own alpha. */
+	private void drawOutline(Graphics2D graphics, NPC npc, Color color)
 	{
 		Shape hull = npc.getConvexHull();
 		if (hull == null)
 			return;
 
-		Composite original = graphics.getComposite();
-		graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Pulse.alpha()));
 		graphics.setColor(color);
-		graphics.setStroke(GLOW_STROKE);
+		graphics.setStroke(OUTLINE_STROKE);
 		graphics.draw(hull);
-		graphics.setComposite(original);
 	}
 
 	/**
