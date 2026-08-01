@@ -24,9 +24,8 @@
  */
 package com.oveduumnakal.goatindicators;
 
-import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
-import java.awt.Composite;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Shape;
@@ -48,17 +47,17 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 
 /**
- * Glows a purple clickbox outline over every goat that is worth luring into a pit right now.
+ * Draws a purple clickbox outline over every goat that is worth luring into a pit right now.
  *
  * <p>A goat is highlighted only when all of these hold: the player can cast a lure spell — Telekinetic
  * Grab or Dark Lure (level, spellbook, runes); a nearby pit has spikes and is not yet full; the goat is
  * within the spell's 10-tile reach; and the goat sits on the far side of that pit from the player, so a
- * cast lures it across the pit into the trap. The outline is the goat's convex hull with no fill,
- * breathing at Stockpile's glow rate.
+ * cast lures it across the pit into the trap. The outline is the goat's convex hull with no fill, drawn
+ * steadily at the outline color's own alpha.
  */
 class GoatHighlightOverlay extends Overlay
 {
-	private static final Stroke GLOW_STROKE = new BasicStroke(2.0f);
+	private static final Stroke OUTLINE_STROKE = new BasicStroke(2.0f);
 
 	private final Client client;
 	private final GoatIndicatorsConfig config;
@@ -97,10 +96,28 @@ class GoatHighlightOverlay extends Overlay
 		if (catchingPits.isEmpty())
 			return null;
 
+		List<NPC> targets = new ArrayList<>();
+		List<Integer> distances = new ArrayList<>();
+		int nearest = Integer.MAX_VALUE;
+		int farthest = Integer.MIN_VALUE;
 		for (NPC npc : client.getTopLevelWorldView().npcs())
 		{
-			if (isTelegrabTarget(npc, player, playerLocation, catchingPits))
-				drawGlow(graphics, npc);
+			int distance = targetPitDistance(npc, player, playerLocation, catchingPits);
+			if (distance < 0)
+				continue;
+
+			targets.add(npc);
+			distances.add(distance);
+			nearest = Math.min(nearest, distance);
+			farthest = Math.max(farthest, distance);
+		}
+
+		Color closest = config.telegrabColor();
+		Color furthest = config.telegrabGradient() ? config.telegrabFurthestColor() : closest;
+		for (int i = 0; i < targets.size(); i++)
+		{
+			float fraction = TelegrabTargeting.priorityFraction(distances.get(i), nearest, farthest);
+			drawOutline(graphics, targets.get(i), lerp(closest, furthest, fraction));
 		}
 
 		return null;
@@ -128,35 +145,43 @@ class GoatHighlightOverlay extends Overlay
 	}
 
 	/**
-	 * Whether this goat should glow: it is a goat, not already in transit, in cast range of the player,
-	 * in the player's line of sight, and on the far side of at least one catching pit. A goat mid-transit
-	 * cannot be grabbed again, so it is excluded to avoid inviting a wasted cast; a goat without line of
-	 * sight is excluded because casting on it makes the player walk to gain sight instead of grabbing in
-	 * place.
+	 * The tile distance from a grabbable goat to the nearest catching pit it can be lured across, or
+	 * {@code -1} when the goat is not a valid target. A goat qualifies when it is a goat, not already in
+	 * transit, in cast range of the player, in the player's line of sight, and on the far side of at least
+	 * one catching pit. A goat mid-transit cannot be grabbed again, so it is excluded to avoid inviting a
+	 * wasted cast; a goat without line of sight is excluded because casting on it makes the player walk to
+	 * gain sight instead of grabbing in place. The returned distance drives the closest-to-furthest
+	 * gradient — the smaller it is, the higher the goat's grab priority.
 	 */
-	private boolean isTelegrabTarget(NPC npc, Player player, WorldPoint playerLocation,
+	int targetPitDistance(NPC npc, Player player, WorldPoint playerLocation,
 		List<GameObject> catchingPits)
 	{
 		if (npc == null || !GoatPitTracker.matchesGoatName(npc.getName()))
-			return false;
+			return -1;
 
 		if (transitTracker.isInTransit(npc.getIndex()))
-			return false;
+			return -1;
 
 		WorldPoint goatLocation = npc.getWorldLocation();
 		if (goatLocation == null || !TelegrabTargeting.withinCastRange(playerLocation.distanceTo(goatLocation)))
-			return false;
+			return -1;
 
 		if (!hasLineOfSight(player, npc))
-			return false;
+			return -1;
 
+		int best = -1;
 		for (GameObject pit : catchingPits)
 		{
-			if (isAcrossPit(pit, playerLocation, goatLocation))
-				return true;
+			WorldPoint pitLocation = pit.getWorldLocation();
+			if (pitLocation == null || !isAcrossPit(pit, playerLocation, goatLocation))
+				continue;
+
+			int distance = goatLocation.distanceTo(pitLocation);
+			if (best < 0 || distance < best)
+				best = distance;
 		}
 
-		return false;
+		return best;
 	}
 
 	/**
@@ -191,18 +216,29 @@ class GoatHighlightOverlay extends Overlay
 			playerLocation.getX(), playerLocation.getY(), goatLocation.getX(), goatLocation.getY());
 	}
 
-	/** Draws the goat's clickbox outline with no fill, breathing at Stockpile's glow rate. */
-	private void drawGlow(Graphics2D graphics, NPC npc)
+	/** Draws the goat's clickbox outline steadily in the given color with no fill, at the color's own alpha. */
+	private void drawOutline(Graphics2D graphics, NPC npc, Color color)
 	{
 		Shape hull = npc.getConvexHull();
 		if (hull == null)
 			return;
 
-		Composite original = graphics.getComposite();
-		graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Pulse.alpha()));
-		graphics.setColor(config.telegrabColor());
-		graphics.setStroke(GLOW_STROKE);
+		graphics.setColor(color);
+		graphics.setStroke(OUTLINE_STROKE);
 		graphics.draw(hull);
-		graphics.setComposite(original);
+	}
+
+	/**
+	 * Linearly blends two colors including their alpha; {@code fraction} is clamped to 0..1. Used to place
+	 * each grabbable goat's outline along the closest-to-furthest gradient.
+	 */
+	private static Color lerp(Color from, Color to, float fraction)
+	{
+		float f = Math.max(0.0f, Math.min(1.0f, fraction));
+		int r = Math.round(from.getRed() + (to.getRed() - from.getRed()) * f);
+		int g = Math.round(from.getGreen() + (to.getGreen() - from.getGreen()) * f);
+		int b = Math.round(from.getBlue() + (to.getBlue() - from.getBlue()) * f);
+		int a = Math.round(from.getAlpha() + (to.getAlpha() - from.getAlpha()) * f);
+		return new Color(r, g, b, a);
 	}
 }

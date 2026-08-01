@@ -6,6 +6,7 @@ package com.oveduumnakal.goatindicators;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -28,6 +29,27 @@ public class TelegrabTargetingTest
 		assertTrue(TelegrabTargeting.effectivelyFull(19, 2, 20));
 		assertTrue(TelegrabTargeting.effectivelyFull(20, 0, 20));
 		assertFalse(TelegrabTargeting.effectivelyFull(0, 0, 16));
+	}
+
+	@Test
+	public void priorityFractionRunsNearestToFurthest()
+	{
+		assertEquals(0.0f, TelegrabTargeting.priorityFraction(2, 2, 6), 0.0001f);
+		assertEquals(1.0f, TelegrabTargeting.priorityFraction(6, 2, 6), 0.0001f);
+		assertEquals(0.5f, TelegrabTargeting.priorityFraction(4, 2, 6), 0.0001f);
+	}
+
+	@Test
+	public void priorityFractionCollapsesWhenAllGoatsAreEquidistant()
+	{
+		assertEquals(0.0f, TelegrabTargeting.priorityFraction(5, 5, 5), 0.0001f);
+	}
+
+	@Test
+	public void priorityFractionClampsOutOfRangeDistances()
+	{
+		assertEquals(0.0f, TelegrabTargeting.priorityFraction(1, 2, 6), 0.0001f);
+		assertEquals(1.0f, TelegrabTargeting.priorityFraction(9, 2, 6), 0.0001f);
 	}
 
 	@Test

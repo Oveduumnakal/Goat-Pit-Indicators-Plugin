@@ -108,12 +108,26 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "highlightTelegrab",
 		name = "Highlight Telegrabbable",
-		description = "Glow an outline on goats you can telegrab into a spiked, non-full pit from where "
+		description = "Outline goats you can telegrab into a spiked, non-full pit from where "
 			+ "you stand, when you can cast Telekinetic Grab.",
 		section = indicatorsSection,
 		position = 3
 	)
 	default boolean highlightTelegrab()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "telegrabGradient",
+		name = "Near/Far Gradient",
+		description = "Shade each telegrabbable goat's outline from the \"Telegrab Closest\" color (nearest "
+			+ "the pit) to the \"Telegrab Furthest\" color. Off draws every target in the \"Telegrab Closest\" "
+			+ "color instead.",
+		section = indicatorsSection,
+		position = 4
+	)
+	default boolean telegrabGradient()
 	{
 		return true;
 	}
@@ -185,14 +199,31 @@ public interface GoatIndicatorsConfig extends Config
 	@Alpha
 	@ConfigItem(
 		keyName = "telegrabColor",
-		name = "Telegrab Color",
-		description = "Outline color for telegrabbable goats.",
+		name = "Telegrab Closest",
+		description = "Outline color for the closest telegrabbable goat — the highest-priority grab. Goats "
+			+ "further from the pit fade toward the \"Telegrab Furthest\" color. Set both the same for a "
+			+ "single flat highlight color.",
 		section = colorsSection,
 		position = 6
 	)
 	default Color telegrabColor()
 	{
 		return new Color(255, 0, 202, 255);
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = "telegrabFurthestColor",
+		name = "Telegrab Furthest",
+		description = "Outline color for the furthest telegrabbable goat — the lowest-priority grab. Goats "
+			+ "nearer the pit shade toward the \"Telegrab Closest\" color. Set both the same for a single "
+			+ "flat highlight color.",
+		section = colorsSection,
+		position = 7
+	)
+	default Color telegrabFurthestColor()
+	{
+		return new Color(255, 194, 242, 175);
 	}
 
 	@ConfigItem(
