@@ -64,11 +64,19 @@ public interface GoatIndicatorsConfig extends Config
 	)
 	String labelsSection = "labels";
 
+	/** Right-click menu reordering: the Cancel, Walk here, and Clear swaps. */
+	@ConfigSection(
+		name = "Context Menu",
+		description = "Right-click menu reordering to guard against stray left-clicks.",
+		position = 3
+	)
+	String contextMenuSection = "contextMenu";
+
 	/** Everything else. */
 	@ConfigSection(
 		name = "Misc",
 		description = "Everything else.",
-		position = 3
+		position = 4
 	)
 	String miscSection = "misc";
 
@@ -324,8 +332,8 @@ public interface GoatIndicatorsConfig extends Config
 		description = "When you click a goat to cast a luring spell but the pit is effectively full (goats in "
 			+ "it plus goats in transit have reached its capacity), move \"Cancel\" to the top of the menu so "
 			+ "a stray click does not waste a cast.",
-		section = miscSection,
-		position = 3
+		section = contextMenuSection,
+		position = 0
 	)
 	default boolean swapCancelWhenFull()
 	{
@@ -338,10 +346,23 @@ public interface GoatIndicatorsConfig extends Config
 		description = "While a Cattleprod is equipped and the pit is effectively full (goats in it plus goats "
 			+ "in transit have reached its capacity), move \"Walk here\" to the top of the menu so movement "
 			+ "takes priority as you prod goats along.",
-		section = miscSection,
-		position = 4
+		section = contextMenuSection,
+		position = 1
 	)
 	default boolean swapWalkWhenProd()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "swapClearWhenNotFull",
+		name = "\"Clear\" Last Until Full",
+		description = "While the pit is not full, demote its \"Clear Goat Pit\" option off the top of the menu "
+			+ "so a stray left-click does not empty a pit that still has room, throwing away catching progress.",
+		section = contextMenuSection,
+		position = 2
+	)
+	default boolean swapClearWhenNotFull()
 	{
 		return true;
 	}

@@ -108,6 +108,51 @@ public class GoatMenuSwapperTest
 		assertSame(walk, promotedTopOf(menu));
 	}
 
+	@Test
+	public void clearIsDemotedOffTheTopWhileThePitIsNotFull()
+	{
+		when(config.swapClearWhenNotFull()).thenReturn(true);
+		onlyPitHasRoom();
+
+		MenuEntry examine = entryOfType(MenuAction.EXAMINE_OBJECT);
+		MenuEntry clear = clearOnPitEntry();
+		Menu menu = menuOf(examine, clear);
+
+		swapper.onPostMenuSort();
+
+		ArgumentCaptor<MenuEntry[]> captor = ArgumentCaptor.forClass(MenuEntry[].class);
+		verify(menu).setMenuEntries(captor.capture());
+		MenuEntry[] reordered = captor.getValue();
+		assertSame(clear, reordered[0]);
+		assertSame(examine, reordered[reordered.length - 1]);
+	}
+
+	@Test
+	public void clearIsLeftOnTopWhenThePitIsFull()
+	{
+		when(config.swapClearWhenNotFull()).thenReturn(true);
+		onlyPitIsFull();
+
+		Menu menu = menuOf(entryOfType(MenuAction.EXAMINE_OBJECT), clearOnPitEntry());
+
+		swapper.onPostMenuSort();
+
+		verify(menu, never()).setMenuEntries(any());
+	}
+
+	@Test
+	public void clearIsLeftAloneWhenTheToggleIsOff()
+	{
+		when(config.swapClearWhenNotFull()).thenReturn(false);
+		onlyPitHasRoom();
+
+		Menu menu = menuOf(entryOfType(MenuAction.EXAMINE_OBJECT), clearOnPitEntry());
+
+		swapper.onPostMenuSort();
+
+		verify(menu, never()).setMenuEntries(any());
+	}
+
 	private void enableBothSwaps()
 	{
 		when(config.swapCancelWhenFull()).thenReturn(true);
@@ -171,6 +216,15 @@ public class GoatMenuSwapperTest
 		MenuEntry entry = mock(MenuEntry.class);
 		when(entry.getType()).thenReturn(MenuAction.WIDGET_TARGET_ON_NPC);
 		when(entry.getTarget()).thenReturn("Goat");
+		return entry;
+	}
+
+	/** A "Clear Goat Pit" option standing on the pit object. */
+	private static MenuEntry clearOnPitEntry()
+	{
+		MenuEntry entry = mock(MenuEntry.class);
+		when(entry.getOption()).thenReturn("Clear");
+		when(entry.getTarget()).thenReturn("Goat pit");
 		return entry;
 	}
 
