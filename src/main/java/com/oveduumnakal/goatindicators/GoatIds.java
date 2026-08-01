@@ -113,6 +113,13 @@ final class GoatIds
 	static final String ADD_SPIKES_ACTION = "add spikes";
 
 	/**
+	 * Lower-cased menu action that empties a pit (the "Clear Goat Pit" / "Clear" option on the pit
+	 * object). Matched on a pit entry so the swap can demote it off the left-click default while the pit
+	 * is not yet full.
+	 */
+	static final String CLEAR_PIT_ACTION = "clear";
+
+	/**
 	 * Varbit holding the goat count. Object {@code 19750} carries no composition varbit, so the count
 	 * lives in this player varbit (part of VarPlayer 5706) instead. Confirmed in a developer-mode
 	 * session stepping 0 → 1 as a goat was caught; see {@code docs/discovery.md}. Set to {@code -1} to

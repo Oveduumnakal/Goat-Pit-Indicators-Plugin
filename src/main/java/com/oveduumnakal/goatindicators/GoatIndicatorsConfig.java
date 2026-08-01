@@ -345,4 +345,17 @@ public interface GoatIndicatorsConfig extends Config
 	{
 		return true;
 	}
+
+	@ConfigItem(
+		keyName = "swapClearWhenNotFull",
+		name = "\"Clear\" Last Until Full",
+		description = "While the pit is not full, demote its \"Clear Goat Pit\" option off the top of the menu "
+			+ "so a stray left-click does not empty a pit that still has room, throwing away catching progress.",
+		section = miscSection,
+		position = 5
+	)
+	default boolean swapClearWhenNotFull()
+	{
+		return true;
+	}
 }

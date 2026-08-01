@@ -24,6 +24,7 @@
  */
 package com.oveduumnakal.goatindicators;
 
+import java.util.Locale;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -71,8 +72,10 @@ class GoatMenuSwapper
 	}
 
 	/**
-	 * Applies the configured swap to the current menu, if one applies. The Cancel-when-full swap wins over
-	 * the Walk-here-with-prod swap when both would fire, since guarding against a wasted cast matters more.
+	 * Applies the configured swaps to the current menu, if any apply. Two independent edits can run in one
+	 * pass: a promote-to-top (the Cancel-when-full swap wins over the Walk-here-with-prod swap when both
+	 * fire, since guarding against a wasted cast matters more) and a demote-to-bottom of the pit's "Clear"
+	 * option while the pit is not full. The menu is rewritten once, only if an edit changed it.
 	 */
 	void onPostMenuSort()
 	{
@@ -80,6 +83,8 @@ class GoatMenuSwapper
 		MenuEntry[] entries = menu.getMenuEntries();
 		if (entries.length < 2)
 			return;
+
+		MenuEntry[] result = entries;
 
 		MenuEntry promote = null;
 		if (config.swapWalkWhenProd() && cattleprodEquipped() && goatEntryPresent(entries) && noCatchingPitHasRoom())
@@ -93,7 +98,17 @@ class GoatMenuSwapper
 		}
 
 		if (promote != null)
-			menu.setMenuEntries(promoteToTop(entries, promote));
+			result = promoteToTop(result, promote);
+
+		if (config.swapClearWhenNotFull() && !anyPitFull())
+		{
+			MenuEntry clear = topClearOnPit(result);
+			if (clear != null)
+				result = demoteToBottom(result, clear);
+		}
+
+		if (result != entries)
+			menu.setMenuEntries(result);
 	}
 
 	/** The first entry of the given action in menu order, or {@code null} if the menu has none. */
@@ -168,6 +183,41 @@ class GoatMenuSwapper
 		return sawCatchingPit;
 	}
 
+	/** Whether any loaded pit is at capacity, so its "Clear" option is a sensible left-click default. */
+	private boolean anyPitFull()
+	{
+		for (GameObject pit : tracker.getPits())
+		{
+			if (tracker.stateOf(pit).isFull())
+				return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * The menu's top (left-click) entry when it is a pit's "Clear" option, or {@code null} otherwise. Only
+	 * the top slot is considered, so the demotion fires exactly when clearing would be the accidental
+	 * left-click action and leaves the menu alone when it would not.
+	 */
+	private static MenuEntry topClearOnPit(MenuEntry[] entries)
+	{
+		MenuEntry top = entries[entries.length - 1];
+		if (isClearOnPit(top))
+			return top;
+
+		return null;
+	}
+
+	/** Whether an entry is the "Clear" option on a goat pit, matched on its action text and pit target. */
+	private static boolean isClearOnPit(MenuEntry entry)
+	{
+		String option = entry.getOption();
+		return option != null
+				&& option.toLowerCase(Locale.ROOT).contains(GoatIds.CLEAR_PIT_ACTION)
+				&& GoatPitTracker.matchesPitName(entry.getTarget());
+	}
+
 	/** Whether a Cattleprod is in the worn-equipment container, so movement should take menu priority. */
 	private boolean cattleprodEquipped()
 	{
@@ -199,6 +249,24 @@ class GoatMenuSwapper
 		}
 
 		reordered[index] = promote;
+		return reordered;
+	}
+
+	/**
+	 * Returns a copy of the menu with {@code demote} moved to the first slot — the bottom of the visible
+	 * menu, so it is no longer the left-click default — leaving every other entry in its existing order.
+	 */
+	static MenuEntry[] demoteToBottom(MenuEntry[] entries, MenuEntry demote)
+	{
+		MenuEntry[] reordered = new MenuEntry[entries.length];
+		int index = 1;
+		for (MenuEntry entry : entries)
+		{
+			if (entry != demote)
+				reordered[index++] = entry;
+		}
+
+		reordered[0] = demote;
 		return reordered;
 	}
 }
