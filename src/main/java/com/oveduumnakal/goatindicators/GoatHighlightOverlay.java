@@ -106,14 +106,21 @@ class GoatHighlightOverlay extends Overlay
 		return null;
 	}
 
-	/** The pits that can still take a goat: spiked and not yet full. */
+	/**
+	 * The pits that can still take a goat: spiked and not yet effectively full. Effectively full — the
+	 * count plus the goats already lured or prodded toward the pit — is the same test the menu swapper
+	 * uses, so the highlight stops glowing fresh targets exactly when a further cast would overfill,
+	 * rather than only once the pit's raw count reaches capacity.
+	 */
 	private List<GameObject> catchingPits()
 	{
+		int inTransit = transitTracker.inTransitCount();
 		List<GameObject> catching = new ArrayList<>();
 		for (GameObject pit : tracker.getPits())
 		{
 			GoatPitState state = tracker.stateOf(pit);
-			if (!state.isFull() && !state.needsSpikes())
+			if (!state.needsSpikes()
+					&& !TelegrabTargeting.effectivelyFull(state.getCount(), inTransit, state.getCapacity()))
 				catching.add(pit);
 		}
 
