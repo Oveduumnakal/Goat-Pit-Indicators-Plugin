@@ -4,8 +4,9 @@
  */
 package com.oveduumnakal.goatindicators;
 
-import static org.junit.Assert.assertEquals;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /** Covers the Stockpile-style compact number formatting used for the total-caught label. */
 public class ShortFormatTest

@@ -94,21 +94,17 @@ final class TelegrabTargeting
 	static boolean oppositeSideOfPit(int minX, int minY, int maxX, int maxY, int px, int py, int gx, int gy)
 	{
 		if (py < minY)
-		{
 			return gy >= minY;
-		}
+
 		if (py > maxY)
-		{
 			return gy <= maxY;
-		}
+
 		if (px < minX)
-		{
 			return gx >= minX;
-		}
+
 		if (px > maxX)
-		{
 			return gx <= maxX;
-		}
+
 		return false;
 	}
 }

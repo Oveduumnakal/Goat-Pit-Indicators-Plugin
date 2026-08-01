@@ -31,6 +31,7 @@ import java.util.Locale;
 import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
 import net.runelite.api.NPC;
@@ -65,9 +66,7 @@ class GoatPitTracker
 	void onSpawn(GameObject object)
 	{
 		if (isPit(object))
-		{
 			pits.put(object.getHash(), object);
-		}
 	}
 
 	/** Drops an object that has left the scene. */
@@ -122,18 +121,15 @@ class GoatPitTracker
 	private boolean isPit(GameObject object)
 	{
 		if (object == null)
-		{
 			return false;
-		}
+
 		if (!GoatIds.PIT_OBJECT_IDS.isEmpty())
-		{
 			return GoatIds.PIT_OBJECT_IDS.contains(object.getId());
-		}
+
 		ObjectComposition base = client.getObjectDefinition(object.getId());
 		if (base == null)
-		{
 			return false;
-		}
+
 		return matchesPitName(base.getName());
 	}
 
@@ -157,16 +153,14 @@ class GoatPitTracker
 	static boolean spikedFromActions(String[] actions)
 	{
 		if (actions == null)
-		{
 			return true;
-		}
+
 		for (String action : actions)
 		{
 			if (action != null && action.toLowerCase(Locale.ROOT).contains(GoatIds.ADD_SPIKES_ACTION))
-			{
 				return false;
-			}
 		}
+
 		return true;
 	}
 
@@ -178,19 +172,18 @@ class GoatPitTracker
 			ObjectComposition base = client.getObjectDefinition(pit.getId());
 			varbit = base == null ? -1 : base.getVarbitId();
 		}
+
 		if (varbit >= 0)
-		{
 			return client.getVarbitValue(varbit);
-		}
+
 		return countGoatsInside(pit);
 	}
 
 	private boolean readSpiked(GameObject pit)
 	{
 		if (GoatIds.SPIKES_VARBIT_OVERRIDE >= 0)
-		{
 			return client.getVarbitValue(GoatIds.SPIKES_VARBIT_OVERRIDE) != 0;
-		}
+
 		ObjectComposition active = activeComposition(pit.getId());
 		return active == null || spikedFromActions(active.getActions());
 	}
@@ -203,9 +196,8 @@ class GoatPitTracker
 	{
 		ObjectComposition base = client.getObjectDefinition(id);
 		if (base == null || base.getImpostorIds() == null)
-		{
 			return base;
-		}
+
 		ObjectComposition impostor = base.getImpostor();
 		return impostor == null ? base : impostor;
 	}
@@ -219,33 +211,28 @@ class GoatPitTracker
 		Point min = pit.getSceneMinLocation();
 		Point max = pit.getSceneMaxLocation();
 		if (min == null || max == null)
-		{
 			return 0;
-		}
+
 		int count = 0;
 		for (NPC npc : client.getTopLevelWorldView().npcs())
 		{
 			if (!isGoat(npc))
-			{
 				continue;
-			}
+
 			WorldPoint world = npc.getWorldLocation();
 			if (world == null || world.getPlane() != pit.getPlane())
-			{
 				continue;
-			}
+
 			LocalPoint location = npc.getLocalLocation();
 			if (location == null)
-			{
 				continue;
-			}
+
 			int x = location.getSceneX();
 			int y = location.getSceneY();
 			if (x >= min.getX() && x <= max.getX() && y >= min.getY() && y <= max.getY())
-			{
 				count++;
-			}
 		}
+
 		return count;
 	}
 

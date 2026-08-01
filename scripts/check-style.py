@@ -25,6 +25,21 @@ every Java source file:
      generics (`java.lang.reflect.Type`/`ParameterizedType`) and the schema
      snapshot test's structural `getDeclaredFields()` inspection are deliberately
      exempt — they read type/field shape, they don't defeat access modifiers.
+ 14. No braces on a single-statement control body: an `if`/`for`/`while`/`else`
+     governing one simple statement omits its braces. Braces are kept (and not
+     flagged) for a multi-statement body, a variable declaration, a body that is
+     itself a control statement, and any if/else chain with a braced branch (rule
+     5 keeps the whole chain uniform).
+ 15. A blank line follows every control construct, unless the next line is a
+     closing brace, a chain continuation (`else`/`catch`/`finally`), or blank.
+ 16. Imports are grouped java/javax, then other third-party, then net.runelite,
+     then static; groups are separated by a single blank line, no blank line
+     falls inside a group, and each group is alphabetized.
+
+Not mechanized (judgement calls, enforced by review): the Stream-API preference,
+the two-tab continuation indent and ternary-break shape (both already bounded by
+the 120-column limit), Javadoc wording quality, and the Stockpile-only shared-
+colour-constant rule, which does not apply to this plugin.
 
 Exits non-zero listing every violation, or prints a summary and exits zero.
 """
@@ -185,6 +200,92 @@ def javadoc_precedes(lines, i):
     return False
 
 
+def match_brace(lines, k, comment):
+    """Given k is the line bearing the opening '{', return the index of its matching '}' line."""
+    depth = 0
+    j = k
+    while j < len(lines):
+        if not comment[j]:
+            s = strip_strings(lines[j]).split('//')[0]
+            depth += s.count('{') - s.count('}')
+            if depth <= 0:
+                return j
+
+        j += 1
+    return j
+
+
+def is_simple_statement(s):
+    """Whether s is a single simple statement (ends in ';', not a control statement, not a block)."""
+    if not s.endswith(';') or '{' in s:
+        return False
+
+    return not re.match(r'^(if|for|while|do|switch|try|synchronized|else)\b', s)
+
+
+def is_declaration(s):
+    """Whether s is a local variable declaration, which keeps its braces as a control body."""
+    if re.match(r'^(return|throw|assert|break|continue|yield|super|this|new)\b', s):
+        return False
+
+    return bool(re.match(r'^(final\s+)?[A-Za-z_$][\w.$]*(\s*<[^;=]*>)?(\s*\[\s*\])?\s+[A-Za-z_$]\w*\s*[=;]', s))
+
+
+def control_branches(lines, comment):
+    """Every control header, grouped into if/else-if/else chains (for/while/if each start a chain).
+
+    Each branch is (start_index, braced, single_simple, end_index): whether it is braced, whether its
+    body is a single simple statement (so braces are optional), and the last line of its body/block.
+    """
+    branches = []
+    for idx in range(len(lines)):
+        if comment[idx]:
+            continue
+
+        s = lines[idx].strip()
+        if re.match(r'^if\s*\(', s):
+            kind = 'if'
+        elif re.match(r'^else if\s*\(', s):
+            kind = 'elseif'
+        elif s == 'else':
+            kind = 'else'
+        elif re.match(r'^for\s*\(', s):
+            kind = 'for'
+        elif re.match(r'^while\s*\(', s):
+            kind = 'while'
+        else:
+            continue
+
+        ind = indent_of(lines[idx])
+        j = header_end(lines, idx) if '(' in s else idx
+        k = next_code_line(lines, j)
+        if k >= len(lines):
+            continue
+
+        braced = lines[k].strip().startswith('{')
+        single = False
+        if braced:
+            end = match_brace(lines, k, comment)
+            body = lines[k + 1].strip() if k + 1 < len(lines) else ''
+            single = end == k + 2 and is_simple_statement(body) and not is_declaration(body)
+        else:
+            end = k
+
+        branches.append((idx, ind, kind, braced, single, end))
+
+    chains = []
+    for branch in branches:
+        idx, ind, kind, braced, single, end = branch
+        if kind in ('if', 'for', 'while'):
+            chains.append([branch])
+        elif chains and indent_of(lines[chains[-1][0][0]]) == ind:
+            chains[-1].append(branch)
+        else:
+            chains.append([branch])
+
+    return chains
+
+
 def check_file(path):
     lines = open(path).read().split('\n')
     comment = in_block_comment_mask(lines)
@@ -299,6 +400,79 @@ def check_file(path):
     for start, _, flags in chains:
         if len(flags) > 1 and len(set(flags)) > 1:
             report(path, start, 'mixed-chain-braces', lines[start - 1])
+
+    # Rules 1 and 3, over grouped control chains.
+    for chain in control_branches(lines, comment):
+        # Rule 1: a chain that needs braces nowhere (no braced multi-statement branch) must be
+        # braceless in every branch; a braced single-statement branch is a violation.
+        required = any(braced and not single for (_, _, _, braced, single, _) in chain)
+        if not required:
+            for (idx, _, _, braced, single, _) in chain:
+                if braced and single:
+                    report(path, idx + 1, 'braces-on-single-statement', lines[idx])
+
+        # Rule 3: a blank line must follow the whole construct, unless the next line is a closing
+        # brace, a chain continuation (else/catch/finally), or already blank.
+        end = chain[-1][5]
+        m = end + 1
+        if m < len(lines) and not comment[end]:
+            nxt = lines[m].strip()
+            if nxt != '' and not nxt.startswith('}') and not re.match(r'^(else|catch|finally)\b', nxt):
+                report(path, end + 1, 'missing-blank-after-control', lines[end])
+
+    # Rule 10: imports are grouped (java/javax, third-party, net.runelite, static) and each group is
+    # alphabetized by path, groups separated by a single blank line.
+    check_import_order(path, lines)
+
+
+def import_group(imp):
+    """Sort bucket for an import line: 0 java/javax, 2 net.runelite, 3 static, 1 everything else."""
+    body = imp[len('import '):].strip()
+    if body.startswith('static '):
+        return 3
+
+    if re.match(r'^(java|javax)\.', body):
+        return 0
+
+    if body.startswith('net.runelite.'):
+        return 2
+
+    return 1
+
+
+def check_import_order(path, lines):
+    idxs = [i for i, l in enumerate(lines) if l.startswith('import ')]
+    if not idxs:
+        return
+
+    prev_group = None
+    prev_import = None
+    prev_i = None
+    for i in range(idxs[0], idxs[-1] + 1):
+        line = lines[i]
+        if line.strip() == '':
+            continue
+
+        if not line.startswith('import '):
+            report(path, i + 1, 'import-block-interrupted', line)
+            continue
+
+        g = import_group(line)
+        body = line.strip()
+        if prev_group is not None:
+            gap = i - prev_i - 1
+            if g < prev_group:
+                report(path, i + 1, 'import-grouping', body)
+            elif g == prev_group:
+                if body < prev_import:
+                    report(path, i + 1, 'import-order', body)
+
+                if gap != 0:
+                    report(path, i + 1, 'import-blank-within-group', body)
+            elif gap != 1:
+                report(path, i + 1, 'import-group-separator', body)
+
+        prev_group, prev_import, prev_i = g, body, i
 
 
 def main():

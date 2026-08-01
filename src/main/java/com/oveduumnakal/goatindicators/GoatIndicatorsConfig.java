@@ -25,6 +25,7 @@
 package com.oveduumnakal.goatindicators;
 
 import java.awt.Color;
+
 import net.runelite.client.config.Alpha;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;

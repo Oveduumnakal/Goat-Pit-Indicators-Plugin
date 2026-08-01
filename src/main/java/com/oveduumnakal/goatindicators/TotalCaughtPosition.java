@@ -68,13 +68,11 @@ public enum TotalCaughtPosition
 		private int resolve(int min, int max)
 		{
 			if (this == MIN)
-			{
 				return min;
-			}
+
 			if (this == MAX)
-			{
 				return max;
-			}
+
 			return (min + max) / 2;
 		}
 	}

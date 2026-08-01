@@ -4,8 +4,9 @@
  */
 package com.oveduumnakal.goatindicators;
 
-import static org.junit.Assert.assertEquals;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /** Covers the Hunter-level -> pit capacity mapping against the OSRS Wiki's stepped table. */
 public class GoatIdsTest

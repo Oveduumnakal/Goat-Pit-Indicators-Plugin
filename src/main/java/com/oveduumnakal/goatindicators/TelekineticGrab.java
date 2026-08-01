@@ -27,6 +27,7 @@ package com.oveduumnakal.goatindicators;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import net.runelite.api.Client;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
@@ -104,9 +105,8 @@ class TelekineticGrab
 		boolean airStaff)
 	{
 		if (magicLevel < MAGIC_LEVEL || spellbook != STANDARD_SPELLBOOK)
-		{
 			return false;
-		}
+
 		return hasLawRune && (hasAirRune || airStaff);
 	}
 
@@ -115,16 +115,14 @@ class TelekineticGrab
 	{
 		ItemContainer worn = client.getItemContainer(InventoryID.WORN);
 		if (worn == null)
-		{
 			return false;
-		}
+
 		for (Item item : worn.getItems())
 		{
 			if (item != null && AIR_STAVES.contains(item.getId()))
-			{
 				return true;
-			}
 		}
+
 		return false;
 	}
 }

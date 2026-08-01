@@ -4,8 +4,9 @@
  */
 package com.oveduumnakal.goatindicators;
 
-import static org.junit.Assert.assertEquals;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /** Covers the session catch-counting logic: upward steps count, emptying does not, seeding gates. */
 public class GoatCatchCounterTest

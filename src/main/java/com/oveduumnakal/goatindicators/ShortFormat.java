@@ -53,17 +53,14 @@ final class ShortFormat
 		long abs = Math.abs(value);
 		String sign = value < 0 ? "-" : "";
 		if (abs >= 1_000_000_000L)
-		{
 			return sign + mantissa(abs / 1_000_000_000.0) + "B";
-		}
+
 		if (abs >= 1_000_000L)
-		{
 			return sign + mantissa(abs / 1_000_000.0) + "M";
-		}
+
 		if (abs >= 1_000L)
-		{
 			return sign + mantissa(abs / 1_000.0) + "K";
-		}
+
 		return sign + GROUPED.format(abs);
 	}
 
@@ -90,25 +87,19 @@ final class ShortFormat
 	{
 		String s;
 		if (d >= 100)
-		{
 			s = String.format(Locale.US, "%.0f", d);
-		}
 		else if (d >= 10)
-		{
 			s = String.format(Locale.US, "%.1f", d);
-		}
 		else
-		{
 			s = String.format(Locale.US, "%.2f", d);
-		}
+
 		if (s.contains("."))
 		{
 			s = s.replaceAll("0+$", "");
 			if (s.endsWith("."))
-			{
 				s = s.substring(0, s.length() - 1);
-			}
 		}
+
 		return s;
 	}
 }

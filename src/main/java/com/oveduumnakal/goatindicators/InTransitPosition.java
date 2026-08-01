@@ -72,13 +72,11 @@ public enum InTransitPosition
 		private int resolve(int min, int max)
 		{
 			if (this == MIN)
-			{
 				return min;
-			}
+
 			if (this == MAX)
-			{
 				return max;
-			}
+
 			return (min + max) / 2;
 		}
 	}
@@ -117,9 +115,8 @@ public enum InTransitPosition
 	boolean sharesTileWith(TotalCaughtPosition total)
 	{
 		if (this == OFF || this == CENTER || total == TotalCaughtPosition.OFF)
-		{
 			return false;
-		}
+
 		return name().equals(total.name());
 	}
 

@@ -101,13 +101,11 @@ class GoatCatchCounter
 	void onCountChanged(int newCount)
 	{
 		if (lastCount < 0)
-		{
 			return;
-		}
+
 		if (newCount > lastCount)
-		{
 			total += newCount - lastCount;
-		}
+
 		lastCount = Math.max(0, newCount);
 	}
 }

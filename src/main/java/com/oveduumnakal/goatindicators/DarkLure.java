@@ -26,6 +26,7 @@ package com.oveduumnakal.goatindicators;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import net.runelite.api.Client;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
@@ -84,9 +85,8 @@ class DarkLure
 		boolean questComplete)
 	{
 		if (magicLevel < MAGIC_LEVEL || spellbook != ARCEUUS_SPELLBOOK || !questComplete)
-		{
 			return false;
-		}
+
 		return hasDeathRune && hasNatureRune;
 	}
 

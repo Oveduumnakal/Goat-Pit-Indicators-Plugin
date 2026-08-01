@@ -4,9 +4,10 @@
  */
 package com.oveduumnakal.goatindicators;
 
+import org.junit.Test;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import org.junit.Test;
 
 /** Covers which in-transit placements draw, and when one stacks under the total-caught label. */
 public class InTransitPositionTest
