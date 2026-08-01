@@ -545,8 +545,7 @@ class GoatPitOverlay extends Overlay
 		int centerX = at.getX() + metrics.stringWidth(state.label()) / 2;
 		int left = centerX - BAR_WIDTH / 2;
 		int top = at.getY() - metrics.getAscent() / 2 - BAR_HEIGHT / 2;
-		float fraction = state.getCapacity() == 0 ? 0.0f
-			: Math.max(0.0f, Math.min(1.0f, (float) state.getCount() / state.getCapacity()));
+		float fraction = Math.max(0.0f, Math.min(1.0f, (float) state.getCount() / state.getCapacity()));
 		Color progress = progressColor(state);
 		graphics.setColor(BAR_BACKGROUND);
 		graphics.fillRect(left, top, BAR_WIDTH, BAR_HEIGHT);
