@@ -42,6 +42,15 @@ public class GoatPitTrackerTest
 	}
 
 	@Test
+	public void supplyNameMatchIsCaseInsensitive()
+	{
+		assertTrue(GoatPitTracker.matchesSupplyName("Spikes"));
+		assertTrue(GoatPitTracker.matchesSupplyName("Goat spike supply"));
+		assertFalse(GoatPitTracker.matchesSupplyName("Goat pit"));
+		assertFalse(GoatPitTracker.matchesSupplyName(null));
+	}
+
+	@Test
 	public void anAddSpikesActionMeansThePitIsUnspiked()
 	{
 		assertFalse(GoatPitTracker.spikedFromActions(new String[]{"Add spikes", null, "Examine"}));

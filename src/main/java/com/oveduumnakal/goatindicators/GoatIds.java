@@ -107,6 +107,28 @@ final class GoatIds
 	static final String GOAT_NAME_FRAGMENT = "goat";
 
 	/**
+	 * Exact game-object ids of the spike supply — the object the player restocks spikes from, outlined
+	 * when a pit needs lining and the player carries none. The Wyrmscraig goat-hunting plugin uses object
+	 * id {@code 62349}; confirm in a developer-mode session (see {@code docs/discovery.md}). Name matching
+	 * via {@link #SPIKE_SUPPLY_NAME_FRAGMENT} still runs as a fallback if this set is emptied.
+	 */
+	static final Set<Integer> SPIKE_SUPPLY_OBJECT_IDS =
+		Collections.unmodifiableSet(new HashSet<>(Arrays.asList(62349)));
+
+	/**
+	 * Lower-cased fragment matched against {@link net.runelite.api.ObjectComposition#getName()} to
+	 * identify the spike supply object when {@link #SPIKE_SUPPLY_OBJECT_IDS} is empty.
+	 */
+	static final String SPIKE_SUPPLY_NAME_FRAGMENT = "spike";
+
+	/**
+	 * Item id of the spikes the pit is lined with. Its presence in the inventory means the player can
+	 * re-line a pit without a trip to the supply, so the supply highlight stays quiet. Observed as
+	 * {@code 34016}; confirm in a developer-mode session (see {@code docs/discovery.md}).
+	 */
+	static final int SPIKES_ITEM_ID = 34016;
+
+	/**
 	 * Lower-cased menu action offered by an unspiked pit. Its presence on the pit's current
 	 * composition is what marks the pit as needing spikes; a spiked pit does not offer it.
 	 */
