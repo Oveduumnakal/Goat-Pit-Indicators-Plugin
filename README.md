@@ -18,15 +18,27 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 
 - **Grab the ones you can reach**
 
-  Goats you can telekinetic-grab into a spiked, non-full pit from where you stand glow with an outline, so you can top a pit up without walking over. Only shows when you can actually cast Telekinetic Grab and the pit has room.
+  Goats you can lure into a spiked, non-full pit from where you stand glow with an outline, so you can top a pit up without walking over. Only shows when you can actually cast the spell (Telekinetic Grab or Dark Lure) and the pit has room. When several are in range, the outline fades from a near color on the closest goat to a far color on the furthest, so you know which to grab first.
+
+- **Find the spike supply when a pit runs dry**
+
+  When a pit needs re-spiking and you are carrying none, the spike supply object is outlined in the same warning colors, with a "Take Spike" prompt — so you can restock without hunting for it.
 
 - **Track your lifetime total**
 
-  A running count of every goat you have caught, drawn on the pit and kept across logins and client restarts. The game keeps no total of its own, so the plugin tallies each catch itself. Place it on any compass point, or turn it off.
+  A running count of every goat you have caught, drawn on the pit and kept across logins and client restarts. The game keeps no total of its own, so the plugin tallies each catch itself. The total's icon is an animated leaping goat by default. Place it on any compass point, or turn it off.
+
+- **Watch the ones on their way in**
+
+  A live count of your goats currently in transit to the pit — lured or prodded — so a busy pit's true fill is clear before the goats land.
+
+- **Guard against misclicks**
+
+  Optional right-click reordering keeps stray left-clicks from wasting a cast or clearing a pit early: "Cancel" jumps up when the pit is effectively full, "Walk here" leads while a Cattleprod is equipped, and "Clear Goat Pit" drops off the top until the pit is actually full.
 
 - **Make it yours**
 
-  The outline gradient, the reminder fills, the telegrab highlight, the label colors, and the draw distance are all configurable, grouped into sections. Turn the whole overlay off from the config panel when you don't need it.
+  The outline gradient, the reminder fills, the telegrab colors, the label colors and formats, the menu reordering, and the draw distance are all configurable, grouped into sections. Turn the whole overlay off from the config panel when you don't need it.
 
 ## Screenshots
 
@@ -36,7 +48,7 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 | **Empty, still spiked** | **Needs spikes** |
 | <img src="docs/images/GoatIndicators-EmptyWithSpikes.png" alt="An empty but spiked pit showing a red outline and 0 / 20 count" width="250"> | <img src="docs/images/GoatIndicators-AddSpikes.png" alt="An empty unspiked pit with a red fill and an Add Spikes prompt" width="250"> |
 
-Goats you can telekinetic-grab into the pit glow pink:
+Goats you can lure into the pit glow pink:
 
 <img src="docs/images/GoatIndicators-Telegrabbable.png" alt="Goats within telegrab range of a spiked pit glowing with a pink outline" width="600">
 
@@ -48,7 +60,9 @@ Goats you can telekinetic-grab into the pit glow pink:
 |---|---|---|
 | Show Color Indicators | Master toggle for the on-pit outline and fills | On |
 | Show "Add Spikes" | Show the spikes reminder on an empty, unspiked pit | On |
-| Highlight Telegrabbable | Glow goats you can telegrab into a spiked, non-full pit | On |
+| Highlight Telegrabbable | Outline goats you can lure into a spiked, non-full pit | On |
+| Near/Far Gradient | Fade the outline from the near color (closest goat) to the far color (furthest) | On |
+| Highlight Spike Supply | Outline the spike supply when a pit needs lining and you carry no spikes | On |
 
 **Indicator Colors**
 
@@ -59,22 +73,35 @@ Goats you can telekinetic-grab into the pit glow pink:
 | Full Outline | Outline for a full pit; high end of the gradient (RGB) | Green |
 | Spike Reminder Fill | Fill for a pit that needs spikes (alpha 0 = outline only) | Faint red |
 | Full Reminder Fill | Fill for a full pit ready to empty (alpha 0 = outline only) | Faint green |
-| Telegrab Color | Outline for telegrabbable goats | Pink |
+| Telegrab Closest | Outline for the closest (highest-priority) lure target | Pink |
+| Telegrab Furthest | Outline for the furthest (lowest-priority) lure target | Faint pink |
 
 **Labels**
 
 | Setting | What it does | Default |
 |---|---|---|
 | Show Goats in Pit | Show the `X / N` count label (capacity scales with Hunter level) | On |
+| Pit Indicator Style | Draw the count as text, a progress bar, or both | Text |
+| Show Goats in Transit | Where to draw a running count of goats on their way in: Off, Center, or a compass point | Center |
+| In Transit Prefix | What precedes the in-transit number: nothing, a label, or the icon | Icon |
 | Show Total Caught | Where to draw the lifetime catch total: Off or a compass point | South-East |
-| Total Prefix | What precedes the total: nothing, a "Total: " label, or the goat icon | Icon |
+| Total Prefix | What precedes the total: nothing, a "Total: " label, or the animated goat | Animated |
 | Count Label Color | Color of the count and "Add Spikes" text | White |
 | Total Label Color | Color of the total-caught text | White |
+
+**Context Menu**
+
+| Setting | What it does | Default |
+|---|---|---|
+| "Cancel" First When Full | Raise "Cancel" when you cast a lure on a goat but the pit is effectively full | On |
+| "Walk here" First With Prod | Raise "Walk here" while a Cattleprod is equipped and the pit is effectively full | On |
+| "Clear" Last Until Full | Drop "Clear Goat Pit" off the top of the menu until the pit is full | On |
 
 **Misc**
 
 | Setting | What it does | Default |
 |---|---|---|
+| Goat Total Format | Lifetime total written short (1K) or full (1,024) | Short |
 | Draw Distance | How far away pits still draw (tiles) | 32 |
 
 ## Links
