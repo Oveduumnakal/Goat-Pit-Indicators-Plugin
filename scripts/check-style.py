@@ -231,6 +231,39 @@ def is_declaration(s):
     return bool(re.match(r'^(final\s+)?[A-Za-z_$][\w.$]*(\s*<[^;=]*>)?(\s*\[\s*\])?\s+[A-Za-z_$]\w*\s*[=;]', s))
 
 
+def braceless_end(lines, k, comment):
+    """Last physical line of a braceless control body beginning at line k.
+
+    A braceless body is a single governed statement that may still span several physical lines — a
+    wrapped method chain, a broken argument list, or a nested control statement. Its end is where that
+    statement completes, not merely its first line, so the rule-3 blank-line check looks past the whole
+    construct rather than mistaking a mid-statement continuation for a missing blank.
+    """
+    s = strip_strings(lines[k]).split('//')[0].strip()
+    if re.match(r'^(if|for|while|switch|synchronized)\b', s) and '(' in s:
+        inner = next_code_line(lines, header_end(lines, k))
+        if inner >= len(lines):
+            return k
+
+        if lines[inner].strip().startswith('{'):
+            return match_brace(lines, inner, comment)
+
+        return braceless_end(lines, inner, comment)
+
+    j = k
+    while j < len(lines):
+        code = strip_strings(lines[j]).split('//')[0].rstrip()
+        if code.endswith('{'):
+            return match_brace(lines, j, comment)
+
+        if code.endswith(';'):
+            return j
+
+        j += 1
+
+    return k
+
+
 def control_branches(lines, comment):
     """Every control header, grouped into if/else-if/else chains (for/while/if each start a chain).
 
@@ -269,7 +302,7 @@ def control_branches(lines, comment):
             body = lines[k + 1].strip() if k + 1 < len(lines) else ''
             single = end == k + 2 and is_simple_statement(body) and not is_declaration(body)
         else:
-            end = k
+            end = braceless_end(lines, k, comment)
 
         branches.append((idx, ind, kind, braced, single, end))
 
@@ -278,8 +311,13 @@ def control_branches(lines, comment):
         idx, ind, kind, braced, single, end = branch
         if kind in ('if', 'for', 'while'):
             chains.append([branch])
-        elif chains and indent_of(lines[chains[-1][0][0]]) == ind:
-            chains[-1].append(branch)
+            continue
+
+        # An else/else-if joins the most recent chain opened at its own indent — not simply the last
+        # chain, which a nested control statement inside the preceding branch would otherwise be.
+        target = next((c for c in reversed(chains) if indent_of(lines[c[0][0]]) == ind), None)
+        if target is not None:
+            target.append(branch)
         else:
             chains.append([branch])
 
@@ -459,12 +497,15 @@ def check_import_order(path, lines):
 
         g = import_group(line)
         body = line.strip()
+        # Order by the dotted path, not the raw line: the trailing ';' (0x3B) otherwise sorts after a
+        # digit (0x32), wrongly ranking `Graphics2D;` ahead of the shorter-prefix `Graphics;`.
+        key = body[:-1] if body.endswith(';') else body
         if prev_group is not None:
             gap = i - prev_i - 1
             if g < prev_group:
                 report(path, i + 1, 'import-grouping', body)
             elif g == prev_group:
-                if body < prev_import:
+                if key < prev_import:
                     report(path, i + 1, 'import-order', body)
 
                 if gap != 0:
@@ -472,7 +513,7 @@ def check_import_order(path, lines):
             elif gap != 1:
                 report(path, i + 1, 'import-group-separator', body)
 
-        prev_group, prev_import, prev_i = g, body, i
+        prev_group, prev_import, prev_i = g, key, i
 
 
 def main():
