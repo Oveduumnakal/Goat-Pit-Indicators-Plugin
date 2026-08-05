@@ -400,9 +400,11 @@ public interface GoatIndicatorsConfig extends Config
 
 	@ConfigItem(
 		keyName = "swapClearWhenNotFull",
-		name = "\"Clear\" Last Until Full",
-		description = "While the pit is not full, demote its \"Clear Goat Pit\" option off the top of the menu "
-			+ "so a stray left-click does not empty a pit that still has room, throwing away catching progress.",
+		name = "\"Clear\" Last While Spikes Sharp",
+		description = "While a pit can still catch — spiked and not yet full — demote its \"Clear Goat Pit\" "
+			+ "option off the top of the menu so a stray left-click does not empty a pit that is still working, "
+			+ "throwing away catching progress. Once every pit is full or needs re-spiking, \"Clear\" is left at "
+			+ "the top so emptying it out takes a single click.",
 		section = contextMenuSection,
 		position = 2
 	)
