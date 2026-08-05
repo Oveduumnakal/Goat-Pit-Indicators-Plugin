@@ -109,7 +109,7 @@ public class GoatMenuSwapperTest
 	}
 
 	@Test
-	public void clearIsDemotedOffTheTopWhileThePitIsNotFull()
+	public void clearIsDemotedOffTheTopWhileAPitIsStillCatching()
 	{
 		when(config.swapClearWhenNotFull()).thenReturn(true);
 		onlyPitHasRoom();
@@ -132,6 +132,19 @@ public class GoatMenuSwapperTest
 	{
 		when(config.swapClearWhenNotFull()).thenReturn(true);
 		onlyPitIsFull();
+
+		Menu menu = menuOf(entryOfType(MenuAction.EXAMINE_OBJECT), clearOnPitEntry());
+
+		swapper.onPostMenuSort();
+
+		verify(menu, never()).setMenuEntries(any());
+	}
+
+	@Test
+	public void clearIsLeftOnTopWhileTheUnspikedPitIsBeingClearedOut()
+	{
+		when(config.swapClearWhenNotFull()).thenReturn(true);
+		onlyPitNeedsSpikesAndIsNotFull();
 
 		Menu menu = menuOf(entryOfType(MenuAction.EXAMINE_OBJECT), clearOnPitEntry());
 
@@ -174,6 +187,18 @@ public class GoatMenuSwapperTest
 		GameObject pit = mock(GameObject.class);
 		when(tracker.getPits()).thenReturn(Collections.singletonList(pit));
 		when(tracker.stateOf(pit)).thenReturn(new GoatPitState(5, true, 16));
+		when(transitTracker.inTransitCount()).thenReturn(0);
+	}
+
+	/**
+	 * Points the tracker at a single unspiked, part-full pit: the clear-out phase, where the pit must be
+	 * emptied over several partial clears before it can be re-lined, so "Clear" should stay handy.
+	 */
+	private void onlyPitNeedsSpikesAndIsNotFull()
+	{
+		GameObject pit = mock(GameObject.class);
+		when(tracker.getPits()).thenReturn(Collections.singletonList(pit));
+		when(tracker.stateOf(pit)).thenReturn(new GoatPitState(5, false, 16));
 		when(transitTracker.inTransitCount()).thenReturn(0);
 	}
 

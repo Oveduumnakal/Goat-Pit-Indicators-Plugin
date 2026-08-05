@@ -75,7 +75,8 @@ class GoatMenuSwapper
 	 * Applies the configured swaps to the current menu, if any apply. Two independent edits can run in one
 	 * pass: a promote-to-top (the Cancel-when-full swap wins over the Walk-here-with-prod swap when both
 	 * fire, since guarding against a wasted cast matters more) and a demote-to-bottom of the pit's "Clear"
-	 * option while the pit is not full. The menu is rewritten once, only if an edit changed it.
+	 * option while some pit can still catch (spiked and not full). The menu is rewritten once, only if an
+	 * edit changed it.
 	 */
 	void onPostMenuSort()
 	{
@@ -100,7 +101,7 @@ class GoatMenuSwapper
 		if (promote != null)
 			result = promoteToTop(result, promote);
 
-		if (config.swapClearWhenNotFull() && !anyPitFull())
+		if (config.swapClearWhenNotFull() && anyPitStillCatching())
 		{
 			MenuEntry clear = topClearOnPit(result);
 			if (clear != null)
@@ -183,12 +184,20 @@ class GoatMenuSwapper
 		return sawCatchingPit;
 	}
 
-	/** Whether any loaded pit is at capacity, so its "Clear" option is a sensible left-click default. */
-	private boolean anyPitFull()
+	/**
+	 * Whether any loaded pit can still catch a goat — spiked and not yet full. While one can, "Clear" is
+	 * demoted so a stray click does not throw away catching progress. Once no pit is still catching (every
+	 * pit is full or needs re-spiking), the player is in the clear-out phase — the pit must be emptied to
+	 * re-line spikes, often over several partial clears — so "Clear" is left at the top as a single-click
+	 * default. Keyed on spike state rather than fullness so a partly-cleared, unspiked pit still keeps
+	 * "Clear" handy.
+	 */
+	private boolean anyPitStillCatching()
 	{
 		for (GameObject pit : tracker.getPits())
 		{
-			if (tracker.stateOf(pit).isFull())
+			GoatPitState state = tracker.stateOf(pit);
+			if (!state.needsSpikes() && !state.isFull())
 				return true;
 		}
 
