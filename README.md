@@ -102,7 +102,7 @@ Goats you can lure into the pit glow pink:
 | Setting | What it does | Default |
 |---|---|---|
 | Goat Total Format | Lifetime total written short (1K) or full (1,024) | Short |
-| Draw Distance | How far away pits still draw (tiles) | 32 |
+| Draw Distance | How far away the pit still draws (tiles) | 32 |
 
 ## Links
 

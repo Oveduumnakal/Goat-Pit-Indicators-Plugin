@@ -83,7 +83,7 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "showOverlay",
 		name = "Show Color Indicators",
-		description = "Draw the colored outline and fills over goat pits in the scene. The text labels (goat "
+		description = "Draw the colored outline and fills over the goat pit in the scene. The text labels (goat "
 			+ "count, total caught, in transit) have their own toggles and still show with this off.",
 		section = indicatorsSection,
 		position = 1
@@ -361,7 +361,7 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "maxDrawDistance",
 		name = "Draw Distance",
-		description = "Stop drawing the overlay for pits further away than this many tiles.",
+		description = "Stop drawing the overlay for a pit further away than this many tiles.",
 		section = miscSection,
 		position = 2
 	)
