@@ -48,7 +48,8 @@ import net.runelite.client.ui.overlay.OverlayManager;
 /** Entry point: keeps the pit tracker fed with scene events and the overlay registered. */
 @PluginDescriptor(
 	name = "Goat Pit Indicators",
-	description = "Shows how full a goat pit is, and warns when it needs spikes",
+	description = "Show how full the goat pit is, highlights goats you can lure, prevent accidental "
+		+ "emptying, track your total catches, and more",
 	tags = {"goat", "goats", "pit", "trap", "spikes", "hunter", "overlay", "indicator"}
 )
 public class GoatIndicatorsPlugin extends Plugin
