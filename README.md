@@ -10,7 +10,7 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 
 - **See how full a pit is without walking to it**
 
-  Every goat pit in view carries a live `X / N` count and a color fill that reads at a glance — green when the pit is full, a neutral fill while it is filling up. The capacity `N` tracks your Hunter level (16 at 60, rising to 24 at 93+).
+  While the goat pit is in view it carries a live `X / N` count and a color fill that reads at a glance — green when the pit is full, a neutral fill while it is filling up. The capacity `N` tracks your Hunter level (16 at 60, rising to 24 at 93+).
 
 - **Never forget the spikes**
 
@@ -102,7 +102,7 @@ Goats you can lure into the pit glow pink:
 | Setting | What it does | Default |
 |---|---|---|
 | Goat Total Format | Lifetime total written short (1K) or full (1,024) | Short |
-| Draw Distance | How far away pits still draw (tiles) | 32 |
+| Draw Distance | How far away the pit still draws (tiles) | 32 |
 
 ## Links
 
