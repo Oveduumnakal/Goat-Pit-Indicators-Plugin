@@ -119,13 +119,41 @@ public interface GoatIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "telegrabGradient",
-		name = "Near/Far Gradient",
-		description = "Shade each telegrabbable goat's outline from the \"Telegrab Closest\" color (nearest "
-			+ "the pit) to the \"Telegrab Furthest\" color. Off draws every target in the \"Telegrab Closest\" "
-			+ "color instead.",
+		keyName = "highlightProdable",
+		name = "Highlight Prodable",
+		description = "While a Cattleprod is equipped, outline the goats you can prod into a spiked, non-full "
+			+ "pit. Takes over the telegrab outline while a Cattleprod is held; turn off to keep the telegrab "
+			+ "highlight instead.",
 		section = indicatorsSection,
 		position = 4
+	)
+	default boolean highlightProdable()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "prodFromLocation",
+		name = "Prodable from Location",
+		description = "Only highlight prodable goats you can prod in from where you stand right now, without "
+			+ "walking to reposition — those the pit sits directly beyond, in the direction a prod would shove "
+			+ "them. Off highlights every goat within prod range of a catching pit regardless of your position.",
+		section = indicatorsSection,
+		position = 5
+	)
+	default boolean prodFromLocation()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "telegrabGradient",
+		name = "Near/Far Gradient",
+		description = "Shade each highlighted goat's outline by its distance to the pit: from the closest "
+			+ "color (nearest the pit) to the furthest color. Applies to both the telegrab and prod "
+			+ "highlights. Off draws every target in its closest color instead.",
+		section = indicatorsSection,
+		position = 6
 	)
 	default boolean telegrabGradient()
 	{
@@ -138,7 +166,7 @@ public interface GoatIndicatorsConfig extends Config
 		description = "Outline the spike supply object when a pit needs lining and you are carrying no "
 			+ "spikes, so the restock point is obvious. Uses the same spike-warning colors as the pit.",
 		section = indicatorsSection,
-		position = 5
+		position = 7
 	)
 	default boolean highlightSpikeSupply()
 	{
@@ -237,6 +265,36 @@ public interface GoatIndicatorsConfig extends Config
 	default Color telegrabFurthestColor()
 	{
 		return new Color(255, 194, 242, 175);
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = "prodColor",
+		name = "Prod Closest",
+		description = "Outline color for the closest prodable goat — the nearest to the pit. Goats further "
+			+ "from the pit fade toward the \"Prod Furthest\" color. Set both the same for a single flat "
+			+ "highlight color.",
+		section = colorsSection,
+		position = 8
+	)
+	default Color prodColor()
+	{
+		return new Color(255, 140, 0, 255);
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = "prodFurthestColor",
+		name = "Prod Furthest",
+		description = "Outline color for the furthest prodable goat — the furthest from the pit still in prod "
+			+ "range. Goats nearer the pit shade toward the \"Prod Closest\" color. Set both the same for a "
+			+ "single flat highlight color.",
+		section = colorsSection,
+		position = 9
+	)
+	default Color prodFurthestColor()
+	{
+		return new Color(255, 253, 199, 125);
 	}
 
 	@ConfigItem(
