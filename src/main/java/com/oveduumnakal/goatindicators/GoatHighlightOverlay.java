@@ -28,11 +28,11 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.Polygon;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import javax.inject.Inject;
 
 import net.runelite.api.Client;
@@ -40,11 +40,9 @@ import net.runelite.api.GameObject;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.NPC;
-import net.runelite.api.Perspective;
 import net.runelite.api.Player;
 import net.runelite.api.Point;
 import net.runelite.api.WorldView;
-import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.InventoryID;
@@ -63,19 +61,31 @@ import net.runelite.client.ui.overlay.OverlayPosition;
  * steadily at the outline color's own alpha.
  *
  * <p>While a Cattleprod is equipped (and the prodable highlight is enabled) this takes over the outline
- * instead: goats within prod range of a catching pit are outlined in the prod color, and the tile to stand
- * on to prod each one in — one step beyond the goat away from the pit — is faint-filled. The prod highlight
- * supersedes the telegrab one so the two never fight over the outline.
+ * instead: goats within prod range of a catching pit are outlined in the prod color, shaded from closest
+ * to furthest by distance to the pit under the same near/far gradient. The prod highlight supersedes the
+ * telegrab one so the two never fight over the outline.
  */
 class GoatHighlightOverlay extends Overlay
 {
 	private static final Stroke OUTLINE_STROKE = new BasicStroke(2.0f);
+
+	/**
+	 * How far, in tiles, the prod-from-location flood searches for a way to the goat. A walk longer than
+	 * this counts as repositioning rather than prodding from where you stand, so the goat is left out.
+	 */
+	private static final int PATH_RADIUS = 16;
 
 	private final Client client;
 	private final GoatIndicatorsConfig config;
 	private final GoatPitTracker tracker;
 	private final GoatTransitTracker transitTracker;
 	private final LureSpells lureSpells;
+
+	/** The tile the last prod-from-location flood started from, so the flood is reused until the player moves. */
+	private WorldPoint cachedPathOrigin;
+
+	/** The reach map from the last flood, keyed by {@link ProdPathing#key(int, int)}. */
+	private Map<Long, Integer> cachedReach;
 
 	@Inject
 	GoatHighlightOverlay(Client client, GoatIndicatorsConfig config, GoatPitTracker tracker,
@@ -99,7 +109,7 @@ class GoatHighlightOverlay extends Overlay
 
 		if (config.highlightProdable() && cattleprodEquipped())
 		{
-			renderProdable(graphics);
+			renderProdable(graphics, player.getWorldLocation());
 			return null;
 		}
 
@@ -142,34 +152,58 @@ class GoatHighlightOverlay extends Overlay
 	}
 
 	/**
-	 * Outlines every prodable goat and faint-fills the tile to stand on to prod it in. A goat is prodable
-	 * when it is within {@link ProdTargeting#MAX_RANGE} tiles of a catching pit and not already committed to
-	 * one. Drawn in place of the telegrab highlight while a Cattleprod is equipped (the caller gates on
-	 * that), so the two never fight over the outline.
+	 * Outlines every prodable goat, shaded from the closest to the furthest prod color by tile distance to
+	 * the pit. A goat is prodable when it is within the configured prod range of a catching pit and not
+	 * already committed to one. Drawn in place of the telegrab highlight while a Cattleprod is equipped (the
+	 * caller gates on that), so the two never fight over the outline. The near/far gradient is shared with
+	 * the telegrab highlight — off draws every prodable goat in the closest prod color. When the
+	 * prod-from-location toggle is on, only goats the player can prod in without repositioning are drawn —
+	 * judged from the tile a click would actually walk them to, not their current tile.
 	 */
-	private void renderProdable(Graphics2D graphics)
+	private void renderProdable(Graphics2D graphics, WorldPoint playerLocation)
 	{
 		List<GameObject> catchingPits = catchingPits();
 		if (catchingPits.isEmpty())
 			return;
 
+		boolean fromLocation = config.prodFromLocation();
+		Map<Long, Integer> reach = fromLocation ? reachFromPlayer(playerLocation) : null;
+
+		List<NPC> targets = new ArrayList<>();
+		List<Integer> distances = new ArrayList<>();
+		int nearest = Integer.MAX_VALUE;
+		int farthest = Integer.MIN_VALUE;
 		for (NPC npc : client.getTopLevelWorldView().npcs())
 		{
-			GameObject pit = prodPitFor(npc, catchingPits);
+			WorldPoint prodOrigin = fromLocation ? landingTileFor(npc, reach, playerLocation) : null;
+			GameObject pit = prodPitFor(npc, prodOrigin, catchingPits);
 			if (pit == null)
 				continue;
 
-			drawStandTile(graphics, npc, pit);
-			drawOutline(graphics, npc, config.prodColor());
+			int distance = prodDistance(pit, npc.getWorldLocation());
+			targets.add(npc);
+			distances.add(distance);
+			nearest = Math.min(nearest, distance);
+			farthest = Math.max(farthest, distance);
+		}
+
+		Color closest = config.prodColor();
+		Color furthest = config.telegrabGradient() ? config.prodFurthestColor() : closest;
+		for (int i = 0; i < targets.size(); i++)
+		{
+			float fraction = TelegrabTargeting.priorityFraction(distances.get(i), nearest, farthest);
+			drawOutline(graphics, targets.get(i), lerp(closest, furthest, fraction));
 		}
 	}
 
 	/**
 	 * The catching pit a goat can be prodded into, or {@code null} when it cannot. A goat qualifies when it
 	 * is a goat, not already in transit to a pit, and within prod range of at least one catching pit; the
-	 * nearest such pit is returned so the stand tile is measured against the edge the goat is closest to.
+	 * nearest such pit is returned. When the prod-from-location toggle is on, the prod is judged from
+	 * {@code prodOrigin} — the tile a click would path the player to — so a pit only counts if a prod from
+	 * that tile shoves the goat into it; an unreachable goat (null origin) never qualifies.
 	 */
-	GameObject prodPitFor(NPC npc, List<GameObject> catchingPits)
+	GameObject prodPitFor(NPC npc, WorldPoint prodOrigin, List<GameObject> catchingPits)
 	{
 		if (npc == null || !GoatPitTracker.matchesGoatName(npc.getName()))
 			return null;
@@ -181,12 +215,19 @@ class GoatHighlightOverlay extends Overlay
 		if (goatLocation == null)
 			return null;
 
+		boolean fromLocation = config.prodFromLocation();
+		if (fromLocation && prodOrigin == null)
+			return null;
+
 		GameObject nearest = null;
 		int best = -1;
 		for (GameObject pit : catchingPits)
 		{
 			int distance = prodDistance(pit, goatLocation);
 			if (distance < 0 || !ProdTargeting.withinProdRange(distance))
+				continue;
+
+			if (fromLocation && !pitInPushDirection(pit, prodOrigin, goatLocation))
 				continue;
 
 			if (best < 0 || distance < best)
@@ -197,6 +238,71 @@ class GoatHighlightOverlay extends Overlay
 		}
 
 		return nearest;
+	}
+
+	/**
+	 * Floods the walkable tiles out from the player to predict where a click would land, reusing the last
+	 * result until the player moves. The walkability of each step is taken from the scene collision map via
+	 * {@link WorldArea#canTravelInDirection}. Returns {@code null} when the player location is unknown.
+	 */
+	private Map<Long, Integer> reachFromPlayer(WorldPoint playerLocation)
+	{
+		if (playerLocation == null)
+			return null;
+
+		if (playerLocation.equals(cachedPathOrigin))
+			return cachedReach;
+
+		WorldView worldView = client.getTopLevelWorldView();
+		int plane = playerLocation.getPlane();
+		ProdPathing.StepFn step = (x, y, dx, dy) ->
+			new WorldArea(new WorldPoint(x, y, plane), 1, 1).canTravelInDirection(worldView, dx, dy);
+		cachedReach = ProdPathing.reachDistances(playerLocation.getX(), playerLocation.getY(), step, PATH_RADIUS);
+		cachedPathOrigin = playerLocation;
+		return cachedReach;
+	}
+
+	/**
+	 * The tile a click on this goat would path the player to, or {@code null} when no tile beside the goat
+	 * is reachable within {@link #PATH_RADIUS}. That tile is the origin the prod's shove is judged from.
+	 */
+	private WorldPoint landingTileFor(NPC npc, Map<Long, Integer> reach, WorldPoint playerLocation)
+	{
+		if (reach == null)
+			return null;
+
+		WorldPoint goatLocation = npc.getWorldLocation();
+		if (goatLocation == null)
+			return null;
+
+		int[] tile = ProdPathing.landingTile(goatLocation.getX(), goatLocation.getY(), reach);
+		if (tile == null)
+			return null;
+
+		return new WorldPoint(tile[0], tile[1], playerLocation.getPlane());
+	}
+
+	/**
+	 * Whether a prod from {@code prodOrigin} — the tile a click would walk the player to — would shove the
+	 * goat into this pit. Resolves the pit's world footprint and defers the geometry to
+	 * {@link ProdTargeting#pitInPushDirection}. A missing origin or pit footprint yields false.
+	 */
+	private boolean pitInPushDirection(GameObject pit, WorldPoint prodOrigin, WorldPoint goatLocation)
+	{
+		if (prodOrigin == null)
+			return false;
+
+		Point min = pit.getSceneMinLocation();
+		Point max = pit.getSceneMaxLocation();
+		WorldView worldView = pit.getWorldView();
+		if (min == null || max == null || worldView == null)
+			return false;
+
+		int baseX = worldView.getBaseX();
+		int baseY = worldView.getBaseY();
+		return ProdTargeting.pitInPushDirection(
+			prodOrigin.getX(), prodOrigin.getY(), goatLocation.getX(), goatLocation.getY(),
+			baseX + min.getX(), baseY + min.getY(), baseX + max.getX(), baseY + max.getY());
 	}
 
 	/**
@@ -216,38 +322,6 @@ class GoatHighlightOverlay extends Overlay
 		int nearestX = ProdTargeting.clampToPit(goatSceneX, min.getX(), max.getX());
 		int nearestY = ProdTargeting.clampToPit(goatSceneY, min.getY(), max.getY());
 		return Math.max(Math.abs(goatSceneX - nearestX), Math.abs(goatSceneY - nearestY));
-	}
-
-	/**
-	 * Faint-fills the tile the player stands on to prod this goat into the pit: one tile beyond the goat on
-	 * the side away from the nearest pit tile. Nothing is drawn when the fill is fully transparent or the
-	 * tile is off screen.
-	 */
-	private void drawStandTile(Graphics2D graphics, NPC npc, GameObject pit)
-	{
-		Color fill = config.prodStandFill();
-		if (fill.getAlpha() == 0)
-			return;
-
-		WorldPoint goatLocation = npc.getWorldLocation();
-		WorldView worldView = pit.getWorldView();
-		Point min = pit.getSceneMinLocation();
-		Point max = pit.getSceneMaxLocation();
-		if (goatLocation == null || worldView == null || min == null || max == null)
-			return;
-
-		int goatSceneX = goatLocation.getX() - worldView.getBaseX();
-		int goatSceneY = goatLocation.getY() - worldView.getBaseY();
-		int standX = ProdTargeting.standTile(goatSceneX, ProdTargeting.clampToPit(goatSceneX, min.getX(), max.getX()));
-		int standY = ProdTargeting.standTile(goatSceneY, ProdTargeting.clampToPit(goatSceneY, min.getY(), max.getY()));
-
-		LocalPoint tile = LocalPoint.fromScene(standX, standY, worldView);
-		Polygon poly = Perspective.getCanvasTilePoly(client, tile);
-		if (poly == null)
-			return;
-
-		graphics.setColor(fill);
-		graphics.fill(poly);
 	}
 
 	/** Whether a Cattleprod is in the worn-equipment container, enabling the prodable highlight. */

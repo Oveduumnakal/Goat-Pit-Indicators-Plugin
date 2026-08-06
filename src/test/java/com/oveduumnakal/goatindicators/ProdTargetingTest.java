@@ -10,11 +10,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-/** Covers the prod range test, the nearest-pit-tile clamp, and the away-from-pit stand-tile offset. */
+/** Covers the fixed prod range test and the nearest-pit-tile clamp. */
 public class ProdTargetingTest
 {
 	@Test
-	public void prodRangeCoversZeroToMax()
+	public void prodRangeCoversZeroToTheMaxAndRejectsBeyond()
 	{
 		assertTrue(ProdTargeting.withinProdRange(0));
 		assertTrue(ProdTargeting.withinProdRange(ProdTargeting.MAX_RANGE));
@@ -31,15 +31,32 @@ public class ProdTargetingTest
 	}
 
 	@Test
-	public void standTileSitsOneStepBeyondTheGoatAwayFromThePit()
+	public void pushDirectionHitsAPitBeyondTheGoat()
 	{
-		assertEquals(11, ProdTargeting.standTile(10, 5));
-		assertEquals(4, ProdTargeting.standTile(5, 10));
+		assertTrue(ProdTargeting.pitInPushDirection(105, 100, 103, 100, 100, 100, 101, 101));
 	}
 
 	@Test
-	public void anAxisAlignedGoatDoesNotShiftOnThatAxis()
+	public void pushDirectionMissesAPitBehindThePlayer()
 	{
-		assertEquals(10, ProdTargeting.standTile(10, 10));
+		assertFalse(ProdTargeting.pitInPushDirection(90, 100, 103, 100, 100, 100, 101, 101));
+	}
+
+	@Test
+	public void pushDirectionToleratesAPitOffTheStraightLine()
+	{
+		assertTrue(ProdTargeting.pitInPushDirection(105, 100, 103, 100, 100, 101, 101, 102));
+	}
+
+	@Test
+	public void pushDirectionMissesAPitBehindThePush()
+	{
+		assertFalse(ProdTargeting.pitInPushDirection(103, 105, 103, 103, 100, 105, 101, 106));
+	}
+
+	@Test
+	public void pushDirectionIsFalseWhenThePlayerStandsOnTheGoat()
+	{
+		assertFalse(ProdTargeting.pitInPushDirection(103, 100, 103, 100, 100, 100, 101, 101));
 	}
 }
