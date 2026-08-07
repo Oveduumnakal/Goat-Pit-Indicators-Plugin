@@ -699,19 +699,9 @@ class GoatPitOverlay extends Overlay
 	{
 		float f = Math.max(0.0f, Math.min(1.0f, fraction));
 		if (f <= 0.5f)
-			return lerp(from, mid, f * 2.0f);
+			return ColorUtil.lerp(from, mid, f * 2.0f, false);
 
-		return lerp(mid, to, (f - 0.5f) * 2.0f);
-	}
-
-	/** Linearly blends two colors, ignoring their alpha; {@code fraction} is clamped to 0..1. */
-	private static Color lerp(Color from, Color to, float fraction)
-	{
-		float f = Math.max(0.0f, Math.min(1.0f, fraction));
-		int r = Math.round(from.getRed() + (to.getRed() - from.getRed()) * f);
-		int g = Math.round(from.getGreen() + (to.getGreen() - from.getGreen()) * f);
-		int b = Math.round(from.getBlue() + (to.getBlue() - from.getBlue()) * f);
-		return new Color(r, g, b);
+		return ColorUtil.lerp(mid, to, (f - 0.5f) * 2.0f, false);
 	}
 
 	/**
