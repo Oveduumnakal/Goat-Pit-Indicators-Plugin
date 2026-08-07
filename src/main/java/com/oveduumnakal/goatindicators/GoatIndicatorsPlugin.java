@@ -24,6 +24,8 @@
  */
 package com.oveduumnakal.goatindicators;
 
+import java.util.HashSet;
+import java.util.Set;
 import javax.inject.Inject;
 
 import com.google.inject.Provides;
@@ -170,7 +172,8 @@ public class GoatIndicatorsPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
-		transitTracker.onTick(client.getTopLevelWorldView().npcs(), localTargetIndex(), localProdding());
+		transitTracker.onTick(client.getTopLevelWorldView().npcs(), localTargetIndex(), localProdding(),
+			remoteProddedGoatIndices());
 		if (seedCountdown > 0 && --seedCountdown == 0)
 			catchCounter.seed(client.getVarbitValue(GoatIds.COUNT_VARBIT_OVERRIDE));
 	}
@@ -180,6 +183,30 @@ public class GoatIndicatorsPlugin extends Plugin
 	{
 		Player localPlayer = client.getLocalPlayer();
 		return localPlayer != null && localPlayer.getAnimation() == GoatIds.LOCAL_PROD_ANIM;
+	}
+
+	/**
+	 * Indices of goats being prodded toward a pit by <em>other</em> players this tick, so their walk-in can be
+	 * kept off the grab highlight. A prod shows as a scene player playing {@link GoatIds#LOCAL_PROD_ANIM} — the
+	 * same id for every player — while interacting with a goat; the goat's own reaction animation fires too
+	 * unreliably to key off. The local player is skipped, since their prods are already attributed through the
+	 * interaction target and, unlike these, feed the in-transit count.
+	 */
+	private Set<Integer> remoteProddedGoatIndices()
+	{
+		Player localPlayer = client.getLocalPlayer();
+		Set<Integer> prodded = new HashSet<>();
+		for (Player player : client.getTopLevelWorldView().players())
+		{
+			if (player == null || player == localPlayer || player.getAnimation() != GoatIds.LOCAL_PROD_ANIM)
+				continue;
+
+			Actor interacting = player.getInteracting();
+			if (interacting instanceof NPC && GoatPitTracker.matchesGoatName(interacting.getName()))
+				prodded.add(((NPC) interacting).getIndex());
+		}
+
+		return prodded;
 	}
 
 	/** The index of the NPC the local player is interacting with, or {@code -1} when it is not an NPC. */
