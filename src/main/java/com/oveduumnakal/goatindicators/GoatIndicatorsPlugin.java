@@ -43,6 +43,7 @@ import net.runelite.api.events.PostMenuSort;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -58,6 +59,9 @@ public class GoatIndicatorsPlugin extends Plugin
 {
 	/** Config key holding the lifetime goats-caught total, so it survives logouts and plugin toggles. */
 	private static final String TOTAL_CAUGHT_KEY = "totalCaught";
+
+	/** Config key of the reset toggle: ticked in config to zero the lifetime total, then unticked again. */
+	private static final String RESET_TOTAL_KEY = "resetTotalCaught";
 
 	/** Config key for the total-caught prefix, so the one-time animated migration can read and rewrite it. */
 	private static final String TOTAL_PREFIX_KEY = "totalPrefix";
@@ -256,6 +260,35 @@ public class GoatIndicatorsPlugin extends Plugin
 		catchCounter.onCountChanged(event.getValue());
 		if (catchCounter.getTotal() != before)
 			configManager.setConfiguration(GoatIndicatorsConfig.GROUP, TOTAL_CAUGHT_KEY, catchCounter.getTotal());
+	}
+
+	/**
+	 * Watches for the reset toggle being ticked in config and zeroes the lifetime total when it is. The
+	 * toggle is a stand-in for a button: the user ticks it, the total is cleared, and it is unticked again
+	 * so it reads as a one-shot action rather than a persistent setting.
+	 */
+	@Subscribe
+	public void onConfigChanged(ConfigChanged event)
+	{
+		if (!GoatIndicatorsConfig.GROUP.equals(event.getGroup()))
+			return;
+
+		if (RESET_TOTAL_KEY.equals(event.getKey()) && Boolean.parseBoolean(event.getNewValue()))
+			resetTotalCaught();
+	}
+
+	/**
+	 * Zeroes the lifetime catch total and its persisted value, unticks the reset toggle, and re-arms the
+	 * seed so counting resumes from the pit's current fill. The baseline is re-seeded through
+	 * {@link #scheduleSeed()} rather than read here, so the varbit is only ever read on the game thread,
+	 * and the goats already sitting in the pit are not counted as fresh catches after the reset.
+	 */
+	private void resetTotalCaught()
+	{
+		catchCounter.reset();
+		configManager.setConfiguration(GoatIndicatorsConfig.GROUP, TOTAL_CAUGHT_KEY, 0);
+		configManager.setConfiguration(GoatIndicatorsConfig.GROUP, RESET_TOTAL_KEY, false);
+		scheduleSeed();
 	}
 
 	/** Reads the persisted lifetime total, defaulting to zero when none is stored yet. */

@@ -429,6 +429,19 @@ public interface GoatIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "resetTotalCaught",
+		name = "Reset Total Caught",
+		description = "Tick to reset the lifetime goats-caught total back to zero. It unticks itself once done, "
+			+ "and counting resumes from the pit's current fill.",
+		section = miscSection,
+		position = 3
+	)
+	default boolean resetTotalCaught()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "swapCancelWhenFull",
 		name = "\"Cancel\" First When Full",
 		description = "When you click a goat to cast a luring spell but the pit is effectively full (goats in "
