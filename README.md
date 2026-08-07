@@ -20,6 +20,10 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 
   Goats you can lure into a spiked, non-full pit from where you stand glow with an outline, so you can top a pit up without walking over. Only shows when you can actually cast the spell (Telekinetic Grab or Dark Lure) and the pit has room. When several are in range, the outline fades from a near color on the closest goat to a far color on the furthest, so you know which to grab first.
 
+- **Prod the ones already close**
+
+  With a Cattleprod equipped, the outline switches to the goats you can prod into a spiked, non-full pit — those within prod range — drawn in their own color and the same near/far gradient. Optionally limited to the goats you can prod in from exactly where you stand, judged from the tile a click would walk you to, so you are never shown a goat you would have to reposition for first.
+
 - **Find the spike supply when a pit runs dry**
 
   When a pit needs re-spiking and you are carrying none, the spike supply object is outlined in the same warning colors, with a "Take Spike" prompt — so you can restock without hunting for it.
@@ -38,7 +42,7 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 
 - **Make it yours**
 
-  The outline gradient, the reminder fills, the telegrab colors, the label colors and formats, the menu reordering, and the draw distance are all configurable, grouped into sections. Turn the whole overlay off from the config panel when you don't need it.
+  The outline gradient, the reminder fills, the telegrab and prod colors, the label colors and formats, the menu reordering, and the draw distance are all configurable, grouped into sections. Turn the whole overlay off from the config panel when you don't need it.
 
 ## Screenshots
 
@@ -60,8 +64,10 @@ Goats you can lure into the pit glow pink:
 |---|---|---|
 | Show Color Indicators | Master toggle for the on-pit outline and fills | On |
 | Show "Add Spikes" | Show the spikes reminder on an empty, unspiked pit | On |
-| Highlight Telegrabbable | Outline goats you can lure into a spiked, non-full pit | On |
-| Near/Far Gradient | Fade the outline from the near color (closest goat) to the far color (furthest) | On |
+| Highlight Telegrabbable | Outline goats you can lure into a spiked, non-full pit, when you can cast Telekinetic Grab or Dark Lure | On |
+| Highlight Prodable | While a Cattleprod is equipped, outline goats you can prod into a spiked, non-full pit instead (takes over the telegrab outline) | On |
+| Prodable from Location | Only highlight prodable goats you can prod in without repositioning, judged from the tile a click would walk you to | On |
+| Near/Far Gradient | Shade each highlighted goat's outline by distance to the pit, closest color to furthest; applies to both the telegrab and prod highlights | On |
 | Highlight Spike Supply | Outline the spike supply when a pit needs lining and you carry no spikes | On |
 
 **Indicator Colors**
@@ -75,6 +81,8 @@ Goats you can lure into the pit glow pink:
 | Full Reminder Fill | Fill for a full pit ready to empty (alpha 0 = outline only) | Faint green |
 | Telegrab Closest | Outline for the closest (highest-priority) lure target | Pink |
 | Telegrab Furthest | Outline for the furthest (lowest-priority) lure target | Faint pink |
+| Prod Closest | Outline for the closest prodable goat, nearest the pit | Orange |
+| Prod Furthest | Outline for the furthest prodable goat still in prod range | Pale yellow |
 
 **Labels**
 
@@ -95,7 +103,7 @@ Goats you can lure into the pit glow pink:
 |---|---|---|
 | "Cancel" First When Full | Raise "Cancel" when you cast a lure on a goat but the pit is effectively full | On |
 | "Walk here" First With Prod | Raise "Walk here" while a Cattleprod is equipped and the pit is effectively full | On |
-| "Clear" Last Until Full | Drop "Clear Goat Pit" off the top of the menu until the pit is full | On |
+| "Clear" Last While Spikes Sharp | Demote "Clear Goat Pit" off the top of the menu while a pit can still catch — spiked and not yet full | On |
 
 **Misc**
 
