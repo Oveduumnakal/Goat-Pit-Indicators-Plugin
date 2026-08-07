@@ -24,6 +24,7 @@
  */
 package com.oveduumnakal.goatindicators;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -50,12 +51,17 @@ import net.runelite.api.NPC;
  * lure cannot be grabbed, whoever cast it), while the owned subset drives the in-transit count, so other
  * players' grabs no longer push the local player's tally up.
  *
- * <p>Cattle-prodded goats are tracked too, but only for the count. The goat the local player is interacting
- * with while playing the prod animation ({@link GoatIds#LOCAL_PROD_ANIM}) is taken as theirs and held in
- * transit until it jumps in, despawns, or {@link #MAX_PRODDED_TICKS} pass without a fresh prod. The goat's own
- * reaction animation proved too unreliable to arm from, whereas the interaction target is set the instant the
- * prod lands. Prodding carries no distinguishing graphic during the walk (like a lure) and no cap, so the
- * count folds lured and prodded goats into one total.
+ * <p>Cattle-prodded goats are tracked too. The goat the local player is interacting with while playing the
+ * prod animation ({@link GoatIds#LOCAL_PROD_ANIM}) is taken as theirs and held in transit until it jumps in,
+ * despawns, or {@link #MAX_PRODDED_TICKS} pass without a fresh prod. The goat's own reaction animation proved
+ * too unreliable to arm from, whereas the interaction target is set the instant the prod lands. Prodding
+ * carries no distinguishing graphic during the walk (like a lure) and no cap, so the count folds the local
+ * player's lured and prodded goats into one total.
+ *
+ * <p>Goats prodded by <em>other</em> players are tracked separately, keyed off any scene player caught playing
+ * the prod animation with a goat as its interaction target. These feed highlight suppression only — a goat
+ * walking into a pit under anyone's prod is not a fresh grab target — but never the local player's in-transit
+ * count, so a neighbour's prods do not inflate the local tally.
  */
 @Singleton
 class GoatTransitTracker
@@ -91,6 +97,7 @@ class GoatTransitTracker
 	private final Map<Integer, Phase> phases = new HashMap<>();
 	private final Map<Integer, Integer> luredTicks = new HashMap<>();
 	private final Map<Integer, Integer> proddedTicks = new HashMap<>();
+	private final Map<Integer, Integer> remoteProddedTicks = new HashMap<>();
 	private final Set<Integer> present = new HashSet<>();
 	private final Set<Integer> owned = new HashSet<>();
 	private int prevLocalTarget = -1;
@@ -107,6 +114,24 @@ class GoatTransitTracker
 	 */
 	void onTick(Iterable<? extends NPC> npcs, int localTargetIndex, boolean localProdding)
 	{
+		onTick(npcs, localTargetIndex, localProdding, Collections.emptySet());
+	}
+
+	/**
+	 * Advances every goat's phase by one tick from the live scene. Goats that have despawned since the last
+	 * tick are dropped, which also clears a goat the instant it is caught.
+	 *
+	 * @param npcs                 the world's current NPCs
+	 * @param localTargetIndex     the index of the NPC the local player is interacting with this tick, or
+	 *                             {@code -1} if none — used to attribute a flight to the local player's own grab
+	 * @param localProdding        whether the local player is playing the Cattleprod animation this tick,
+	 *                             marking the goat they are interacting with as prodded toward the pit
+	 * @param remoteProddedIndices indices of goats being prodded by other players this tick — suppressed from
+	 *                             highlighting but never counted toward the local player's in-transit tally
+	 */
+	void onTick(Iterable<? extends NPC> npcs, int localTargetIndex, boolean localProdding,
+		Set<Integer> remoteProddedIndices)
+	{
 		present.clear();
 		for (NPC npc : npcs)
 		{
@@ -121,12 +146,14 @@ class GoatTransitTracker
 			boolean localTargeted = index == localTargetIndex || index == prevLocalTarget;
 			boolean freshlyProdded = localProdding && localTargeted;
 			advance(index, flying, jumping, localTargeted);
-			advanceProd(index, freshlyProdded, jumping);
+			advanceProd(proddedTicks, index, freshlyProdded, jumping);
+			advanceProd(remoteProddedTicks, index, remoteProddedIndices.contains(index), jumping);
 		}
 
 		phases.keySet().retainAll(present);
 		luredTicks.keySet().retainAll(present);
 		proddedTicks.keySet().retainAll(present);
+		remoteProddedTicks.keySet().retainAll(present);
 		owned.retainAll(phases.keySet());
 		prevLocalTarget = localTargetIndex;
 	}
@@ -162,41 +189,42 @@ class GoatTransitTracker
 	}
 
 	/**
-	 * Tracks a prodded goat's trip to the pit for the in-transit count. A goat the local player is prodding
-	 * this tick (interacting with while playing the prod animation) is (re)armed as theirs for
-	 * {@link #MAX_PRODDED_TICKS}; otherwise a goat already tracked ages by one tick, its timer refreshed while
-	 * it plays the jump-in, and drops once the timer runs out. Prodded goats are held apart from the lure
-	 * {@link #phases} so they never affect highlight suppression.
+	 * Tracks a prodded goat's trip to the pit. A goat being prodded this tick (its prodder interacting with it
+	 * while playing the prod animation) is (re)armed for {@link #MAX_PRODDED_TICKS}; otherwise a goat already
+	 * tracked ages by one tick, its timer refreshed while it plays the jump-in, and drops once the timer runs
+	 * out. The same logic drives both prod maps: {@link #proddedTicks} for the local player's own prods (which
+	 * also feed the in-transit count) and {@link #remoteProddedTicks} for other players' (suppression only).
 	 *
+	 * @param ticks          the prod-timer map to advance
 	 * @param index          the goat's NPC index
-	 * @param freshlyProdded whether the local player is prodding this goat this tick
+	 * @param freshlyProdded whether this goat is being prodded this tick
 	 * @param jumping        whether the goat is playing the jump-in animation this tick
 	 */
-	private void advanceProd(int index, boolean freshlyProdded, boolean jumping)
+	private void advanceProd(Map<Integer, Integer> ticks, int index, boolean freshlyProdded, boolean jumping)
 	{
 		if (freshlyProdded)
 		{
-			proddedTicks.put(index, MAX_PRODDED_TICKS);
+			ticks.put(index, MAX_PRODDED_TICKS);
 			return;
 		}
 
-		if (!proddedTicks.containsKey(index))
+		if (!ticks.containsKey(index))
 			return;
 
 		if (jumping)
 		{
-			proddedTicks.put(index, MAX_PRODDED_TICKS);
+			ticks.put(index, MAX_PRODDED_TICKS);
 			return;
 		}
 
-		int left = proddedTicks.get(index) - 1;
+		int left = ticks.get(index) - 1;
 		if (left <= 0)
 		{
-			proddedTicks.remove(index);
+			ticks.remove(index);
 			return;
 		}
 
-		proddedTicks.put(index, left);
+		ticks.put(index, left);
 	}
 
 	/**
@@ -237,12 +265,15 @@ class GoatTransitTracker
 	}
 
 	/**
-	 * Whether this goat is mid-lure and so should not be highlighted or offered as a fresh target. Any goat
-	 * in transit qualifies, whoever cast the grab — an already-flying goat cannot be grabbed again.
+	 * Whether this goat is committed to a pit and so should not be highlighted or offered as a fresh target.
+	 * Any goat in transit qualifies, whoever set it going — a goat already flying to a pit under a lure, or
+	 * walking into one under any player's prod, cannot be grabbed again.
 	 */
 	boolean isInTransit(int npcIndex)
 	{
-		return phases.containsKey(npcIndex);
+		return phases.containsKey(npcIndex)
+			|| proddedTicks.containsKey(npcIndex)
+			|| remoteProddedTicks.containsKey(npcIndex);
 	}
 
 	/**
@@ -263,6 +294,7 @@ class GoatTransitTracker
 		phases.clear();
 		luredTicks.clear();
 		proddedTicks.clear();
+		remoteProddedTicks.clear();
 		present.clear();
 		owned.clear();
 		prevLocalTarget = -1;

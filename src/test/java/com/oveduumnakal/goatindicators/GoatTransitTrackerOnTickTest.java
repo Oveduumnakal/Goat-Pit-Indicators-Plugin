@@ -6,7 +6,9 @@ package com.oveduumnakal.goatindicators;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.Test;
 
@@ -130,10 +132,74 @@ public class GoatTransitTrackerOnTickTest
 		assertEquals(1, tracker.inTransitCount());
 	}
 
+	@Test
+	public void aLocalProddedGoatIsSuppressedFromHighlightingNotJustCounted()
+	{
+		GoatTransitTracker tracker = new GoatTransitTracker();
+
+		tracker.onTick(one(goat(7, false, false)), 7, true);
+
+		assertTrue(tracker.isInTransit(7));
+		assertEquals(1, tracker.inTransitCount());
+	}
+
+	@Test
+	public void aRemoteProddedGoatIsSuppressedButNeverCounted()
+	{
+		GoatTransitTracker tracker = new GoatTransitTracker();
+
+		tracker.onTick(one(goat(9, false, false)), -1, false, set(9));
+
+		assertTrue(tracker.isInTransit(9));
+		assertEquals(0, tracker.inTransitCount());
+	}
+
+	@Test
+	public void aRemoteProddedGoatDropsOnceItsTimerRunsOut()
+	{
+		GoatTransitTracker tracker = new GoatTransitTracker();
+
+		tracker.onTick(one(goat(9, false, false)), -1, false, set(9));
+
+		for (int idle = 0; idle < 4; idle++)
+			tracker.onTick(one(goat(9, false, false)), -1, false);
+
+		assertTrue(tracker.isInTransit(9));
+
+		tracker.onTick(one(goat(9, false, false)), -1, false);
+		assertFalse(tracker.isInTransit(9));
+	}
+
+	@Test
+	public void aRemoteProdTimerRefreshesWhileTheGoatJumpsIn()
+	{
+		GoatTransitTracker tracker = new GoatTransitTracker();
+
+		tracker.onTick(one(goat(9, false, false)), -1, false, set(9));
+		for (int walk = 0; walk < 4; walk++)
+			tracker.onTick(one(goat(9, false, false)), -1, false);
+
+		tracker.onTick(one(goat(9, false, true)), -1, false);
+		for (int idle = 0; idle < 4; idle++)
+			tracker.onTick(one(goat(9, false, false)), -1, false);
+
+		assertTrue(tracker.isInTransit(9));
+	}
+
 	/** A single-goat scene, for the common one-goat tick. */
 	private static List<NPC> one(NPC npc)
 	{
 		return Collections.singletonList(npc);
+	}
+
+	/** The set of goat indices prodded by other players this tick. */
+	private static Set<Integer> set(int... indices)
+	{
+		Set<Integer> set = new HashSet<>();
+		for (int index : indices)
+			set.add(index);
+
+		return set;
 	}
 
 	/** A mock goat carrying only the flight spot-anim, jump animation, name and index {@code onTick} reads. */
