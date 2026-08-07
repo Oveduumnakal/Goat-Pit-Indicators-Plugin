@@ -81,11 +81,19 @@ class GoatHighlightOverlay extends Overlay
 	private final GoatTransitTracker transitTracker;
 	private final LureSpells lureSpells;
 
-	/** The tile the last prod-from-location flood started from, so the flood is reused until the player moves. */
+	/**
+	 * The tile the last prod-from-location flood started from. Together with {@link #cachedReachTick} it keys
+	 * the cache: the flood is reused only while the player stays on this tile <em>and</em> the game tick has
+	 * not advanced, so a collision change that leaves the player put — a gate opening on an adjacent tile — is
+	 * picked up on the next tick rather than lingering stale until the player steps away.
+	 */
 	private WorldPoint cachedPathOrigin;
 
 	/** The reach map from the last flood, keyed by {@link ProdPathing#key(int, int)}. */
 	private Map<Long, Integer> cachedReach;
+
+	/** The game tick the cached flood was computed on, so the reach is refreshed at least once per tick. */
+	private int cachedReachTick = -1;
 
 	@Inject
 	GoatHighlightOverlay(Client client, GoatIndicatorsConfig config, GoatPitTracker tracker,
@@ -242,7 +250,11 @@ class GoatHighlightOverlay extends Overlay
 
 	/**
 	 * Floods the walkable tiles out from the player to predict where a click would land, reusing the last
-	 * result until the player moves. The walkability of each step is taken from the scene collision map via
+	 * result while the player stays on the same tile within the same game tick. The tick is part of the key so
+	 * the flood is recomputed at most once per tick, picking up a collision change (a gate or door opening on
+	 * an adjacent tile) that leaves the player standing still — which a tile-only key would miss until the next
+	 * move. Recomputing once per tick is cheap: the flood is bounded to {@link #PATH_RADIUS} and only runs
+	 * while prodding from location. The walkability of each step is taken from the scene collision map via
 	 * {@link WorldArea#canTravelInDirection}. Returns {@code null} when the player location is unknown.
 	 */
 	private Map<Long, Integer> reachFromPlayer(WorldPoint playerLocation)
@@ -250,7 +262,8 @@ class GoatHighlightOverlay extends Overlay
 		if (playerLocation == null)
 			return null;
 
-		if (playerLocation.equals(cachedPathOrigin))
+		int tick = client.getTickCount();
+		if (tick == cachedReachTick && playerLocation.equals(cachedPathOrigin))
 			return cachedReach;
 
 		WorldView worldView = client.getTopLevelWorldView();
@@ -259,6 +272,7 @@ class GoatHighlightOverlay extends Overlay
 			new WorldArea(new WorldPoint(x, y, plane), 1, 1).canTravelInDirection(worldView, dx, dy);
 		cachedReach = ProdPathing.reachDistances(playerLocation.getX(), playerLocation.getY(), step, PATH_RADIUS);
 		cachedPathOrigin = playerLocation;
+		cachedReachTick = tick;
 		return cachedReach;
 	}
 
