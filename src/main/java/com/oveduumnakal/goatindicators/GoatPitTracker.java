@@ -112,8 +112,15 @@ class GoatPitTracker
 	/**
 	 * Reads the current state of a tracked pit.
 	 *
+	 * <p>The count and spikes state come from VarPlayer-backed varbits
+	 * ({@link GoatIds#COUNT_VARBIT_OVERRIDE} / {@link GoatIds#SPIKES_VARBIT_OVERRIDE}) that describe the
+	 * <em>local player's</em> pit, not this specific {@code pit} object. The plugin assumes only one personal
+	 * pit is ever in scene at a time, so callers may iterate every loaded pit and read each independently and
+	 * still get the right answer; if several pits could co-exist (a shared or instanced area) this state would
+	 * need keying per object instead.
+	 *
 	 * @param pit a pit previously handed to {@link #onSpawn(GameObject)}
-	 * @return its goat count and spikes state
+	 * @return its goat count and spikes state, which under the single-pit assumption is the local player's
 	 */
 	GoatPitState stateOf(GameObject pit)
 	{

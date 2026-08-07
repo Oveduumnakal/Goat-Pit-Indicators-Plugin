@@ -280,6 +280,11 @@ class GoatTransitTracker
 	 * How many of the local player's own goats are committed to a pit — those it lured plus those it
 	 * prodded, counted once each. Other players' lured goats share the flight graphic but are excluded, so a
 	 * busy pit does not inflate the local player's tally.
+	 *
+	 * <p>This is a single scene-wide total, not attributed to any particular pit object. Callers that iterate
+	 * pits ({@code GoatPitOverlay}, {@code GoatHighlightOverlay}, {@code GoatMenuSwapper}) apply it to every
+	 * pit alike, which holds only because a single personal pit is assumed in scene; a multi-pit area would
+	 * need the in-transit goats keyed to their target pit.
 	 */
 	int inTransitCount()
 	{
