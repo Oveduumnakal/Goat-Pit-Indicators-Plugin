@@ -43,6 +43,7 @@ import net.runelite.api.events.PostMenuSort;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -58,6 +59,9 @@ public class GoatIndicatorsPlugin extends Plugin
 {
 	/** Config key holding the lifetime goats-caught total, so it survives logouts and plugin toggles. */
 	private static final String TOTAL_CAUGHT_KEY = "totalCaught";
+
+	/** Config key of the momentary "Reset Total Caught" button, which un-ticks itself once handled. */
+	private static final String RESET_TOTAL_KEY = "resetTotalCaught";
 
 	/** Config key for the total-caught prefix, so the one-time animated migration can read and rewrite it. */
 	private static final String TOTAL_PREFIX_KEY = "totalPrefix";
@@ -256,6 +260,28 @@ public class GoatIndicatorsPlugin extends Plugin
 		catchCounter.onCountChanged(event.getValue());
 		if (catchCounter.getTotal() != before)
 			configManager.setConfiguration(GoatIndicatorsConfig.GROUP, TOTAL_CAUGHT_KEY, catchCounter.getTotal());
+	}
+
+	/**
+	 * Handles the momentary "Reset Total Caught" button. When the user ticks it, zero the lifetime total
+	 * and its persisted value, then re-seed from the live count so counting continues from zero rather than
+	 * stalling until the next login. Finally un-tick the button so it reads as a one-shot action.
+	 */
+	@Subscribe
+	public void onConfigChanged(ConfigChanged event)
+	{
+		if (!GoatIndicatorsConfig.GROUP.equals(event.getGroup()) || !RESET_TOTAL_KEY.equals(event.getKey()))
+			return;
+
+		if (!Boolean.parseBoolean(event.getNewValue()))
+			return;
+
+		catchCounter.reset();
+		configManager.setConfiguration(GoatIndicatorsConfig.GROUP, TOTAL_CAUGHT_KEY, 0);
+		if (client.getGameState() == GameState.LOGGED_IN)
+			catchCounter.seed(client.getVarbitValue(GoatIds.COUNT_VARBIT_OVERRIDE));
+
+		configManager.setConfiguration(GoatIndicatorsConfig.GROUP, RESET_TOTAL_KEY, false);
 	}
 
 	/** Reads the persisted lifetime total, defaulting to zero when none is stored yet. */
