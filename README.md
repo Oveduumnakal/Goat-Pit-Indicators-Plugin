@@ -38,7 +38,7 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 
 - **Guard against misclicks**
 
-  Optional right-click reordering keeps stray left-clicks from wasting a cast or clearing a pit early: "Cancel" jumps up when the pit is effectively full, "Walk here" leads while a Cattleprod is equipped, and "Clear Goat Pit" drops off the top until the pit is actually full.
+  Optional right-click reordering keeps stray left-clicks from wasting a cast or clearing a pit early: "Cancel" jumps up when the pit is effectively full, "Walk here" leads while a Cattleprod is equipped, "Clear Goat Pit" drops off the top until the pit is actually full, and a goat's own cast stays on top when another NPC — like Geoff — stands on its tile, so the overlap can't steal your telegrab.
 
 - **Make it yours**
 
@@ -104,6 +104,7 @@ Goats you can lure into the pit glow pink:
 | "Cancel" First When Full | Raise "Cancel" when you cast a lure on a goat but the pit is effectively full | On |
 | "Walk here" First With Prod | Raise "Walk here" while a Cattleprod is equipped and the pit is effectively full | On |
 | "Clear" Last While Spikes Sharp | Demote "Clear Goat Pit" off the top of the menu while a pit can still catch — spiked and not yet full | On |
+| Goat First For Telegrab | Keep a goat's cast on top when another NPC (like Geoff) shares its tile, so the overlap can't steal the click | On |
 
 **Misc**
 
