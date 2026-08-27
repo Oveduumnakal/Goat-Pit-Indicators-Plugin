@@ -102,6 +102,9 @@ public class GoatIndicatorsPlugin extends Plugin
 	@Inject
 	private GoatMenuSwapper menuSwapper;
 
+	@Inject
+	private PitFullNotifier pitFullNotifier;
+
 	/**
 	 * Ticks left before the catch counter is seeded from the live count varbit, or {@code 0} when no seed
 	 * is pending. Set on plugin start and on login; counted down in {@link #onGameTick(GameTick)}.
@@ -174,6 +177,7 @@ public class GoatIndicatorsPlugin extends Plugin
 	{
 		transitTracker.onTick(client.getTopLevelWorldView().npcs(), localTargetIndex(), localProdding(),
 			remoteProddedGoatIndices());
+		pitFullNotifier.onTick();
 		if (seedCountdown > 0 && --seedCountdown == 0)
 			catchCounter.seed(client.getVarbitValue(GoatIds.COUNT_VARBIT_OVERRIDE));
 	}

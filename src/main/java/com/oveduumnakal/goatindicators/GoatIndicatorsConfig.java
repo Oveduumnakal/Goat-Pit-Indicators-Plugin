@@ -31,6 +31,7 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.Notification;
 import net.runelite.client.config.Range;
 
 /** Settings for the goat pit overlay: what is drawn, in which colors, and how the labels read. */
@@ -72,11 +73,19 @@ public interface GoatIndicatorsConfig extends Config
 	)
 	String contextMenuSection = "contextMenu";
 
+	/** Alerts fired for pit events, such as the pit filling up. */
+	@ConfigSection(
+		name = "Notifications",
+		description = "Alerts fired for pit events.",
+		position = 4
+	)
+	String notificationsSection = "notifications";
+
 	/** Everything else. */
 	@ConfigSection(
 		name = "Misc",
 		description = "Everything else.",
-		position = 4
+		position = 5
 	)
 	String miscSection = "misc";
 
@@ -467,6 +476,34 @@ public interface GoatIndicatorsConfig extends Config
 		position = 2
 	)
 	default boolean swapClearWhenNotFull()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "pitFullNotification",
+		name = "Notify When Pit Is Full",
+		description = "Fire a notification once the goat pit fills up and needs emptying, so you can catch the "
+			+ "moment without watching the count. Tray, sound and screen flash follow this notification's "
+			+ "settings; set it to off to disable.",
+		section = notificationsSection,
+		position = 0
+	)
+	default Notification pitFullNotification()
+	{
+		return Notification.ON;
+	}
+
+	@ConfigItem(
+		keyName = "notifyCountInTransit",
+		name = "Count Goats In Transit",
+		description = "Count goats still on their way into the pit toward the full trigger, so the alert fires "
+			+ "the moment the pit is committed to filling rather than waiting for the last goat to land. Off "
+			+ "waits until the landed count alone reaches capacity.",
+		section = notificationsSection,
+		position = 1
+	)
+	default boolean notifyCountInTransit()
 	{
 		return true;
 	}
