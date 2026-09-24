@@ -115,6 +115,9 @@ public class GoatIndicatorsPlugin extends Plugin
 	private PitFullNotifier pitFullNotifier;
 
 	@Inject
+	private IdleNotifier idleNotifier;
+
+	@Inject
 	private SessionStats sessionStats;
 
 	@Inject
@@ -196,7 +199,9 @@ public class GoatIndicatorsPlugin extends Plugin
 		transitTracker.onTick(client.getTopLevelWorldView().npcs(), localTargetIndex(), localProdding(),
 			remoteProddedGoatIndices());
 		pitFullNotifier.onTick();
-		sessionStats.update(Instant.now(), catchCounter.getTotal(), client.getSkillExperience(Skill.HUNTER));
+		long hunterXp = client.getSkillExperience(Skill.HUNTER);
+		idleNotifier.onTick(client.getTickCount(), hunterXp);
+		sessionStats.update(Instant.now(), catchCounter.getTotal(), hunterXp);
 		if (seedCountdown > 0 && --seedCountdown == 0)
 			catchCounter.seed(client.getVarbitValue(GoatIds.COUNT_VARBIT_OVERRIDE));
 	}

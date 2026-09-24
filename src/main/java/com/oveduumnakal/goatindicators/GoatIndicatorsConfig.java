@@ -33,6 +33,7 @@ import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
 import net.runelite.client.config.Notification;
 import net.runelite.client.config.Range;
+import net.runelite.client.config.Units;
 
 /** Settings for the goat pit overlay: what is drawn, in which colors, and how the labels read. */
 @ConfigGroup(GoatIndicatorsConfig.GROUP)
@@ -542,6 +543,34 @@ public interface GoatIndicatorsConfig extends Config
 	default boolean notifyCountInTransit()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		keyName = "idleNotification",
+		name = "Nudge When Idle",
+		description = "Fire a notification when nothing has happened at the pit for a while — no catch, no goat "
+			+ "on its way in, no Hunter XP. Names the likely cause: a full pit to empty, a pit needing spikes, or "
+			+ "no catches. Fires once per stall and never on top of the pit-full alert. Off by default.",
+		section = notificationsSection,
+		position = 2
+	)
+	default Notification idleNotification()
+	{
+		return Notification.OFF;
+	}
+
+	@Range(min = 10, max = 600)
+	@Units(Units.SECONDS)
+	@ConfigItem(
+		keyName = "idleThresholdSeconds",
+		name = "Idle After",
+		description = "How long the pit must see no activity before the idle nudge fires.",
+		section = notificationsSection,
+		position = 3
+	)
+	default int idleThresholdSeconds()
+	{
+		return 60;
 	}
 
 	@ConfigItem(

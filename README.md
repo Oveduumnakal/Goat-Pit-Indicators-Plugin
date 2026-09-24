@@ -42,7 +42,7 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 
 - **Get pinged when the pit fills**
 
-  Filling a pit is semi-AFK, and the moment that matters is when it reaches capacity and needs emptying. The plugin fires a notification once the pit is full — tray, sound, and screen flash all follow your notification settings — and re-arms after you empty it, so one fill is one ping. Optionally count goats still in transit toward the trigger to be pinged the moment the pit is committed to filling.
+  Filling a pit is semi-AFK, and the moment that matters is when it reaches capacity and needs emptying. The plugin fires a notification once the pit is full — tray, sound, and screen flash all follow your notification settings — and re-arms after you empty it, so one fill is one ping. Optionally count goats still in transit toward the trigger to be pinged the moment the pit is committed to filling. An optional idle nudge covers the opposite case — drifting off — and pings you once when nothing has happened at the pit for a set time, saying whether the pit needs emptying, needs spikes, or has just stopped catching.
 
 - **Guard against misclicks**
 
@@ -120,6 +120,8 @@ Goats you can lure into the pit glow pink:
 |---|---|---|
 | Notify When Pit Is Full | Fire a notification (tray / sound / flash) once the pit fills and needs emptying, re-arming after you empty it | On |
 | Count Goats In Transit | Count goats still on their way in toward the full trigger, firing the moment the pit is committed to filling | On |
+| Nudge When Idle | Notify when nothing has happened at the pit for a while, naming the likely cause (full pit, needs spikes, or no catches) | Off |
+| Idle After | How long the pit must see no activity before the idle nudge fires (seconds) | 60 |
 
 **Misc**
 
