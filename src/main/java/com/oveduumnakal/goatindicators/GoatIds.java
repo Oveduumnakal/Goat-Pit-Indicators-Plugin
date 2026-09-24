@@ -33,14 +33,15 @@ import java.util.Set;
  * Every game-side identifier and name fragment the plugin recognises, in one place.
  *
  * <p>The goat pit is not present in the {@code net.runelite.api.gameval} constants shipped with the
- * RuneLite API, so nothing here can be imported from there. The plugin therefore identifies the pit
- * <em>structurally</em> rather than by a hard-coded id: it matches the object's name, and reads the
- * count from the varbit the object composition itself declares
- * ({@link net.runelite.api.ObjectComposition#getVarbitId()}). That needs no known id and survives a
- * re-release of the content under new ids.
+ * RuneLite API, so nothing here can be imported from there. Detection was therefore designed to work
+ * <em>structurally</em> — matching the object's name and reading the count from the varbit the object
+ * composition itself declares ({@link net.runelite.api.ObjectComposition#getVarbitId()}) — as a path
+ * that needs no known id. In practice a developer-mode session pinned the confirmed ids and varbits
+ * below, so those are what the plugin uses; the structural path is only the fallback, and a partial one
+ * — it restores the footprint outline but not the count/spikes state (see {@link GoatPitTracker}).
  *
- * <p>{@link #PIT_OBJECT_IDS} is an optional allowlist. Leave it empty to use name matching; fill it
- * in from a developer-mode session (see {@code docs/discovery.md}) to pin detection to exact ids.
+ * <p>{@link #PIT_OBJECT_IDS} is an optional allowlist. Leave it empty to fall back to name matching; fill
+ * it in from a developer-mode session (see {@code docs/discovery.md}) to pin detection to exact ids.
  */
 final class GoatIds
 {

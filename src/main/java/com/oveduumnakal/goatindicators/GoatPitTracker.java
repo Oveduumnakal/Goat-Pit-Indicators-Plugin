@@ -49,10 +49,19 @@ import net.runelite.api.coords.WorldPoint;
  * only caller (the overlay) already runs on the client thread, so caching would add invalidation
  * bugs for no measurable gain.
  *
- * <p>Both the count and the spikes state degrade gracefully. If the pit declares a varbit, that is
- * the count; otherwise goats standing inside the pit footprint are counted instead. If the pit's
- * current composition offers an "Add spikes" action, the pit is unspiked; otherwise it is treated as
- * spiked. See {@code docs/discovery.md} for how to replace these heuristics with confirmed ids.
+ * <p>Detection degrades gracefully, but only partially. As shipped the pit is found by its confirmed
+ * object id ({@link GoatIds#PIT_OBJECT_IDS}) and its count and spikes state read from the confirmed
+ * player varbits ({@link GoatIds#COUNT_VARBIT_OVERRIDE} / {@link GoatIds#SPIKES_VARBIT_OVERRIDE}), so
+ * the fallback branches below never run. Clear those ids/varbits (set the id sets empty and the varbit
+ * overrides to {@code -1}) and the fallbacks take over: the pit is matched by name, its count comes from
+ * the varbit the object composition declares — or, failing that, from goats standing on its footprint —
+ * and its spikes state from whether the composition still offers an "Add spikes" action.
+ *
+ * <p><em>The fallback only restores the footprint, not the state.</em> A re-release that churns the object
+ * ids would almost certainly move the count/spikes varbits too, and this pit's object declares no varbit of
+ * its own (see {@code docs/discovery.md}), so name matching would give a working outline over a broken count
+ * and spikes reading. Treat the fallback as a way to keep the outline alive while the confirmed varbits are
+ * re-discovered, not as full graceful degradation.
  */
 @Singleton
 class GoatPitTracker
