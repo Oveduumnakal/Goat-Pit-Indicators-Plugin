@@ -70,6 +70,18 @@ class SessionStats
 		xpGained = Math.max(0, hunterXp - startXp);
 	}
 
+	/**
+	 * Re-anchors the catch baseline after the lifetime total is reset out from under the session, so the
+	 * catches already counted this session survive rather than dropping to zero until the total climbs back.
+	 *
+	 * @param catchTotal the lifetime goats-caught total just after the reset
+	 */
+	void rebaseCatches(int catchTotal)
+	{
+		if (start != null)
+			startCatches = catchTotal - catches;
+	}
+
 	/** Clears the session so the next {@link #update(Instant, int, long)} starts a fresh one. */
 	void reset()
 	{

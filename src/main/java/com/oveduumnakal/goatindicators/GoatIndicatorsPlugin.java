@@ -62,6 +62,9 @@ public class GoatIndicatorsPlugin extends Plugin
 	/** Config key holding the lifetime goats-caught total, so it survives logouts and plugin toggles. */
 	private static final String TOTAL_CAUGHT_KEY = "totalCaught";
 
+	/** Config key of the momentary "Reset Total Caught" button, which un-ticks itself once handled. */
+	private static final String RESET_TOTAL_KEY = "resetTotalCaught";
+
 	/** Config key for the total-caught prefix, so the one-time animated migration can read and rewrite it. */
 	private static final String TOTAL_PREFIX_KEY = "totalPrefix";
 
@@ -279,20 +282,42 @@ public class GoatIndicatorsPlugin extends Plugin
 	}
 
 	/**
-	 * Handles the momentary "Reset Session Stats" button: restarts the session and un-ticks the button so it
-	 * reads as a one-shot action rather than a persistent toggle.
+	 * Handles the two momentary buttons, "Reset Total Caught" and "Reset Session Stats". Each acts only when
+	 * ticked, then un-ticks itself so it reads as a one-shot action rather than a persistent toggle.
 	 */
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
-		if (!GoatIndicatorsConfig.GROUP.equals(event.getGroup()) || !SESSION_RESET_KEY.equals(event.getKey()))
+		if (!GoatIndicatorsConfig.GROUP.equals(event.getGroup()) || !Boolean.parseBoolean(event.getNewValue()))
 			return;
 
-		if (Boolean.parseBoolean(event.getNewValue()))
-		{
-			sessionStats.reset();
-			configManager.setConfiguration(GoatIndicatorsConfig.GROUP, SESSION_RESET_KEY, false);
-		}
+		if (RESET_TOTAL_KEY.equals(event.getKey()))
+			resetTotal();
+		else if (SESSION_RESET_KEY.equals(event.getKey()))
+			resetSession();
+	}
+
+	/**
+	 * Zeroes the lifetime total and its persisted value, then re-seeds from the live count so counting continues
+	 * from zero rather than stalling until the next login. The session keeps its catches by rebasing onto the
+	 * new total, then the button un-ticks.
+	 */
+	private void resetTotal()
+	{
+		catchCounter.reset();
+		configManager.setConfiguration(GoatIndicatorsConfig.GROUP, TOTAL_CAUGHT_KEY, 0);
+		if (client.getGameState() == GameState.LOGGED_IN)
+			catchCounter.seed(client.getVarbitValue(GoatIds.COUNT_VARBIT_OVERRIDE));
+
+		sessionStats.rebaseCatches(catchCounter.getTotal());
+		configManager.setConfiguration(GoatIndicatorsConfig.GROUP, RESET_TOTAL_KEY, false);
+	}
+
+	/** Restarts the session stats, then un-ticks the button. */
+	private void resetSession()
+	{
+		sessionStats.reset();
+		configManager.setConfiguration(GoatIndicatorsConfig.GROUP, SESSION_RESET_KEY, false);
 	}
 
 	/** Reads the persisted lifetime total, defaulting to zero when none is stored yet. */

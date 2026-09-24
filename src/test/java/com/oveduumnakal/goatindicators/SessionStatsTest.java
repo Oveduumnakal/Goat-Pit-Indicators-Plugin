@@ -88,4 +88,24 @@ public class SessionStatsTest
 		assertEquals(0, stats.catches());
 		assertEquals(0, stats.xpGained());
 	}
+
+	@Test
+	public void rebaseKeepsSessionCatchesWhenTheLifetimeTotalIsReset()
+	{
+		stats.update(T0, 100, 5000);
+		stats.update(T0.plus(Duration.ofMinutes(10)), 107, 5700);
+		stats.rebaseCatches(0);
+		stats.update(T0.plus(Duration.ofMinutes(20)), 2, 5900);
+
+		assertEquals(9, stats.catches());
+	}
+
+	@Test
+	public void rebaseBeforeTheSessionStartsIsIgnored()
+	{
+		stats.rebaseCatches(0);
+		stats.update(T0, 50, 5000);
+
+		assertEquals(0, stats.catches());
+	}
 }

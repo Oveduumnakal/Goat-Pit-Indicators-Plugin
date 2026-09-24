@@ -420,6 +420,20 @@ public interface GoatIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "resetTotalCaught",
+		name = "Reset Total Caught",
+		description = "Zero the lifetime goats-caught total. Tick this to reset it; it un-ticks itself once "
+			+ "done. Counting continues from zero.",
+		section = labelsSection,
+		position = 9,
+		warning = "This clears your lifetime goats-caught total for good. Continue?"
+	)
+	default boolean resetTotalCaught()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "goatTotalFormat",
 		name = "Goat Total Format",
 		description = "How the lifetime total caught is written: Short for the compact form (e.g. 1K), or Full "
