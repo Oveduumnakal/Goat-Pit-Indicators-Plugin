@@ -38,6 +38,13 @@ final class ShortFormat
 {
 	private static final NumberFormat GROUPED = NumberFormat.getIntegerInstance(Locale.US);
 
+	/**
+	 * Smallest values that round up to a whole {@code 1M} and {@code 1B} at 3 significant figures. Anything
+	 * from here up takes the larger unit, so {@code 999,500} reads {@code 1M} rather than {@code 1000K} (#124).
+	 */
+	private static final long MILLION_FROM = 999_500L;
+	private static final long BILLION_FROM = 999_500_000L;
+
 	private ShortFormat()
 	{
 	}
@@ -52,10 +59,10 @@ final class ShortFormat
 	{
 		long abs = Math.abs(value);
 		String sign = value < 0 ? "-" : "";
-		if (abs >= 1_000_000_000L)
+		if (abs >= BILLION_FROM)
 			return sign + mantissa(abs / 1_000_000_000.0) + "B";
 
-		if (abs >= 1_000_000L)
+		if (abs >= MILLION_FROM)
 			return sign + mantissa(abs / 1_000_000.0) + "M";
 
 		if (abs >= 1_000L)
@@ -77,10 +84,10 @@ final class ShortFormat
 	}
 
 	/**
-	 * Formats a scaled mantissa in {@code [1, 1000)} to 3 significant figures, dropping any trailing
+	 * Formats a scaled mantissa (just under 1 up to 1000) to 3 significant figures, dropping any trailing
 	 * zeros and a dangling decimal point.
 	 *
-	 * @param d the scaled value in {@code [1, 1000)}
+	 * @param d the scaled value, from just under 1 up to 1000
 	 * @return the trimmed mantissa string
 	 */
 	private static String mantissa(double d)

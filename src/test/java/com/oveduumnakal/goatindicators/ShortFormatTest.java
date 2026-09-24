@@ -37,6 +37,17 @@ public class ShortFormatTest
 	}
 
 	@Test
+	public void valuesThatRoundUpToTheNextUnitTakeIt()
+	{
+		assertEquals("999K", ShortFormat.value(999_499));
+		assertEquals("1M", ShortFormat.value(999_500));
+		assertEquals("1M", ShortFormat.value(999_999));
+		assertEquals("999M", ShortFormat.value(999_499_999));
+		assertEquals("1B", ShortFormat.value(999_500_000));
+		assertEquals("-1M", ShortFormat.value(-999_700));
+	}
+
+	@Test
 	public void negativesKeepTheirSign()
 	{
 		assertEquals("-1.7K", ShortFormat.value(-1_700));
