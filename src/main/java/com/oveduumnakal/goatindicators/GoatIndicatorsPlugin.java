@@ -109,6 +109,9 @@ public class GoatIndicatorsPlugin extends Plugin
 	private GoatMenuSwapper menuSwapper;
 
 	@Inject
+	private PitFullNotifier pitFullNotifier;
+
+	@Inject
 	private SessionStats sessionStats;
 
 	@Inject
@@ -189,6 +192,7 @@ public class GoatIndicatorsPlugin extends Plugin
 	{
 		transitTracker.onTick(client.getTopLevelWorldView().npcs(), localTargetIndex(), localProdding(),
 			remoteProddedGoatIndices());
+		pitFullNotifier.onTick();
 		sessionStats.update(Instant.now(), catchCounter.getTotal(), client.getSkillExperience(Skill.HUNTER));
 		if (seedCountdown > 0 && --seedCountdown == 0)
 			catchCounter.seed(client.getVarbitValue(GoatIds.COUNT_VARBIT_OVERRIDE));
