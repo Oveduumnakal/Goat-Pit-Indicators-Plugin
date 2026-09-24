@@ -31,7 +31,9 @@ import static org.mockito.Mockito.when;
 /**
  * Covers the menu reordering: the pure {@link GoatMenuSwapper#promoteToTop} move, and the
  * {@code onPostMenuSort} decision that a Cancel swap outranks a Walk swap, fires only once no catching pit
- * has room, and leaves the menu untouched otherwise. RuneLite menu, item and pit types are mocked.
+ * has room, leaves the menu untouched otherwise, and promotes a goat's cast over an overlapping NPC (Geoff)
+ * only when the cast is not already the default and no full-pit Cancel swap outranks it. RuneLite menu, item
+ * and pit types are mocked.
  */
 public class GoatMenuSwapperTest
 {
@@ -164,6 +166,66 @@ public class GoatMenuSwapperTest
 		swapper.onPostMenuSort();
 
 		verify(menu, never()).setMenuEntries(any());
+	}
+
+	@Test
+	public void goatCastIsPromotedOverAnOverlappingNpcWhenTheCastIsNotTheDefault()
+	{
+		when(config.swapTelegrabGoatFirst()).thenReturn(true);
+		when(lureSpells.canLure()).thenReturn(true);
+
+		MenuEntry walk = entryOfType(MenuAction.WALK);
+		MenuEntry cast = castOnGoatEntry();
+		MenuEntry overlappingNpc = mock(MenuEntry.class);
+		Menu menu = menuOf(walk, cast, overlappingNpc);
+
+		swapper.onPostMenuSort();
+
+		assertSame(cast, promotedTopOf(menu));
+	}
+
+	@Test
+	public void goatFirstLeavesTheMenuAloneWhenTheCastIsAlreadyTheDefault()
+	{
+		when(config.swapTelegrabGoatFirst()).thenReturn(true);
+		when(lureSpells.canLure()).thenReturn(true);
+
+		Menu menu = menuOf(entryOfType(MenuAction.WALK), castOnGoatEntry());
+
+		swapper.onPostMenuSort();
+
+		verify(menu, never()).setMenuEntries(any());
+	}
+
+	@Test
+	public void goatFirstDoesNothingWithoutASelectedSpell()
+	{
+		when(config.swapTelegrabGoatFirst()).thenReturn(true);
+		when(lureSpells.canLure()).thenReturn(false);
+
+		Menu menu = menuOf(entryOfType(MenuAction.WALK), goatNpcEntry());
+
+		swapper.onPostMenuSort();
+
+		verify(menu, never()).setMenuEntries(any());
+	}
+
+	@Test
+	public void cancelWhenFullOutranksTheGoatFirstPromote()
+	{
+		when(config.swapTelegrabGoatFirst()).thenReturn(true);
+		when(config.swapCancelWhenFull()).thenReturn(true);
+		when(lureSpells.canLure()).thenReturn(true);
+		onlyPitIsFull();
+
+		MenuEntry cast = castOnGoatEntry();
+		MenuEntry cancel = entryOfType(MenuAction.CANCEL);
+		MenuEntry overlappingNpc = mock(MenuEntry.class);
+		Menu menu = menuOf(cast, cancel, overlappingNpc);
+
+		swapper.onPostMenuSort();
+
+		assertSame(cancel, promotedTopOf(menu));
 	}
 
 	private void enableBothSwaps()

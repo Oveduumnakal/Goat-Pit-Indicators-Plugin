@@ -470,4 +470,18 @@ public interface GoatIndicatorsConfig extends Config
 	{
 		return true;
 	}
+
+	@ConfigItem(
+		keyName = "swapTelegrabGoatFirst",
+		name = "Goat First For Telegrab",
+		description = "When a luring spell is selected and a goat shares a tile with another NPC — like Geoff — "
+			+ "keep the goat's cast at the top (left-click) of the menu so the NPC standing over it does not steal "
+			+ "the click. Only reorders when the goat's cast is not already the default.",
+		section = contextMenuSection,
+		position = 3
+	)
+	default boolean swapTelegrabGoatFirst()
+	{
+		return true;
+	}
 }
