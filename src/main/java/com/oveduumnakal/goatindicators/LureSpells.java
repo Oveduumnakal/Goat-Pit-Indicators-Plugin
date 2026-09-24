@@ -27,24 +27,49 @@ package com.oveduumnakal.goatindicators;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import net.runelite.api.Client;
+
 /**
  * Answers whether the player is set up to lure a goat into the pit by either supported spell — Telekinetic
  * Grab or Dark Lure. Both drag the goat toward the caster across the pit, so the highlight and targeting
  * geometry treat them alike; only the cast requirements differ, and each spell owns its own. The book the
  * player is on is detected automatically, so no config choice between the two is needed.
+ *
+ * <p>The answer is cached per game tick (#129). It is asked every frame by the menu swapper and the goat
+ * highlight, and each check scans the inventory, the rune pouch and the spellbook, yet everything it depends on
+ * — Magic level, spellbook, runes, worn staff, quest state — only changes on a tick.
  */
 @Singleton
 class LureSpells
 {
-	@Inject
-	private TelekineticGrab telekineticGrab;
+	private final Client client;
+	private final TelekineticGrab telekineticGrab;
+	private final DarkLure darkLure;
+
+	/** Tick the cached answer was computed on, or {@code -1} before the first check. */
+	private int cachedTick = -1;
+
+	/** Whether either spell could be cast, as of {@link #cachedTick}. */
+	private boolean cachedCanLure;
 
 	@Inject
-	private DarkLure darkLure;
+	LureSpells(Client client, TelekineticGrab telekineticGrab, DarkLure darkLure)
+	{
+		this.client = client;
+		this.telekineticGrab = telekineticGrab;
+		this.darkLure = darkLure;
+	}
 
 	/** Whether the player can cast either lure spell right now, so goats are worth highlighting. */
 	boolean canLure()
 	{
-		return telekineticGrab.canCast() || darkLure.canCast();
+		int tick = client.getTickCount();
+		if (tick != cachedTick)
+		{
+			cachedCanLure = telekineticGrab.canCast() || darkLure.canCast();
+			cachedTick = tick;
+		}
+
+		return cachedCanLure;
 	}
 }
