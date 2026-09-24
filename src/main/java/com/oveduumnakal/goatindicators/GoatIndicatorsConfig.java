@@ -191,6 +191,20 @@ public interface GoatIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "highlightBestTile",
+		name = "Highlight Best Tile",
+		description = "Mark the tile you can walk to that puts the most goats in reach at once — for a lure "
+			+ "spell, goats in range and across the pit; with a Cattleprod equipped, goats beside the tile you "
+			+ "can prod in. Updates every tick as the goats move.",
+		section = indicatorsSection,
+		position = 8
+	)
+	default boolean highlightBestTile()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "emptyOutlineColor",
 		name = "Empty Outline",
 		description = "Outline color for an empty or unspiked pit, and the low end of the fill gradient. "
@@ -312,6 +326,19 @@ public interface GoatIndicatorsConfig extends Config
 	default Color prodFurthestColor()
 	{
 		return new Color(255, 253, 199, 125);
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = "bestTileColor",
+		name = "Best Tile",
+		description = "Color of the best-tile marker and its \"Stand here\" label.",
+		section = colorsSection,
+		position = 10
+	)
+	default Color bestTileColor()
+	{
+		return new Color(0, 220, 255, 200);
 	}
 
 	@ConfigItem(

@@ -24,6 +24,10 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 
   With a Cattleprod equipped, the outline switches to the goats you can prod into a spiked, non-full pit — those within prod range — drawn in their own color and the same near/far gradient. Optionally limited to the goats you can prod in from exactly where you stand, judged from the tile a click would walk you to, so you are never shown a goat you would have to reposition for first.
 
+- **Know where to stand**
+
+  An optional best-tile marker shows the tile you can walk to that puts the most goats in reach at once — across the pit and in range for a lure spell, or right beside you for a Cattleprod — with a "Stand here" count. It updates every tick as the goats wander.
+
 - **Find the spike supply when a pit runs dry**
 
   When a pit needs re-spiking and you are carrying none, the spike supply object is outlined in the same warning colors, with a "Take Spike" prompt — so you can restock without hunting for it.
@@ -77,6 +81,7 @@ Goats you can lure into the pit glow pink:
 | Prodable from Location | Only highlight prodable goats you can prod in without repositioning, judged from the tile a click would walk you to | On |
 | Near/Far Gradient | Shade each highlighted goat's outline by distance to the pit, closest color to furthest; applies to both the telegrab and prod highlights | On |
 | Highlight Spike Supply | Outline the spike supply when a pit needs lining and you carry no spikes | On |
+| Highlight Best Tile | Mark the reachable tile that puts the most goats in reach at once — lure range and across the pit, or beside you to prod — with a "Stand here" count | Off |
 
 **Indicator Colors**
 
@@ -91,6 +96,7 @@ Goats you can lure into the pit glow pink:
 | Telegrab Furthest | Outline for the furthest (lowest-priority) lure target | Faint pink |
 | Prod Closest | Outline for the closest prodable goat, nearest the pit | Orange |
 | Prod Furthest | Outline for the furthest prodable goat still in prod range | Pale yellow |
+| Best Tile | Color of the best-tile marker and its "Stand here" label | Cyan |
 
 **Labels**
 

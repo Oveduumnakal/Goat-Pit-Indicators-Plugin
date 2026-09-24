@@ -28,6 +28,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.Polygon;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.util.ArrayList;
@@ -40,9 +41,11 @@ import net.runelite.api.GameObject;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.NPC;
+import net.runelite.api.Perspective;
 import net.runelite.api.Player;
 import net.runelite.api.Point;
 import net.runelite.api.WorldView;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.InventoryID;
@@ -50,6 +53,7 @@ import net.runelite.api.gameval.ItemID;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
+import net.runelite.client.ui.overlay.OverlayUtil;
 
 /**
  * Draws a purple clickbox outline over every goat that is worth luring into a pit right now.
@@ -64,6 +68,10 @@ import net.runelite.client.ui.overlay.OverlayPosition;
  * instead: goats within prod range of a catching pit are outlined in the prod color, shaded from closest
  * to furthest by distance to the pit under the same near/far gradient. The prod highlight supersedes the
  * telegrab one so the two never fight over the outline.
+ *
+ * <p>Optionally it also marks the best tile to stand on (#104): the reachable tile that puts the most goats in
+ * reach of the current method at once — lure with a lure spell ready, prod with a Cattleprod equipped — scored
+ * by {@link BestTile} and recomputed at most once per game tick.
  */
 class GoatHighlightOverlay extends Overlay
 {
@@ -87,6 +95,15 @@ class GoatHighlightOverlay extends Overlay
 	/** The reach map from the last flood, keyed by {@link ProdPathing#key(int, int)}. */
 	private Map<Long, Integer> cachedReach;
 
+	/** Game tick the best tile was last scored on, so the search runs at most once per tick. */
+	private int bestTileTick = -1;
+
+	/** Whether the cached best tile was scored for prodding rather than luring. */
+	private boolean bestTileProd;
+
+	/** The cached best tile as {@code int[]{x, y, score}}, or {@code null} when no tile scored. */
+	private int[] bestTile;
+
 	@Inject
 	GoatHighlightOverlay(Client client, GoatIndicatorsConfig config, GoatPitTracker tracker,
 		GoatTransitTracker transitTracker, LureSpells lureSpells)
@@ -106,6 +123,9 @@ class GoatHighlightOverlay extends Overlay
 		Player player = client.getLocalPlayer();
 		if (player == null)
 			return null;
+
+		if (config.highlightBestTile())
+			renderBestTile(graphics, player.getWorldLocation());
 
 		if (config.highlightProdable() && cattleprodEquipped())
 		{
@@ -149,6 +169,123 @@ class GoatHighlightOverlay extends Overlay
 		}
 
 		return null;
+	}
+
+	/**
+	 * Marks the best tile to stand on for the current method: prod while a Cattleprod is equipped, otherwise
+	 * lure when a lure spell can be cast. Nothing is drawn with neither method ready, with no catching pit, or
+	 * when no reachable tile reaches a goat. The search is cached per game tick, since goats and the player
+	 * only move on ticks.
+	 */
+	private void renderBestTile(Graphics2D graphics, WorldPoint playerLocation)
+	{
+		if (playerLocation == null)
+			return;
+
+		boolean prod = cattleprodEquipped();
+		if (!prod && !lureSpells.canLure())
+			return;
+
+		int tick = client.getTickCount();
+		if (tick != bestTileTick || prod != bestTileProd)
+		{
+			bestTile = findBestTile(prod, playerLocation);
+			bestTileTick = tick;
+			bestTileProd = prod;
+		}
+
+		if (bestTile != null)
+			drawBestTile(graphics, new WorldPoint(bestTile[0], bestTile[1], playerLocation.getPlane()), bestTile[2]);
+	}
+
+	/**
+	 * Scores every tile reachable from the player and returns the best as {@code int[]{x, y, score}}, or
+	 * {@code null} when none reaches a goat. Goats already in transit are left out, as they cannot be sent in
+	 * again. Line of sight for a lure is taken from the scene collision map.
+	 */
+	private int[] findBestTile(boolean prod, WorldPoint playerLocation)
+	{
+		int plane = playerLocation.getPlane();
+		List<int[]> pits = new ArrayList<>();
+		for (GameObject pit : catchingPits())
+		{
+			int[] footprint = worldFootprint(pit);
+			if (footprint != null && pit.getPlane() == plane)
+				pits.add(footprint);
+		}
+
+		List<int[]> goats = new ArrayList<>();
+		List<WorldArea> goatAreas = new ArrayList<>();
+		for (NPC npc : client.getTopLevelWorldView().npcs())
+		{
+			if (npc == null || !GoatPitTracker.matchesGoatName(npc.getName())
+					|| transitTracker.isInTransit(npc.getIndex()))
+				continue;
+
+			WorldPoint at = npc.getWorldLocation();
+			WorldArea area = npc.getWorldArea();
+			if (at == null || area == null || at.getPlane() != plane)
+				continue;
+
+			goats.add(new int[]{at.getX(), at.getY(), goatAreas.size()});
+			goatAreas.add(area);
+		}
+
+		Map<Long, Integer> reach = reachFromPlayer(playerLocation);
+		if (pits.isEmpty() || goats.isEmpty() || reach == null)
+			return null;
+
+		if (prod)
+			return BestTile.pick(reach, pits, (x, y) -> BestTile.prodCount(x, y, goats, pits));
+
+		WorldView worldView = client.getTopLevelWorldView();
+		BestTile.SightFn sight = (x, y, id) ->
+			new WorldArea(x, y, 1, 1, plane).hasLineOfSightTo(worldView, goatAreas.get(id));
+		return BestTile.pick(reach, pits, (x, y) -> BestTile.lureCount(x, y, goats, pits, sight));
+	}
+
+	/**
+	 * Draws the best-tile marker: a lightly filled tile outline in the configured color with a
+	 * {@code "Stand here: N"} label, where {@code N} is how many goats the tile reaches.
+	 */
+	private void drawBestTile(Graphics2D graphics, WorldPoint tile, int score)
+	{
+		LocalPoint local = LocalPoint.fromWorld(client.getTopLevelWorldView(), tile);
+		if (local == null)
+			return;
+
+		Polygon poly = Perspective.getCanvasTilePoly(client, local);
+		if (poly == null)
+			return;
+
+		Color color = config.bestTileColor();
+		graphics.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha() / 4));
+		graphics.fill(poly);
+		graphics.setColor(color);
+		graphics.setStroke(OUTLINE_STROKE);
+		graphics.draw(poly);
+
+		String text = "Stand here: " + score;
+		Point at = Perspective.getCanvasTextLocation(client, graphics, local, text, 0);
+		if (at != null)
+			OverlayUtil.renderTextLocation(graphics, at, text, color);
+	}
+
+	/**
+	 * A pit's footprint in world coordinates as {@code int[]{minX, minY, maxX, maxY}}, or {@code null} when its
+	 * scene bounds are unavailable.
+	 */
+	private static int[] worldFootprint(GameObject pit)
+	{
+		Point min = pit.getSceneMinLocation();
+		Point max = pit.getSceneMaxLocation();
+		WorldView worldView = pit.getWorldView();
+		if (min == null || max == null || worldView == null)
+			return null;
+
+		int baseX = worldView.getBaseX();
+		int baseY = worldView.getBaseY();
+		return new int[]{baseX + min.getX(), baseY + min.getY(), baseX + max.getX(), baseY + max.getY()};
 	}
 
 	/**
