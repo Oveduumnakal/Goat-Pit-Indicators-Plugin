@@ -104,6 +104,7 @@ Goats you can lure into the pit glow pink:
 | Total Prefix | What precedes the total: nothing, a "Total: " label, or the animated goat | Animated |
 | Count Label Color | Color of the count and "Add Spikes" text | White |
 | Total Label Color | Color of the total-caught text | White |
+| Reset Total Caught | Tick to zero the lifetime goats-caught total; un-ticks itself | Off |
 
 **Context Menu**
 
