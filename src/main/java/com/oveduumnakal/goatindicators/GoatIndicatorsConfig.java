@@ -197,7 +197,7 @@ public interface GoatIndicatorsConfig extends Config
 			+ "spell, goats in range and across the pit; with a Cattleprod equipped, goats beside the tile you "
 			+ "can prod in. Updates every tick as the goats move.",
 		section = indicatorsSection,
-		position = 8
+		position = 9
 	)
 	default boolean highlightBestTile()
 	{
