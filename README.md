@@ -26,7 +26,7 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 
 - **Find the spike supply when a pit runs dry**
 
-  When a pit needs re-spiking and you are carrying none, the spike supply object is outlined in the same warning colors, with a "Take Spike" prompt — so you can restock without hunting for it.
+  When a pit needs re-spiking and you are carrying none, the spike supply object is outlined in the same warning colors, with a "Take Spike" prompt — so you can restock without hunting for it. It also warns you *before* you empty a full pit with no spikes on you — emptying uses up the spikes, so a "Restock Spikes" line on the pit and a reminder in the pit-full notification save you a dead pit.
 
 - **Track your lifetime total**
 
@@ -77,6 +77,7 @@ Goats you can lure into the pit glow pink:
 | Prodable from Location | Only highlight prodable goats you can prod in without repositioning, judged from the tile a click would walk you to | On |
 | Near/Far Gradient | Shade each highlighted goat's outline by distance to the pit, closest color to furthest; applies to both the telegrab and prod highlights | On |
 | Highlight Spike Supply | Outline the spike supply when a pit needs lining and you carry no spikes | On |
+| Restock Before Emptying | When the pit is full and you carry no spikes, show "Restock Spikes" on the pit, outline the supply, and add a reminder to the pit-full notification | On |
 
 **Indicator Colors**
 
@@ -104,6 +105,7 @@ Goats you can lure into the pit glow pink:
 | Total Prefix | What precedes the total: nothing, a "Total: " label, or the animated goat | Animated |
 | Count Label Color | Color of the count and "Add Spikes" text | White |
 | Total Label Color | Color of the total-caught text | White |
+| Show Spikes Carried | Show how many spikes you are carrying, one line above the pit count | Off |
 
 **Context Menu**
 

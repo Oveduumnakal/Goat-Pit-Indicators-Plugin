@@ -191,6 +191,21 @@ public interface GoatIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "warnRestockSpikes",
+		name = "Restock Before Emptying",
+		description = "When the pit is full and you are carrying no spikes, say so before you empty it: a "
+			+ "\"Restock Spikes\" line on the pit, the spike supply outlined (with Highlight Spike Supply on), and "
+			+ "a reminder added to the pit-full notification. Emptying uses up the pit's spikes, so this saves a "
+			+ "dead pit.",
+		section = indicatorsSection,
+		position = 8
+	)
+	default boolean warnRestockSpikes()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "emptyOutlineColor",
 		name = "Empty Outline",
 		description = "Outline color for an empty or unspiked pit, and the low end of the fill gradient. "
@@ -429,6 +444,18 @@ public interface GoatIndicatorsConfig extends Config
 		warning = "This clears your lifetime goats-caught total for good. Continue?"
 	)
 	default boolean resetTotalCaught()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "showSpikeCount",
+		name = "Show Spikes Carried",
+		description = "Show how many spikes you are carrying, one line above the pit count.",
+		section = labelsSection,
+		position = 10
+	)
+	default boolean showSpikeCount()
 	{
 		return false;
 	}
