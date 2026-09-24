@@ -38,6 +38,7 @@ import net.runelite.api.NPC;
 import net.runelite.api.ObjectComposition;
 import net.runelite.api.Point;
 import net.runelite.api.Skill;
+import net.runelite.api.Tile;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 
@@ -79,6 +80,44 @@ class GoatPitTracker
 			pits.put(object.getHash(), object);
 		else if (isSupply(object))
 			supplies.put(object.getHash(), object);
+	}
+
+	/**
+	 * Records every pit and spike supply already standing in the scene, for when the plugin starts with the pit
+	 * loaded: their spawn events fired before the plugin was listening (#122). A multi-tile object sits on
+	 * several tiles but is keyed by its hash, so it is recorded once.
+	 *
+	 * @param tiles the scene's tiles, indexed {@code [plane][x][y]}; missing entries are skipped
+	 */
+	void scan(Tile[][][] tiles)
+	{
+		if (tiles == null)
+			return;
+
+		for (Tile[][] plane : tiles)
+		{
+			if (plane == null)
+				continue;
+
+			for (Tile[] column : plane)
+				scanColumn(column);
+		}
+	}
+
+	/** Records the pits and supplies on one column of scene tiles. */
+	private void scanColumn(Tile[] column)
+	{
+		if (column == null)
+			return;
+
+		for (Tile tile : column)
+		{
+			if (tile == null || tile.getGameObjects() == null)
+				continue;
+
+			for (GameObject object : tile.getGameObjects())
+				onSpawn(object);
+		}
 	}
 
 	/** Drops an object that has left the scene. */
