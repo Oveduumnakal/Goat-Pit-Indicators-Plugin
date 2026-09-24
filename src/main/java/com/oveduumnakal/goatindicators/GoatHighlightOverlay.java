@@ -84,6 +84,13 @@ class GoatHighlightOverlay extends Overlay
 	/** The tile the last prod-from-location flood started from, so the flood is reused until the player moves. */
 	private WorldPoint cachedPathOrigin;
 
+	/**
+	 * The game tick the cached flood was computed on. The flood is reused across the many render frames
+	 * within a tick, but recomputed on the next tick even from an unchanged tile, so a collision change
+	 * (a gate or door opening on an adjacent tile) is picked up rather than served stale.
+	 */
+	private int cachedPathTick = -1;
+
 	/** The reach map from the last flood, keyed by {@link ProdPathing#key(int, int)}. */
 	private Map<Long, Integer> cachedReach;
 
@@ -242,15 +249,18 @@ class GoatHighlightOverlay extends Overlay
 
 	/**
 	 * Floods the walkable tiles out from the player to predict where a click would land, reusing the last
-	 * result until the player moves. The walkability of each step is taken from the scene collision map via
-	 * {@link WorldArea#canTravelInDirection}. Returns {@code null} when the player location is unknown.
+	 * result until the player moves or the tick advances. The walkability of each step is taken from the
+	 * scene collision map via {@link WorldArea#canTravelInDirection}. Recomputing once per tick (rather than
+	 * only on movement) keeps the flood off the per-frame hot path while still picking up a collision change
+	 * that happens with the player standing still. Returns {@code null} when the player location is unknown.
 	 */
 	private Map<Long, Integer> reachFromPlayer(WorldPoint playerLocation)
 	{
 		if (playerLocation == null)
 			return null;
 
-		if (playerLocation.equals(cachedPathOrigin))
+		int tick = client.getTickCount();
+		if (playerLocation.equals(cachedPathOrigin) && tick == cachedPathTick)
 			return cachedReach;
 
 		WorldView worldView = client.getTopLevelWorldView();
@@ -259,6 +269,7 @@ class GoatHighlightOverlay extends Overlay
 			new WorldArea(new WorldPoint(x, y, plane), 1, 1).canTravelInDirection(worldView, dx, dy);
 		cachedReach = ProdPathing.reachDistances(playerLocation.getX(), playerLocation.getY(), step, PATH_RADIUS);
 		cachedPathOrigin = playerLocation;
+		cachedPathTick = tick;
 		return cachedReach;
 	}
 
