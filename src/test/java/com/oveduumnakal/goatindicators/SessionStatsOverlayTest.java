@@ -34,4 +34,11 @@ public class SessionStatsOverlayTest
 	{
 		assertEquals("00:00", SessionStatsOverlay.formatDuration(Duration.ofSeconds(-5)));
 	}
+
+	@Test
+	public void lootValueSumsBothItemsWithoutOverflow()
+	{
+		assertEquals(3 * 110 + 9 * 200, SessionStatsOverlay.lootValue(3, 110, 9, 200));
+		assertEquals(3_000_000_000L, SessionStatsOverlay.lootValue(30_000, 100_000, 0, 5));
+	}
 }

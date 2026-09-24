@@ -30,6 +30,8 @@ import java.time.Duration;
 import java.util.Locale;
 import javax.inject.Inject;
 
+import net.runelite.api.gameval.ItemID;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.LineComponent;
@@ -37,7 +39,8 @@ import net.runelite.client.ui.overlay.components.TitleComponent;
 
 /**
  * A movable infobox showing this session's catching stats (#101): elapsed time, goats caught, goats per
- * hour, Hunter XP gained, and XP per hour. Reads {@link SessionStats}, which the plugin samples each tick;
+ * hour, Hunter XP gained, and XP per hour — plus, optionally, the goat fur and horn collected and their Grand
+ * Exchange value (#102). Reads {@link SessionStats}, which the plugin samples each tick;
  * hidden until the session has a sample and while the config toggle is off. A standard {@link OverlayPanel},
  * so the user can drag it anywhere from the overlay menu.
  */
@@ -45,12 +48,14 @@ class SessionStatsOverlay extends OverlayPanel
 {
 	private final GoatIndicatorsConfig config;
 	private final SessionStats stats;
+	private final ItemManager itemManager;
 
 	@Inject
-	SessionStatsOverlay(GoatIndicatorsConfig config, SessionStats stats)
+	SessionStatsOverlay(GoatIndicatorsConfig config, SessionStats stats, ItemManager itemManager)
 	{
 		this.config = config;
 		this.stats = stats;
+		this.itemManager = itemManager;
 		setPosition(OverlayPosition.TOP_LEFT);
 	}
 
@@ -69,8 +74,34 @@ class SessionStatsOverlay extends OverlayPanel
 		panelComponent.getChildren().add(line("Goats/hr", ShortFormat.exact(stats.catchesPerHour())));
 		panelComponent.getChildren().add(line("Hunter xp", ShortFormat.value(stats.xpGained())));
 		panelComponent.getChildren().add(line("Xp/hr", ShortFormat.value(stats.xpPerHour())));
+		if (config.showSessionLoot())
+			addLootLines();
 
 		return super.render(graphics);
+	}
+
+	/** Adds the fur and horn collected this session, and their combined Grand Exchange value. */
+	private void addLootLines()
+	{
+		long value = lootValue(stats.fur(), itemManager.getItemPrice(ItemID.GOAT_PIT_FUR),
+			stats.horn(), itemManager.getItemPrice(ItemID.DESERT_GOAT_HORN));
+		panelComponent.getChildren().add(line("Fur", ShortFormat.exact(stats.fur())));
+		panelComponent.getChildren().add(line("Horn", ShortFormat.exact(stats.horn())));
+		panelComponent.getChildren().add(line("Loot gp", ShortFormat.value(value)));
+	}
+
+	/**
+	 * The combined value of the fur and horn collected.
+	 *
+	 * @param fur fur collected
+	 * @param furPrice price of one fur
+	 * @param horn horns collected
+	 * @param hornPrice price of one horn
+	 * @return the total value, computed in {@code long} so a long session cannot overflow
+	 */
+	static long lootValue(int fur, int furPrice, int horn, int hornPrice)
+	{
+		return (long) fur * furPrice + (long) horn * hornPrice;
 	}
 
 	/** @return a two-column stat row with {@code label} on the left and {@code value} on the right. */

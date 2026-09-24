@@ -16,7 +16,8 @@ import static org.junit.Assert.assertTrue;
 /**
  * Covers the session tally: the first sample fixes the baseline, later samples report the catch/XP delta and
  * elapsed time, the per-hour rates scale by elapsed time (and stay zero before any passes), a reset
- * re-baselines, and a shrinking lifetime total cannot drive the counts negative.
+ * re-baselines, and a shrinking lifetime total cannot drive the counts negative. Also covers the fur/horn
+ * tally: only rises at the pit count, drops book nothing, and a reset keeps the carried baseline.
  */
 public class SessionStatsTest
 {
@@ -107,5 +108,59 @@ public class SessionStatsTest
 		stats.update(T0, 50, 5000);
 
 		assertEquals(0, stats.catches());
+	}
+
+	@Test
+	public void firstInventoryReadingOnlyFixesTheBaseline()
+	{
+		stats.recordInventory(5, 12, true);
+
+		assertEquals(0, stats.fur());
+		assertEquals(0, stats.horn());
+	}
+
+	@Test
+	public void risesAtThePitCountAsLoot()
+	{
+		stats.recordInventory(0, 0, true);
+		stats.recordInventory(1, 3, true);
+		stats.recordInventory(2, 6, true);
+
+		assertEquals(2, stats.fur());
+		assertEquals(6, stats.horn());
+	}
+
+	@Test
+	public void risesAwayFromThePitAreIgnoredButMoveTheBaseline()
+	{
+		stats.recordInventory(0, 0, true);
+		stats.recordInventory(20, 20, false);
+		stats.recordInventory(21, 20, true);
+
+		assertEquals(1, stats.fur());
+		assertEquals(0, stats.horn());
+	}
+
+	@Test
+	public void dropsBookNothing()
+	{
+		stats.recordInventory(10, 10, true);
+		stats.recordInventory(0, 4, true);
+		stats.recordInventory(1, 4, true);
+
+		assertEquals(1, stats.fur());
+		assertEquals(0, stats.horn());
+	}
+
+	@Test
+	public void resetClearsLootButKeepsTheCarriedBaseline()
+	{
+		stats.recordInventory(0, 0, true);
+		stats.recordInventory(3, 9, true);
+		stats.reset();
+		stats.recordInventory(4, 9, true);
+
+		assertEquals(1, stats.fur());
+		assertEquals(0, stats.horn());
 	}
 }
