@@ -96,7 +96,7 @@ class GoatMenuSwapper
 		if (config.swapTelegrabGoatFirst() && lureSpells.canLure())
 		{
 			MenuEntry goatCast = goatCastEntry(entries);
-			if (goatCast != null && goatCast != entries[entries.length - 1])
+			if (goatCast != null && !isGoatCast(entries[entries.length - 1]))
 				promote = goatCast;
 		}
 
@@ -149,16 +149,26 @@ class GoatMenuSwapper
 	 * name distinguishes a goat from any other NPC sharing the tile (Geoff), which is what the goat-first swap
 	 * promotes over.
 	 */
-	private MenuEntry goatCastEntry(MenuEntry[] entries)
+	private static MenuEntry goatCastEntry(MenuEntry[] entries)
 	{
 		for (MenuEntry entry : entries)
 		{
-			if (entry.getType() == MenuAction.WIDGET_TARGET_ON_NPC
-					&& GoatPitTracker.matchesGoatName(entry.getTarget()))
+			if (isGoatCast(entry))
 				return entry;
 		}
 
 		return null;
+	}
+
+	/**
+	 * Whether an entry is a selected spell aimed at a goat. The goat-first promote leaves the menu alone when the
+	 * top entry already is one: with two goats stacked under the cursor, swapping which goat gets the cast
+	 * would only trade one valid target for another (#125).
+	 */
+	private static boolean isGoatCast(MenuEntry entry)
+	{
+		return entry.getType() == MenuAction.WIDGET_TARGET_ON_NPC
+			&& GoatPitTracker.matchesGoatName(entry.getTarget());
 	}
 
 	/**

@@ -198,6 +198,19 @@ public class GoatMenuSwapperTest
 	}
 
 	@Test
+	public void goatFirstLeavesTwoStackedGoatsAlone()
+	{
+		when(config.swapTelegrabGoatFirst()).thenReturn(true);
+		when(lureSpells.canLure()).thenReturn(true);
+
+		Menu menu = menuOf(entryOfType(MenuAction.WALK), castOnGoatEntry(), castOnGoatEntry());
+
+		swapper.onPostMenuSort();
+
+		verify(menu, never()).setMenuEntries(any());
+	}
+
+	@Test
 	public void goatFirstDoesNothingWithoutASelectedSpell()
 	{
 		when(config.swapTelegrabGoatFirst()).thenReturn(true);
