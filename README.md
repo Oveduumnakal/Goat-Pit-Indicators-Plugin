@@ -32,13 +32,21 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 
   A running count of every goat you have caught, drawn on the pit and kept across logins and client restarts. The game keeps no total of its own, so the plugin tallies each catch itself. The total's icon is an animated leaping goat by default. Place it on any compass point, or turn it off.
 
+- **See how the session is going**
+
+  An optional movable infobox tracks this session at a glance: time elapsed, goats caught, goats per hour, and Hunter XP gained and per hour. Starts when the plugin loads, resets on demand, and drags anywhere you like.
+
 - **Watch the ones on their way in**
 
   A live count of your goats currently in transit to the pit — lured or prodded — so a busy pit's true fill is clear before the goats land.
 
+- **Get pinged when the pit fills**
+
+  Filling a pit is semi-AFK, and the moment that matters is when it reaches capacity and needs emptying. The plugin fires a notification once the pit is full — tray, sound, and screen flash all follow your notification settings — and re-arms after you empty it, so one fill is one ping. Optionally count goats still in transit toward the trigger to be pinged the moment the pit is committed to filling.
+
 - **Guard against misclicks**
 
-  Optional right-click reordering keeps stray left-clicks from wasting a cast or clearing a pit early: "Cancel" jumps up when the pit is effectively full, "Walk here" leads while a Cattleprod is equipped, and "Clear Goat Pit" drops off the top until the pit is actually full.
+  Optional right-click reordering keeps stray left-clicks from wasting a cast or clearing a pit early: "Cancel" jumps up when the pit is effectively full, "Walk here" leads while a Cattleprod is equipped, "Clear Goat Pit" drops off the top until the pit is actually full, and a goat's own cast stays on top when another NPC — like Geoff — stands on its tile, so the overlap can't steal your telegrab.
 
 - **Make it yours**
 
@@ -104,6 +112,14 @@ Goats you can lure into the pit glow pink:
 | "Cancel" First When Full | Raise "Cancel" when you cast a lure on a goat but the pit is effectively full | On |
 | "Walk here" First With Prod | Raise "Walk here" while a Cattleprod is equipped and the pit is effectively full | On |
 | "Clear" Last While Spikes Sharp | Demote "Clear Goat Pit" off the top of the menu while a pit can still catch — spiked and not yet full | On |
+| Goat First For Telegrab | Keep a goat's cast on top when another NPC (like Geoff) shares its tile, so the overlap can't steal the click | On |
+
+**Notifications**
+
+| Setting | What it does | Default |
+|---|---|---|
+| Notify When Pit Is Full | Fire a notification (tray / sound / flash) once the pit fills and needs emptying, re-arming after you empty it | On |
+| Count Goats In Transit | Count goats still on their way in toward the full trigger, firing the moment the pit is committed to filling | On |
 
 **Misc**
 
@@ -111,6 +127,13 @@ Goats you can lure into the pit glow pink:
 |---|---|---|
 | Goat Total Format | Lifetime total written short (1K) or full (1,024) | Short |
 | Draw Distance | How far away the pit still draws (tiles) | 32 |
+
+**Session**
+
+| Setting | What it does | Default |
+|---|---|---|
+| Show Session Stats | Show a movable infobox with this session's time, goats caught, goats/hr, and Hunter XP gained and per hour | On |
+| Reset Session Stats | Tick to restart the session (time, catches, XP); un-ticks itself | Off |
 
 ## Links
 

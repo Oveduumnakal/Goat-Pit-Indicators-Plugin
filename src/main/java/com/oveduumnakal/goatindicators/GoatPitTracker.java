@@ -49,10 +49,19 @@ import net.runelite.api.coords.WorldPoint;
  * only caller (the overlay) already runs on the client thread, so caching would add invalidation
  * bugs for no measurable gain.
  *
- * <p>Both the count and the spikes state degrade gracefully. If the pit declares a varbit, that is
- * the count; otherwise goats standing inside the pit footprint are counted instead. If the pit's
- * current composition offers an "Add spikes" action, the pit is unspiked; otherwise it is treated as
- * spiked. See {@code docs/discovery.md} for how to replace these heuristics with confirmed ids.
+ * <p>Detection degrades gracefully, but only partially. As shipped the pit is found by its confirmed
+ * object id ({@link GoatIds#PIT_OBJECT_IDS}) and its count and spikes state read from the confirmed
+ * player varbits ({@link GoatIds#COUNT_VARBIT_OVERRIDE} / {@link GoatIds#SPIKES_VARBIT_OVERRIDE}), so
+ * the fallback branches below never run. Clear those ids/varbits (set the id sets empty and the varbit
+ * overrides to {@code -1}) and the fallbacks take over: the pit is matched by name, its count comes from
+ * the varbit the object composition declares — or, failing that, from goats standing on its footprint —
+ * and its spikes state from whether the composition still offers an "Add spikes" action.
+ *
+ * <p><em>The fallback only restores the footprint, not the state.</em> A re-release that churns the object
+ * ids would almost certainly move the count/spikes varbits too, and this pit's object declares no varbit of
+ * its own (see {@code docs/discovery.md}), so name matching would give a working outline over a broken count
+ * and spikes reading. Treat the fallback as a way to keep the outline alive while the confirmed varbits are
+ * re-discovered, not as full graceful degradation.
  */
 @Singleton
 class GoatPitTracker
@@ -112,8 +121,15 @@ class GoatPitTracker
 	/**
 	 * Reads the current state of a tracked pit.
 	 *
+	 * <p>The count and spikes state come from VarPlayer-backed varbits
+	 * ({@link GoatIds#COUNT_VARBIT_OVERRIDE} / {@link GoatIds#SPIKES_VARBIT_OVERRIDE}) that describe the
+	 * <em>local player's</em> pit, not this specific {@code pit} object. The plugin assumes only one personal
+	 * pit is ever in scene at a time, so callers may iterate every loaded pit and read each independently and
+	 * still get the right answer; if several pits could co-exist (a shared or instanced area) this state would
+	 * need keying per object instead.
+	 *
 	 * @param pit a pit previously handed to {@link #onSpawn(GameObject)}
-	 * @return its goat count and spikes state
+	 * @return its goat count and spikes state, which under the single-pit assumption is the local player's
 	 */
 	GoatPitState stateOf(GameObject pit)
 	{

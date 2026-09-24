@@ -31,6 +31,7 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.Notification;
 import net.runelite.client.config.Range;
 
 /** Settings for the goat pit overlay: what is drawn, in which colors, and how the labels read. */
@@ -72,13 +73,29 @@ public interface GoatIndicatorsConfig extends Config
 	)
 	String contextMenuSection = "contextMenu";
 
+	/** Alerts fired for pit events, such as the pit filling up. */
+	@ConfigSection(
+		name = "Notifications",
+		description = "Alerts fired for pit events.",
+		position = 4
+	)
+	String notificationsSection = "notifications";
+
 	/** Everything else. */
 	@ConfigSection(
 		name = "Misc",
 		description = "Everything else.",
-		position = 4
+		position = 5
 	)
 	String miscSection = "misc";
+
+	/** The session-stats infobox: goats caught, rates, and Hunter XP this session. */
+	@ConfigSection(
+		name = "Session",
+		description = "This session's catching stats.",
+		position = 6
+	)
+	String sessionSection = "session";
 
 	@ConfigItem(
 		keyName = "showOverlay",
@@ -483,5 +500,74 @@ public interface GoatIndicatorsConfig extends Config
 	default boolean swapClearWhenNotFull()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		keyName = "swapTelegrabGoatFirst",
+		name = "Goat First For Telegrab",
+		description = "When a luring spell is selected and a goat shares a tile with another NPC — like Geoff — "
+			+ "keep the goat's cast at the top (left-click) of the menu so the NPC standing over it does not steal "
+			+ "the click. Only reorders when the goat's cast is not already the default.",
+		section = contextMenuSection,
+		position = 3
+	)
+	default boolean swapTelegrabGoatFirst()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "pitFullNotification",
+		name = "Notify When Pit Is Full",
+		description = "Fire a notification once the goat pit fills up and needs emptying, so you can catch the "
+			+ "moment without watching the count. Tray, sound and screen flash follow this notification's "
+			+ "settings; set it to off to disable.",
+		section = notificationsSection,
+		position = 0
+	)
+	default Notification pitFullNotification()
+	{
+		return Notification.ON;
+	}
+
+	@ConfigItem(
+		keyName = "notifyCountInTransit",
+		name = "Count Goats In Transit",
+		description = "Count goats still on their way into the pit toward the full trigger, so the alert fires "
+			+ "the moment the pit is committed to filling rather than waiting for the last goat to land. Off "
+			+ "waits until the landed count alone reaches capacity.",
+		section = notificationsSection,
+		position = 1
+	)
+	default boolean notifyCountInTransit()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showSessionStats",
+		name = "Show Session Stats",
+		description = "Show a movable infobox with this session's stats: time, goats caught, goats per hour, "
+			+ "and Hunter XP gained and per hour. The session starts when the plugin loads and can be reset "
+			+ "below; drag the box anywhere from the overlay menu.",
+		section = sessionSection,
+		position = 0
+	)
+	default boolean showSessionStats()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "sessionReset",
+		name = "Reset Session Stats",
+		description = "Tick to restart the session — zeroing the time, catch count, and XP — then it un-ticks "
+			+ "itself.",
+		section = sessionSection,
+		position = 1
+	)
+	default boolean sessionReset()
+	{
+		return false;
 	}
 }

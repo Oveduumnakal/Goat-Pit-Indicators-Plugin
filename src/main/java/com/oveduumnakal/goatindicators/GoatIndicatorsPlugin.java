@@ -24,6 +24,7 @@
  */
 package com.oveduumnakal.goatindicators;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import javax.inject.Inject;
@@ -35,6 +36,7 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.NPC;
 import net.runelite.api.Player;
+import net.runelite.api.Skill;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
@@ -79,6 +81,9 @@ public class GoatIndicatorsPlugin extends Plugin
 	 */
 	private static final int SEED_SETTLE_TICKS = 2;
 
+	/** Config key for the momentary "Reset Session Stats" button, so its self-clearing write can target it. */
+	private static final String SESSION_RESET_KEY = "sessionReset";
+
 	@Inject
 	private Client client;
 
@@ -106,6 +111,15 @@ public class GoatIndicatorsPlugin extends Plugin
 	@Inject
 	private GoatMenuSwapper menuSwapper;
 
+	@Inject
+	private PitFullNotifier pitFullNotifier;
+
+	@Inject
+	private SessionStats sessionStats;
+
+	@Inject
+	private SessionStatsOverlay sessionStatsOverlay;
+
 	/**
 	 * Ticks left before the catch counter is seeded from the live count varbit, or {@code 0} when no seed
 	 * is pending. Set on plugin start and on login; counted down in {@link #onGameTick(GameTick)}.
@@ -118,7 +132,9 @@ public class GoatIndicatorsPlugin extends Plugin
 		migrateIconPrefixToAnimated();
 		overlayManager.add(overlay);
 		overlayManager.add(highlightOverlay);
+		overlayManager.add(sessionStatsOverlay);
 		catchCounter.restore(loadPersistedTotal());
+		sessionStats.reset();
 		scheduleSeed();
 	}
 
@@ -147,6 +163,7 @@ public class GoatIndicatorsPlugin extends Plugin
 	{
 		overlayManager.remove(overlay);
 		overlayManager.remove(highlightOverlay);
+		overlayManager.remove(sessionStatsOverlay);
 		tracker.clear();
 		transitTracker.clear();
 		catchCounter.suspend();
@@ -178,6 +195,8 @@ public class GoatIndicatorsPlugin extends Plugin
 	{
 		transitTracker.onTick(client.getTopLevelWorldView().npcs(), localTargetIndex(), localProdding(),
 			remoteProddedGoatIndices());
+		pitFullNotifier.onTick();
+		sessionStats.update(Instant.now(), catchCounter.getTotal(), client.getSkillExperience(Skill.HUNTER));
 		if (seedCountdown > 0 && --seedCountdown == 0)
 			catchCounter.seed(client.getVarbitValue(GoatIds.COUNT_VARBIT_OVERRIDE));
 	}
@@ -263,25 +282,42 @@ public class GoatIndicatorsPlugin extends Plugin
 	}
 
 	/**
-	 * Handles the momentary "Reset Total Caught" button. When the user ticks it, zero the lifetime total
-	 * and its persisted value, then re-seed from the live count so counting continues from zero rather than
-	 * stalling until the next login. Finally un-tick the button so it reads as a one-shot action.
+	 * Handles the two momentary buttons, "Reset Total Caught" and "Reset Session Stats". Each acts only when
+	 * ticked, then un-ticks itself so it reads as a one-shot action rather than a persistent toggle.
 	 */
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
-		if (!GoatIndicatorsConfig.GROUP.equals(event.getGroup()) || !RESET_TOTAL_KEY.equals(event.getKey()))
+		if (!GoatIndicatorsConfig.GROUP.equals(event.getGroup()) || !Boolean.parseBoolean(event.getNewValue()))
 			return;
 
-		if (!Boolean.parseBoolean(event.getNewValue()))
-			return;
+		if (RESET_TOTAL_KEY.equals(event.getKey()))
+			resetTotal();
+		else if (SESSION_RESET_KEY.equals(event.getKey()))
+			resetSession();
+	}
 
+	/**
+	 * Zeroes the lifetime total and its persisted value, then re-seeds from the live count so counting continues
+	 * from zero rather than stalling until the next login. The session keeps its catches by rebasing onto the
+	 * new total, then the button un-ticks.
+	 */
+	private void resetTotal()
+	{
 		catchCounter.reset();
 		configManager.setConfiguration(GoatIndicatorsConfig.GROUP, TOTAL_CAUGHT_KEY, 0);
 		if (client.getGameState() == GameState.LOGGED_IN)
 			catchCounter.seed(client.getVarbitValue(GoatIds.COUNT_VARBIT_OVERRIDE));
 
+		sessionStats.rebaseCatches(catchCounter.getTotal());
 		configManager.setConfiguration(GoatIndicatorsConfig.GROUP, RESET_TOTAL_KEY, false);
+	}
+
+	/** Restarts the session stats, then un-ticks the button. */
+	private void resetSession()
+	{
+		sessionStats.reset();
+		configManager.setConfiguration(GoatIndicatorsConfig.GROUP, SESSION_RESET_KEY, false);
 	}
 
 	/** Reads the persisted lifetime total, defaulting to zero when none is stored yet. */

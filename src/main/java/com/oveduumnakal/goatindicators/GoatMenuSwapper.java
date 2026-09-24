@@ -42,14 +42,15 @@ import net.runelite.api.gameval.ItemID;
 /**
  * Reorders the goat-area menu so a stray click never wastes a lure and movement stays free while prodding.
  *
- * <p>Two independent swaps, each toggleable in config. When the player points a luring spell — Telekinetic
+ * <p>Independent swaps, each toggleable in config. When the player points a luring spell — Telekinetic
  * Grab or Dark Lure — at a goat but the pit is effectively full (goats in it plus goats in transit have
  * reached its capacity), {@code "Cancel"} is moved to the top of the menu so the cast cannot fire by
  * accident. Separately, and under the same effectively-full condition, while a Cattleprod is equipped
- * {@code "Walk here"} is moved to the top so a click near a goat walks instead of interacting. Both swaps
- * only apply once a pit is full, so an in-progress catch is left alone. Run every frame from
- * {@link GoatIndicatorsPlugin} on {@code PostMenuSort}, so it fixes both the left-click default and the
- * right-click ordering.
+ * {@code "Walk here"} is moved to the top so a click near a goat walks instead of interacting. A third
+ * promote keeps a goat's own cast on top whenever a luring spell is selected and another NPC — like Geoff —
+ * shares its tile, so the overlapping NPC cannot steal the click; it fires only when the cast is not already
+ * the default. Run every frame from {@link GoatIndicatorsPlugin} on {@code PostMenuSort}, so it fixes both
+ * the left-click default and the right-click ordering.
  */
 @Singleton
 class GoatMenuSwapper
@@ -72,11 +73,12 @@ class GoatMenuSwapper
 	}
 
 	/**
-	 * Applies the configured swaps to the current menu, if any apply. Two independent edits can run in one
-	 * pass: a promote-to-top (the Cancel-when-full swap wins over the Walk-here-with-prod swap when both
-	 * fire, since guarding against a wasted cast matters more) and a demote-to-bottom of the pit's "Clear"
-	 * option while some pit can still catch (spiked and not full). The menu is rewritten once, only if an
-	 * edit changed it.
+	 * Applies the configured swaps to the current menu, if any apply. Two kinds of edit can run in one pass:
+	 * a single promote-to-top and a demote-to-bottom of the pit's "Clear" option while some pit can still
+	 * catch (spiked and not full). Three swaps compete for the promote, resolved by order: the goat-first
+	 * cast promote sits above the Walk-here-with-prod swap, and the Cancel-when-full swap outranks both, since
+	 * guarding against a wasted cast matters more than either. The menu is rewritten once, only if an edit
+	 * changed it.
 	 */
 	void onPostMenuSort()
 	{
@@ -90,6 +92,13 @@ class GoatMenuSwapper
 		MenuEntry promote = null;
 		if (config.swapWalkWhenProd() && cattleprodEquipped() && goatEntryPresent(entries) && noCatchingPitHasRoom())
 			promote = firstOfType(entries, MenuAction.WALK);
+
+		if (config.swapTelegrabGoatFirst() && lureSpells.canLure())
+		{
+			MenuEntry goatCast = goatCastEntry(entries);
+			if (goatCast != null && goatCast != entries[entries.length - 1])
+				promote = goatCast;
+		}
 
 		if (config.swapCancelWhenFull() && castOnGoatPresent(entries) && noCatchingPitHasRoom())
 		{
@@ -131,17 +140,25 @@ class GoatMenuSwapper
 	 */
 	private boolean castOnGoatPresent(MenuEntry[] entries)
 	{
-		if (!lureSpells.canLure())
-			return false;
+		return lureSpells.canLure() && goatCastEntry(entries) != null;
+	}
 
+	/**
+	 * The menu's spell-on-goat cast entry — a selected luring spell aimed at a goat NPC — or {@code null} when
+	 * the menu has none. A selected spell used on an NPC is a {@code WIDGET_TARGET_ON_NPC} entry; the target
+	 * name distinguishes a goat from any other NPC sharing the tile (Geoff), which is what the goat-first swap
+	 * promotes over.
+	 */
+	private MenuEntry goatCastEntry(MenuEntry[] entries)
+	{
 		for (MenuEntry entry : entries)
 		{
 			if (entry.getType() == MenuAction.WIDGET_TARGET_ON_NPC
 					&& GoatPitTracker.matchesGoatName(entry.getTarget()))
-				return true;
+				return entry;
 		}
 
-		return false;
+		return null;
 	}
 
 	/**
