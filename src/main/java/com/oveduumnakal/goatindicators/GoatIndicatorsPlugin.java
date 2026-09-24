@@ -24,6 +24,7 @@
  */
 package com.oveduumnakal.goatindicators;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import javax.inject.Inject;
@@ -35,6 +36,7 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.NPC;
 import net.runelite.api.Player;
+import net.runelite.api.Skill;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
@@ -43,6 +45,7 @@ import net.runelite.api.events.PostMenuSort;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -75,6 +78,9 @@ public class GoatIndicatorsPlugin extends Plugin
 	 */
 	private static final int SEED_SETTLE_TICKS = 2;
 
+	/** Config key for the momentary "Reset Session Stats" button, so its self-clearing write can target it. */
+	private static final String SESSION_RESET_KEY = "sessionReset";
+
 	@Inject
 	private Client client;
 
@@ -105,6 +111,12 @@ public class GoatIndicatorsPlugin extends Plugin
 	@Inject
 	private PitFullNotifier pitFullNotifier;
 
+	@Inject
+	private SessionStats sessionStats;
+
+	@Inject
+	private SessionStatsOverlay sessionStatsOverlay;
+
 	/**
 	 * Ticks left before the catch counter is seeded from the live count varbit, or {@code 0} when no seed
 	 * is pending. Set on plugin start and on login; counted down in {@link #onGameTick(GameTick)}.
@@ -117,7 +129,9 @@ public class GoatIndicatorsPlugin extends Plugin
 		migrateIconPrefixToAnimated();
 		overlayManager.add(overlay);
 		overlayManager.add(highlightOverlay);
+		overlayManager.add(sessionStatsOverlay);
 		catchCounter.restore(loadPersistedTotal());
+		sessionStats.reset();
 		scheduleSeed();
 	}
 
@@ -146,6 +160,7 @@ public class GoatIndicatorsPlugin extends Plugin
 	{
 		overlayManager.remove(overlay);
 		overlayManager.remove(highlightOverlay);
+		overlayManager.remove(sessionStatsOverlay);
 		tracker.clear();
 		transitTracker.clear();
 		catchCounter.suspend();
@@ -178,6 +193,7 @@ public class GoatIndicatorsPlugin extends Plugin
 		transitTracker.onTick(client.getTopLevelWorldView().npcs(), localTargetIndex(), localProdding(),
 			remoteProddedGoatIndices());
 		pitFullNotifier.onTick();
+		sessionStats.update(Instant.now(), catchCounter.getTotal(), client.getSkillExperience(Skill.HUNTER));
 		if (seedCountdown > 0 && --seedCountdown == 0)
 			catchCounter.seed(client.getVarbitValue(GoatIds.COUNT_VARBIT_OVERRIDE));
 	}
@@ -260,6 +276,23 @@ public class GoatIndicatorsPlugin extends Plugin
 		catchCounter.onCountChanged(event.getValue());
 		if (catchCounter.getTotal() != before)
 			configManager.setConfiguration(GoatIndicatorsConfig.GROUP, TOTAL_CAUGHT_KEY, catchCounter.getTotal());
+	}
+
+	/**
+	 * Handles the momentary "Reset Session Stats" button: restarts the session and un-ticks the button so it
+	 * reads as a one-shot action rather than a persistent toggle.
+	 */
+	@Subscribe
+	public void onConfigChanged(ConfigChanged event)
+	{
+		if (!GoatIndicatorsConfig.GROUP.equals(event.getGroup()) || !SESSION_RESET_KEY.equals(event.getKey()))
+			return;
+
+		if (Boolean.parseBoolean(event.getNewValue()))
+		{
+			sessionStats.reset();
+			configManager.setConfiguration(GoatIndicatorsConfig.GROUP, SESSION_RESET_KEY, false);
+		}
 	}
 
 	/** Reads the persisted lifetime total, defaulting to zero when none is stored yet. */

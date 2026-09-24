@@ -89,6 +89,14 @@ public interface GoatIndicatorsConfig extends Config
 	)
 	String miscSection = "misc";
 
+	/** The session-stats infobox: goats caught, rates, and Hunter XP this session. */
+	@ConfigSection(
+		name = "Session",
+		description = "This session's catching stats.",
+		position = 6
+	)
+	String sessionSection = "session";
+
 	@ConfigItem(
 		keyName = "showOverlay",
 		name = "Show Color Indicators",
@@ -520,5 +528,32 @@ public interface GoatIndicatorsConfig extends Config
 	default boolean notifyCountInTransit()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showSessionStats",
+		name = "Show Session Stats",
+		description = "Show a movable infobox with this session's stats: time, goats caught, goats per hour, "
+			+ "and Hunter XP gained and per hour. The session starts when the plugin loads and can be reset "
+			+ "below; drag the box anywhere from the overlay menu.",
+		section = sessionSection,
+		position = 0
+	)
+	default boolean showSessionStats()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "sessionReset",
+		name = "Reset Session Stats",
+		description = "Tick to restart the session — zeroing the time, catch count, and XP — then it un-ticks "
+			+ "itself.",
+		section = sessionSection,
+		position = 1
+	)
+	default boolean sessionReset()
+	{
+		return false;
 	}
 }

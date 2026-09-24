@@ -32,6 +32,10 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 
   A running count of every goat you have caught, drawn on the pit and kept across logins and client restarts. The game keeps no total of its own, so the plugin tallies each catch itself. The total's icon is an animated leaping goat by default. Place it on any compass point, or turn it off.
 
+- **See how the session is going**
+
+  An optional movable infobox tracks this session at a glance: time elapsed, goats caught, goats per hour, and Hunter XP gained and per hour. Starts when the plugin loads, resets on demand, and drags anywhere you like.
+
 - **Watch the ones on their way in**
 
   A live count of your goats currently in transit to the pit — lured or prodded — so a busy pit's true fill is clear before the goats land.
@@ -123,6 +127,13 @@ Goats you can lure into the pit glow pink:
 |---|---|---|
 | Goat Total Format | Lifetime total written short (1K) or full (1,024) | Short |
 | Draw Distance | How far away the pit still draws (tiles) | 32 |
+
+**Session**
+
+| Setting | What it does | Default |
+|---|---|---|
+| Show Session Stats | Show a movable infobox with this session's time, goats caught, goats/hr, and Hunter XP gained and per hour | On |
+| Reset Session Stats | Tick to restart the session (time, catches, XP); un-ticks itself | Off |
 
 ## Links
 
