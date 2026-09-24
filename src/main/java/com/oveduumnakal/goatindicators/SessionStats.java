@@ -34,13 +34,20 @@ import javax.inject.Singleton;
  *
  * <p>The plugin feeds a fresh sample each game tick via {@link #update(Instant, int, long)}; the first
  * sample after a {@link #reset()} fixes the session baseline (the lifetime catch total and Hunter XP at that
- * moment), and every later sample reports the delta from it. Rates are the delta scaled by elapsed wall time.
+ * moment), and every later sample reports the delta from it. The session clock starts later, at the first
+ * catch or Hunter XP gain (#126), so time spent banking or walking to the pit does not dilute the rates. Rates
+ * are the delta scaled by the time since that first gain.
  * Kept free of the client and the clock so it is unit-testable — the caller supplies "now" and the readings.
  */
 @Singleton
 class SessionStats
 {
-	private Instant start;
+	/** Whether the first sample has fixed the catch and XP baseline. */
+	private boolean baselined;
+
+	/** When the first catch or XP gain landed, which the session clock runs from, or {@code null} before it. */
+	private Instant clockStart;
+
 	private int startCatches;
 	private long startXp;
 
@@ -50,7 +57,7 @@ class SessionStats
 
 	/**
 	 * Records a fresh sample. The first sample after construction or {@link #reset()} fixes the baseline;
-	 * later samples report the catch and XP gained since, and the time elapsed.
+	 * later samples report the catch and XP gained since, and the time elapsed since the first gain.
 	 *
 	 * @param now the current instant
 	 * @param catchTotal the lifetime goats-caught total (its session delta is the catch count)
@@ -58,16 +65,19 @@ class SessionStats
 	 */
 	void update(Instant now, int catchTotal, long hunterXp)
 	{
-		if (start == null)
+		if (!baselined)
 		{
-			start = now;
+			baselined = true;
 			startCatches = catchTotal;
 			startXp = hunterXp;
 		}
 
-		elapsed = Duration.between(start, now);
 		catches = Math.max(0, catchTotal - startCatches);
 		xpGained = Math.max(0, hunterXp - startXp);
+		if (clockStart == null && (catches > 0 || xpGained > 0))
+			clockStart = now;
+
+		elapsed = clockStart == null ? Duration.ZERO : Duration.between(clockStart, now);
 	}
 
 	/**
@@ -78,14 +88,15 @@ class SessionStats
 	 */
 	void rebaseCatches(int catchTotal)
 	{
-		if (start != null)
+		if (baselined)
 			startCatches = catchTotal - catches;
 	}
 
 	/** Clears the session so the next {@link #update(Instant, int, long)} starts a fresh one. */
 	void reset()
 	{
-		start = null;
+		baselined = false;
+		clockStart = null;
 		elapsed = Duration.ZERO;
 		catches = 0;
 		xpGained = 0;
@@ -94,10 +105,10 @@ class SessionStats
 	/** @return whether a session is running (at least one sample has been recorded since the last reset). */
 	boolean started()
 	{
-		return start != null;
+		return baselined;
 	}
 
-	/** @return the time elapsed since the session began. */
+	/** @return the time elapsed since the session's first catch or XP gain, or zero before one. */
 	Duration elapsed()
 	{
 		return elapsed;
