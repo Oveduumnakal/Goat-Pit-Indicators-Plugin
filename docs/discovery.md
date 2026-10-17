@@ -72,5 +72,8 @@ The "single-catch trap" reading above was wrong. The pit **does** hold a count:
 varbit `15725` steps 0 → capacity, and the shipped overlay uses the `X / N` model.
 Capacity is **not** a fixed 20 either — it scales with Hunter level per the OSRS
 Wiki ([Goat pit](https://oldschool.runescape.wiki/w/Goat_pit)): 16 at level 60,
-18 at 70, 20 at 77, 22 at 85, 24 at 93+. Encoded in
+18 at 69, 20 at 77, 22 at 85, 24 at 93+. Encoded in
 `GoatIds.capacityForHunterLevel(int)` as of release 1.0.1.
+
+The 16 → 18 step is at level **69**, not 70: a player reported the in-game count staying at
+`x/16` after reaching 69 while 2 more goats still fit. Fixed in `GoatIds.capacityForHunterLevel`.
