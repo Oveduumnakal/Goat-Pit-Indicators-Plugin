@@ -34,7 +34,7 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 
 - **See how the session is going**
 
-  An optional movable infobox tracks this session at a glance: time elapsed, goats caught, goats per hour, and Hunter XP gained and per hour. Starts when the plugin loads, resets on demand, and drags anywhere you like.
+  An optional movable infobox tracks this session at a glance: time elapsed, goats caught, goats per hour, and Hunter XP gained and per hour. The clock starts at your first catch or Hunter XP gain, so time spent getting to the pit does not drag the rates down. Resets on demand, and drags anywhere you like.
 
 - **Watch the ones on their way in**
 
