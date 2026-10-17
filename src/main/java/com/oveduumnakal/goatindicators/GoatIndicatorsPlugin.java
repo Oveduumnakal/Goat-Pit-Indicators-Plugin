@@ -43,6 +43,7 @@ import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.PostMenuSort;
 import net.runelite.api.events.VarbitChanged;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -86,6 +87,9 @@ public class GoatIndicatorsPlugin extends Plugin
 
 	@Inject
 	private Client client;
+
+	@Inject
+	private ClientThread clientThread;
 
 	@Inject
 	private ConfigManager configManager;
@@ -136,6 +140,22 @@ public class GoatIndicatorsPlugin extends Plugin
 		catchCounter.restore(loadPersistedTotal());
 		sessionStats.reset();
 		scheduleSeed();
+		clientThread.invokeLater(this::scanScene);
+	}
+
+	/**
+	 * Picks up a pit and spike supply that were already loaded when the plugin started — enabled, installed or
+	 * re-enabled while standing at the pit — since their spawn events fired before it was listening (#122). Runs
+	 * on the client thread; does nothing while logged out, when the login scene build fires spawn events anyway.
+	 */
+	private void scanScene()
+	{
+		if (client.getGameState() != GameState.LOGGED_IN)
+			return;
+
+		tracker.scan(client.getTopLevelWorldView()
+			.getScene()
+			.getTiles());
 	}
 
 	/**
