@@ -108,17 +108,6 @@ class GoatPitTracker
 	}
 
 	/**
-	 * Whether an object is a pit the tracker is currently holding.
-	 *
-	 * @param object any spawned object
-	 * @return true once {@link #onSpawn(GameObject)} has accepted it as a pit
-	 */
-	boolean isPitTracked(GameObject object)
-	{
-		return object != null && pits.containsKey(object.getHash());
-	}
-
-	/**
 	 * Reads the current state of a tracked pit.
 	 *
 	 * <p>The count and spikes state come from VarPlayer-backed varbits
