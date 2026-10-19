@@ -108,4 +108,15 @@ public class SessionStatsTest
 
 		assertEquals(0, stats.catches());
 	}
+
+	@Test
+	public void clockPausesWhileInactiveAndResumesAfter()
+	{
+		stats.update(T0, 100, 5000, true);
+		stats.update(T0.plus(Duration.ofMinutes(10)), 100, 5000, true);
+		stats.update(T0.plus(Duration.ofMinutes(40)), 100, 5000, false);
+		stats.update(T0.plus(Duration.ofMinutes(50)), 100, 5000, true);
+
+		assertEquals(Duration.ofMinutes(20), stats.elapsed());
+	}
 }

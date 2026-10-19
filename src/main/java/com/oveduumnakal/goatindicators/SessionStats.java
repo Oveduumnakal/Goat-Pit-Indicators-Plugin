@@ -41,6 +41,7 @@ import javax.inject.Singleton;
 class SessionStats
 {
 	private Instant start;
+	private Instant last;
 	private int startCatches;
 	private long startXp;
 
@@ -49,8 +50,7 @@ class SessionStats
 	private long xpGained;
 
 	/**
-	 * Records a fresh sample. The first sample after construction or {@link #reset()} fixes the baseline;
-	 * later samples report the catch and XP gained since, and the time elapsed.
+	 * Records a fresh sample with the clock running; see {@link #update(Instant, int, long, boolean)}.
 	 *
 	 * @param now the current instant
 	 * @param catchTotal the lifetime goats-caught total (its session delta is the catch count)
@@ -58,14 +58,34 @@ class SessionStats
 	 */
 	void update(Instant now, int catchTotal, long hunterXp)
 	{
+		update(now, catchTotal, hunterXp, true);
+	}
+
+	/**
+	 * Records a fresh sample. The first sample after construction or {@link #reset()} fixes the baseline;
+	 * later samples report the catch and XP gained since, and the time elapsed. Time only accrues across
+	 * samples taken while {@code active}, so the clock — and with it the per-hour rates — pauses while the
+	 * player is away from the pit.
+	 *
+	 * @param now the current instant
+	 * @param catchTotal the lifetime goats-caught total (its session delta is the catch count)
+	 * @param hunterXp the current total Hunter experience
+	 * @param active whether the player is at the pit, so the time since the previous sample counts
+	 */
+	void update(Instant now, int catchTotal, long hunterXp, boolean active)
+	{
 		if (start == null)
 		{
 			start = now;
 			startCatches = catchTotal;
 			startXp = hunterXp;
 		}
+		else if (active)
+		{
+			elapsed = elapsed.plus(Duration.between(last, now));
+		}
 
-		elapsed = Duration.between(start, now);
+		last = now;
 		catches = Math.max(0, catchTotal - startCatches);
 		xpGained = Math.max(0, hunterXp - startXp);
 	}
@@ -86,6 +106,7 @@ class SessionStats
 	void reset()
 	{
 		start = null;
+		last = null;
 		elapsed = Duration.ZERO;
 		catches = 0;
 		xpGained = 0;
