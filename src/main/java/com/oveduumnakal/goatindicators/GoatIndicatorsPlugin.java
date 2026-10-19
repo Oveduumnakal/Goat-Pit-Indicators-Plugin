@@ -196,7 +196,8 @@ public class GoatIndicatorsPlugin extends Plugin
 		transitTracker.onTick(client.getTopLevelWorldView().npcs(), localTargetIndex(), localProdding(),
 			remoteProddedGoatIndices());
 		pitFullNotifier.onTick();
-		sessionStats.update(Instant.now(), catchCounter.getTotal(), client.getSkillExperience(Skill.HUNTER));
+		sessionStats.update(Instant.now(), catchCounter.getTotal(), client.getSkillExperience(Skill.HUNTER),
+			!tracker.getPits().isEmpty());
 		if (seedCountdown > 0 && --seedCountdown == 0)
 			catchCounter.seed(client.getVarbitValue(GoatIds.COUNT_VARBIT_OVERRIDE));
 	}
