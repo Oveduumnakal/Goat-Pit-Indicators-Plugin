@@ -369,9 +369,9 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "totalCaughtPosition",
 		name = "Show Total Caught",
-		description = "Where to draw the lifetime total of goats caught on the pit: off, or one of its "
-			+ "compass points. The game keeps no total of its own, so the plugin counts every catch and "
-			+ "keeps the tally across logins and restarts.",
+		description = "Where to draw the lifetime total of goats caught on the pit: off, the center (under "
+			+ "the pit count when shown), or one of its compass points. The game keeps no total of its own, "
+			+ "so the plugin counts every catch and keeps the tally across logins and restarts.",
 		section = labelsSection,
 		position = 5
 	)
