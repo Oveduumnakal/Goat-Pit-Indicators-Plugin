@@ -26,7 +26,7 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 
 - **Know where to stand**
 
-  An optional best-tile marker shows the tile you can walk to that puts the most goats in reach at once — across the pit and in range for a lure spell, or right beside you for a Cattleprod — with a "Stand here" count. It updates every tick as the goats wander.
+  An optional best-tile marker shows where to stand to put the most goats in reach at once — for a lure spell, the side of the pit (its 3 edge tiles) with the most goats across the pit and in range; with a Cattleprod, the tile with the most goats right beside it — with a "Stand here" count. It updates every tick as the goats wander.
 
 - **Find the spike supply when a pit runs dry**
 
@@ -82,7 +82,8 @@ Goats you can lure into the pit glow pink:
 | Near/Far Gradient | Shade each highlighted goat's outline by distance to the pit, closest color to furthest; applies to both the telegrab and prod highlights | On |
 | Highlight Spike Supply | Outline the spike supply when a pit needs lining and you carry no spikes | On |
 | Restock Before Emptying | When the pit is full and you carry no spikes, show "Restock Spikes" on the pit, outline the supply, and add a reminder to the pit-full notification | On |
-| Highlight Best Tile | Mark the reachable tile that puts the most goats in reach at once — lure range and across the pit, or beside you to prod — with a "Stand here" count | Off |
+| Highlight Best Tile | Mark where to stand to put the most goats in reach at once — the best pit side (3 edge tiles) to lure from, or the best tile to prod from — with a "Stand here" count | Off |
+| Always Show Goat Count | With Highlight Best Tile on and a lure spell ready, also draw a faint goat count beside the pit's other three sides | Off |
 
 **Indicator Colors**
 
@@ -97,7 +98,7 @@ Goats you can lure into the pit glow pink:
 | Telegrab Furthest | Outline for the furthest (lowest-priority) lure target | Faint pink |
 | Prod Closest | Outline for the closest prodable goat, nearest the pit | Orange |
 | Prod Furthest | Outline for the furthest prodable goat still in prod range | Pale yellow |
-| Best Tile | Color of the best-tile marker and its "Stand here" label | Cyan |
+| Best Tile | Color of the best-tile marker and its "Stand here" label | Sky blue (`#7D00ADFF`) |
 
 **Labels**
 

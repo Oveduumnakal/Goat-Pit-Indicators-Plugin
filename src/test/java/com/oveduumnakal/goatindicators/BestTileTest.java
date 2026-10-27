@@ -14,12 +14,14 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
 /**
  * Covers the best-tile scoring (#104) on a synthetic 3x3 pit spanning (10, 10)-(12, 12): lure counts goats in
  * range, across the pit and in sight; prod counts adjacent goats a push sends into the pit; the pick takes the
- * highest score, breaks ties by fewest steps, never suggests a pit tile, and yields nothing when no tile scores.
+ * highest score, breaks ties by fewest steps, never suggests a pit tile, and yields nothing when no tile scores;
+ * the lure side pick takes the pit side whose tiles lure the most goats.
  */
 public class BestTileTest
 {
@@ -78,6 +80,73 @@ public class BestTileTest
 	}
 
 	@Test
+	public void lureSidePicksTheSideAcrossFromTheGoats()
+	{
+		List<int[]> goats = Arrays.asList(new int[]{14, 11, 0}, new int[]{15, 10, 1});
+		Map<Long, Integer> reach = new HashMap<>();
+		for (int y = 10; y <= 12; y++)
+		{
+			reach.put(ProdPathing.key(9, y), 3);
+			reach.put(ProdPathing.key(13, y), 1);
+		}
+
+		assertArrayEquals(new int[]{9, 10, 9, 12, 2}, pickLureSide(reach, goats, ALWAYS));
+	}
+
+	@Test
+	public void lureSideCountsGoatsAnyOfItsTilesCanLure()
+	{
+		List<int[]> goats = Arrays.asList(new int[]{13, 10, 0}, new int[]{13, 12, 1});
+		Map<Long, Integer> reach = new HashMap<>();
+		reach.put(ProdPathing.key(9, 10), 2);
+		reach.put(ProdPathing.key(9, 12), 2);
+		BestTile.SightFn split = (x, y, id) -> y == 10 ? id == 0 : id == 1;
+
+		assertArrayEquals(new int[]{9, 10, 9, 12, 2}, pickLureSide(reach, goats, split));
+	}
+
+	@Test
+	public void lureSideSkipsSidesWithNoReachableTile()
+	{
+		List<int[]> goats = Collections.singletonList(new int[]{13, 11, 0});
+		Map<Long, Integer> reach = new HashMap<>();
+		reach.put(ProdPathing.key(8, 11), 0);
+		reach.put(ProdPathing.key(9, 9), 1);
+
+		assertNull(pickLureSide(reach, goats, ALWAYS));
+	}
+
+	@Test
+	public void lureSidesScoreEveryReachableSideOfThePit()
+	{
+		List<int[]> goats = Arrays.asList(new int[]{14, 11, 0}, new int[]{15, 10, 1});
+		Map<Long, Integer> reach = new HashMap<>();
+		reach.put(ProdPathing.key(9, 11), 3);
+		reach.put(ProdPathing.key(13, 11), 1);
+		reach.put(ProdPathing.key(11, 13), 2);
+
+		List<int[]> sides = BestTile.lureSides(reach, PITS, goats, ALWAYS);
+
+		assertEquals(3, sides.size());
+		assertArrayEquals(new int[]{9, 10, 9, 12, 2, 3, 0}, sides.get(0));
+		assertArrayEquals(new int[]{13, 10, 13, 12, 0, 1, 0}, sides.get(1));
+		assertArrayEquals(new int[]{10, 13, 12, 13, 2, 2, 0}, sides.get(2));
+		assertArrayEquals(sides.get(2), BestTile.bestSide(sides));
+	}
+
+	@Test
+	public void outerEdgesSkipThePitAndTheSpotsOwnSeams()
+	{
+		List<int[]> edges = BestTile.outerEdges(new int[]{9, 10, 9, 12}, PITS);
+
+		assertEquals(5, edges.size());
+		for (int[] edge : edges)
+			assertFalse(edge[0] == 10 && edge[2] == 10);
+
+		assertEquals(4, BestTile.outerEdges(new int[]{5, 5, 5, 5}, PITS).size());
+	}
+
+	@Test
 	public void pickYieldsNothingWhenNoTileScores()
 	{
 		Map<Long, Integer> reach = new HashMap<>();
@@ -85,6 +154,13 @@ public class BestTileTest
 		reach.put(ProdPathing.key(-5, -7), 3);
 
 		assertNull(BestTile.pick(reach, PITS, (x, y) -> 0));
+	}
+
+	/** The best lure side's bounds and score, or {@code null}, against the synthetic pit. */
+	private static int[] pickLureSide(Map<Long, Integer> reach, List<int[]> goats, BestTile.SightFn sight)
+	{
+		int[] best = BestTile.bestSide(BestTile.lureSides(reach, PITS, goats, sight));
+		return best == null ? null : Arrays.copyOf(best, 5);
 	}
 
 	@Test
