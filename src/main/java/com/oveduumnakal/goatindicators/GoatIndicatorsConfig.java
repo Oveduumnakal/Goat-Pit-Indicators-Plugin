@@ -101,7 +101,7 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "showOverlay",
 		name = "Show Color Indicators",
-		description = "Draw the colored outline and fills over the goat pit in the scene. The text labels (goat "
+		description = "Draw the colored outline and fills over the goat pit in the scene.<br>The text labels (goat "
 			+ "count, total caught, in transit) have their own toggles and still show with this off.",
 		section = indicatorsSection,
 		position = 1
@@ -140,7 +140,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "highlightProdable",
 		name = "Highlight Prodable",
 		description = "While a Cattleprod is equipped, outline the goats you can prod into a spiked, non-full "
-			+ "pit. Takes over the telegrab outline while a Cattleprod is held; turn off to keep the telegrab "
+			+ "pit.<br>Takes over the telegrab outline while a Cattleprod is held; turn off to keep the telegrab "
 			+ "highlight instead.",
 		section = indicatorsSection,
 		position = 4
@@ -155,7 +155,7 @@ public interface GoatIndicatorsConfig extends Config
 		name = "Prodable from Location",
 		description = "Only highlight prodable goats you can prod in from where you stand right now, without "
 			+ "walking to reposition — those the pit sits directly beyond, in the direction a prod would shove "
-			+ "them. Off highlights every goat within prod range of a catching pit regardless of your position.",
+			+ "them.<br>Off highlights every goat within prod range of a catching pit regardless of your position.",
 		section = indicatorsSection,
 		position = 5
 	)
@@ -168,8 +168,8 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "telegrabGradient",
 		name = "Near/Far Gradient",
 		description = "Shade each highlighted goat's outline by its distance to the pit: from the closest "
-			+ "color (nearest the pit) to the furthest color. Applies to both the telegrab and prod "
-			+ "highlights. Off draws every target in its closest color instead.",
+			+ "color (nearest the pit) to the furthest color.<br>Applies to both the telegrab and prod "
+			+ "highlights.<br>Off draws every target in its closest color instead.",
 		section = indicatorsSection,
 		position = 6
 	)
@@ -182,7 +182,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "highlightSpikeSupply",
 		name = "Highlight Spike Supply",
 		description = "Outline the spike supply object when a pit needs lining and you are carrying no "
-			+ "spikes, so the restock point is obvious. Uses the same spike-warning colors as the pit.",
+			+ "spikes, so the restock point is obvious.<br>Uses the same spike-warning colors as the pit.",
 		section = indicatorsSection,
 		position = 7
 	)
@@ -196,7 +196,7 @@ public interface GoatIndicatorsConfig extends Config
 		name = "Restock Before Emptying",
 		description = "When the pit is full and you are carrying no spikes, say so before you empty it: a "
 			+ "\"Restock Spikes\" line on the pit, the spike supply outlined (with Highlight Spike Supply on), and "
-			+ "a reminder added to the pit-full notification. Emptying uses up the pit's spikes, so this saves a "
+			+ "a reminder added to the pit-full notification.<br>Emptying uses up the pit's spikes, so this saves a "
 			+ "dead pit.",
 		section = indicatorsSection,
 		position = 8
@@ -211,7 +211,7 @@ public interface GoatIndicatorsConfig extends Config
 		name = "Highlight Best Tile",
 		description = "Mark the tile you can walk to that puts the most goats in reach at once — for a lure "
 			+ "spell, goats in range and across the pit; with a Cattleprod equipped, goats beside the tile you "
-			+ "can prod in. Updates every tick as the goats move.",
+			+ "can prod in.<br>Updates every tick as the goats move.",
 		section = indicatorsSection,
 		position = 9
 	)
@@ -223,7 +223,7 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "emptyOutlineColor",
 		name = "Empty Outline",
-		description = "Outline color for an empty or unspiked pit, and the low end of the fill gradient. "
+		description = "Outline color for an empty or unspiked pit, and the low end of the fill gradient.<br>"
 			+ "Alpha is ignored.",
 		section = colorsSection,
 		position = 1
@@ -236,7 +236,7 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "partialColor",
 		name = "Midpoint Outline",
-		description = "Outline color at the middle of the fill gradient. Alpha is ignored.",
+		description = "Outline color at the middle of the fill gradient.<br>Alpha is ignored.",
 		section = colorsSection,
 		position = 2
 	)
@@ -248,7 +248,7 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "fullOutlineColor",
 		name = "Full Outline",
-		description = "Outline color for a full pit, and the high end of the fill gradient. Alpha is "
+		description = "Outline color for a full pit, and the high end of the fill gradient.<br>Alpha is "
 			+ "ignored.",
 		section = colorsSection,
 		position = 3
@@ -262,7 +262,7 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "spikeReminderFill",
 		name = "Spike Reminder Fill",
-		description = "Fill for an empty pit that needs spikes. Set the alpha to 0 for outline only.",
+		description = "Fill for an empty pit that needs spikes.<br>Set the alpha to 0 for outline only.",
 		section = colorsSection,
 		position = 4
 	)
@@ -275,7 +275,7 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "fullReminderFill",
 		name = "Full Reminder Fill",
-		description = "Fill for a full pit that is ready to empty. Set the alpha to 0 for outline only.",
+		description = "Fill for a full pit that is ready to empty.<br>Set the alpha to 0 for outline only.",
 		section = colorsSection,
 		position = 5
 	)
@@ -288,8 +288,8 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "telegrabColor",
 		name = "Telegrab Closest",
-		description = "Outline color for the closest telegrabbable goat — the highest-priority grab. Goats "
-			+ "further from the pit fade toward the \"Telegrab Furthest\" color. Set both the same for a "
+		description = "Outline color for the closest telegrabbable goat — the highest-priority grab.<br>Goats "
+			+ "further from the pit fade toward the \"Telegrab Furthest\" color.<br>Set both the same for a "
 			+ "single flat highlight color.",
 		section = colorsSection,
 		position = 6
@@ -303,8 +303,8 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "telegrabFurthestColor",
 		name = "Telegrab Furthest",
-		description = "Outline color for the furthest telegrabbable goat — the lowest-priority grab. Goats "
-			+ "nearer the pit shade toward the \"Telegrab Closest\" color. Set both the same for a single "
+		description = "Outline color for the furthest telegrabbable goat — the lowest-priority grab.<br>Goats "
+			+ "nearer the pit shade toward the \"Telegrab Closest\" color.<br>Set both the same for a single "
 			+ "flat highlight color.",
 		section = colorsSection,
 		position = 7
@@ -318,8 +318,8 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "prodColor",
 		name = "Prod Closest",
-		description = "Outline color for the closest prodable goat — the nearest to the pit. Goats further "
-			+ "from the pit fade toward the \"Prod Furthest\" color. Set both the same for a single flat "
+		description = "Outline color for the closest prodable goat — the nearest to the pit.<br>Goats further "
+			+ "from the pit fade toward the \"Prod Furthest\" color.<br>Set both the same for a single flat "
 			+ "highlight color.",
 		section = colorsSection,
 		position = 8
@@ -334,7 +334,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "prodFurthestColor",
 		name = "Prod Furthest",
 		description = "Outline color for the furthest prodable goat — the furthest from the pit still in prod "
-			+ "range. Goats nearer the pit shade toward the \"Prod Closest\" color. Set both the same for a "
+			+ "range.<br>Goats nearer the pit shade toward the \"Prod Closest\" color.<br>Set both the same for a "
 			+ "single flat highlight color.",
 		section = colorsSection,
 		position = 9
@@ -360,7 +360,7 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "showCount",
 		name = "Show Goats in Pit",
-		description = "Draw the goat count (e.g. 12 / 20) on the pit. The capacity scales with your Hunter level.",
+		description = "Draw the goat count (e.g. 12 / 20) on the pit.<br>The capacity scales with your Hunter level.",
 		section = labelsSection,
 		position = 1
 	)
@@ -387,7 +387,7 @@ public interface GoatIndicatorsConfig extends Config
 		name = "Show Goats in Transit",
 		description = "Where to draw a running count of your goats currently on their way into the pit, lured "
 			+ "or prodded (e.g. In transit: 2): off, centered under the pit count, or one of the pit's compass "
-			+ "points. On the same compass point as the total caught, it stacks under the total.",
+			+ "points.<br>On the same compass point as the total caught, it stacks under the total.",
 		section = labelsSection,
 		position = 3
 	)
@@ -413,7 +413,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "totalCaughtPosition",
 		name = "Show Total Caught",
 		description = "Where to draw the lifetime total of goats caught on the pit: off, the center (under "
-			+ "the pit count when shown), or one of its compass points. The game keeps no total of its own, "
+			+ "the pit count when shown), or one of its compass points.<br>The game keeps no total of its own, "
 			+ "so the plugin counts every catch and keeps the tally across logins and restarts.",
 		section = labelsSection,
 		position = 5
@@ -465,8 +465,8 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "resetTotalCaught",
 		name = "Reset Total Caught",
-		description = "Zero the lifetime goats-caught total. Tick this to reset it; it un-ticks itself once "
-			+ "done. Counting continues from zero.",
+		description = "Zero the lifetime goats-caught total.<br>Tick this to reset it; it un-ticks itself once "
+			+ "done.<br>Counting continues from zero.",
 		section = labelsSection,
 		position = 9,
 		warning = "This clears your lifetime goats-caught total for good. Continue?"
@@ -547,7 +547,7 @@ public interface GoatIndicatorsConfig extends Config
 		name = "\"Clear\" Last While Spikes Sharp",
 		description = "While a pit can still catch — spiked and not yet full — demote its \"Clear Goat Pit\" "
 			+ "option off the top of the menu so a stray left-click does not empty a pit that is still working, "
-			+ "throwing away catching progress. Once every pit is full or needs re-spiking, \"Clear\" is left at "
+			+ "throwing away catching progress.<br>Once every pit is full or needs re-spiking, \"Clear\" is left at "
 			+ "the top so emptying it out takes a single click.",
 		section = contextMenuSection,
 		position = 2
@@ -562,7 +562,7 @@ public interface GoatIndicatorsConfig extends Config
 		name = "Goat First For Telegrab",
 		description = "When a luring spell is selected and a goat shares a tile with another NPC — like Geoff — "
 			+ "keep the goat's cast at the top (left-click) of the menu so the NPC standing over it does not steal "
-			+ "the click. Only reorders when the goat's cast is not already the default.",
+			+ "the click.<br>Only reorders when the goat's cast is not already the default.",
 		section = contextMenuSection,
 		position = 3
 	)
@@ -575,7 +575,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "pitFullNotification",
 		name = "Notify When Pit Is Full",
 		description = "Fire a notification once the goat pit fills up and needs emptying, so you can catch the "
-			+ "moment without watching the count. Tray, sound and screen flash follow this notification's "
+			+ "moment without watching the count.<br>Tray, sound and screen flash follow this notification's "
 			+ "settings; set it to off to disable.",
 		section = notificationsSection,
 		position = 0
@@ -589,7 +589,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "notifyCountInTransit",
 		name = "Count Goats In Transit",
 		description = "Count goats still on their way into the pit toward the full trigger, so the alert fires "
-			+ "the moment the pit is committed to filling rather than waiting for the last goat to land. Off "
+			+ "the moment the pit is committed to filling rather than waiting for the last goat to land.<br>Off "
 			+ "waits until the landed count alone reaches capacity.",
 		section = notificationsSection,
 		position = 1
@@ -603,8 +603,8 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "idleNotification",
 		name = "Nudge When Idle",
 		description = "Fire a notification when nothing has happened at the pit for a while — no catch, no goat "
-			+ "on its way in, no Hunter XP. Names the likely cause: a full pit to empty, a pit needing spikes, or "
-			+ "no catches. Fires once per stall and never on top of the pit-full alert. Off by default.",
+			+ "on its way in, no Hunter XP.<br>Names the likely cause: a full pit to empty, a pit needing spikes, or "
+			+ "no catches.<br>Fires once per stall and never on top of the pit-full alert.<br>Off by default.",
 		section = notificationsSection,
 		position = 2
 	)
@@ -631,7 +631,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "showSessionStats",
 		name = "Show Session Stats",
 		description = "Show a movable infobox with this session's stats: time, goats caught, goats per hour, "
-			+ "and Hunter XP gained and per hour. Timed from your first catch or XP gain; can be reset "
+			+ "and Hunter XP gained and per hour.<br>Timed from your first catch or XP gain; can be reset "
 			+ "below; drag the box anywhere from the overlay menu.",
 		section = sessionSection,
 		position = 0
@@ -645,7 +645,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "showSessionLoot",
 		name = "Show Fur & Horn",
 		description = "Add the goat fur and horns collected this session to the session infobox, with their "
-			+ "combined Grand Exchange value. Counted from your inventory as you loot the pit, so fur that goes "
+			+ "combined Grand Exchange value.<br>Counted from your inventory as you loot the pit, so fur that goes "
 			+ "straight into a fur pouch is not seen.",
 		section = sessionSection,
 		position = 1
