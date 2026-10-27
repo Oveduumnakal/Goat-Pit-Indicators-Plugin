@@ -83,6 +83,7 @@ Goats you can lure into the pit glow pink:
 | Highlight Spike Supply | Outline the spike supply when a pit needs lining and you carry no spikes | On |
 | Restock Before Emptying | When the pit is full and you carry no spikes, show "Restock Spikes" on the pit, outline the supply, and add a reminder to the pit-full notification | On |
 | Highlight Best Tile | Mark where to stand to put the most goats in reach at once — the best pit side (3 edge tiles) to lure from, or the best tile to prod from — with a "Stand here" count | Off |
+| Always Show Goat Count | With Highlight Best Tile on and a lure spell ready, also draw a faint goat count beside the pit's other three sides | Off |
 
 **Indicator Colors**
 

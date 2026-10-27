@@ -32,6 +32,7 @@ import java.awt.Polygon;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
@@ -116,6 +117,12 @@ class GoatHighlightOverlay extends Overlay
 
 	/** The catching pits' world footprints the cached spot was scored against, so its pit-facing edges hide. */
 	private List<int[]> bestTilePits = new ArrayList<>();
+
+	/**
+	 * The cached best lure side's pit's other reachable sides, as {@code int[]{minX, minY, maxX, maxY, score, ...}}
+	 * from {@link BestTile#lureSides}, for the faint goat counts; empty for prod or when no side scored.
+	 */
+	private List<int[]> otherSides = new ArrayList<>();
 
 	@Inject
 	GoatHighlightOverlay(Client client, GoatIndicatorsConfig config, GoatPitTracker tracker,
@@ -207,8 +214,15 @@ class GoatHighlightOverlay extends Overlay
 			bestTileProd = prod;
 		}
 
-		if (bestTile != null)
-			drawBestTile(graphics, bestTile, playerLocation.getPlane());
+		if (bestTile == null)
+			return;
+
+		drawBestTile(graphics, bestTile, playerLocation.getPlane());
+		if (config.alwaysShowGoatCount())
+		{
+			for (int[] side : otherSides)
+				drawSideCount(graphics, side, playerLocation.getPlane());
+		}
 	}
 
 	/**
@@ -229,6 +243,7 @@ class GoatHighlightOverlay extends Overlay
 		}
 
 		bestTilePits = pits;
+		otherSides = new ArrayList<>();
 
 		List<int[]> goats = new ArrayList<>();
 		List<WorldArea> goatAreas = new ArrayList<>();
@@ -260,7 +275,18 @@ class GoatHighlightOverlay extends Overlay
 		WorldView worldView = client.getTopLevelWorldView();
 		BestTile.SightFn sight = (x, y, id) ->
 			new WorldArea(x, y, 1, 1, plane).hasLineOfSightTo(worldView, goatAreas.get(id));
-		return BestTile.pickLureSide(reach, pits, goats, sight);
+		List<int[]> sides = BestTile.lureSides(reach, pits, goats, sight);
+		int[] best = BestTile.bestSide(sides);
+		if (best == null)
+			return null;
+
+		for (int[] side : sides)
+		{
+			if (side != best && side[6] == best[6])
+				otherSides.add(side);
+		}
+
+		return Arrays.copyOf(best, 5);
 	}
 
 	/**
@@ -302,6 +328,30 @@ class GoatHighlightOverlay extends Overlay
 		Point at = Perspective.getCanvasTextLocation(client, graphics, local, text, 0);
 		if (at != null)
 			OverlayUtil.renderTextLocation(graphics, at, text, color);
+	}
+
+	/**
+	 * Draws a faint goat count on the middle tile of a pit side that is not the best one, in the best-tile color
+	 * at a fraction of its alpha, with an equally faint shadow.
+	 */
+	private void drawSideCount(Graphics2D graphics, int[] side, int plane)
+	{
+		WorldPoint middle = new WorldPoint((side[0] + side[2]) / 2, (side[1] + side[3]) / 2, plane);
+		LocalPoint local = LocalPoint.fromWorld(client.getTopLevelWorldView(), middle);
+		if (local == null)
+			return;
+
+		String text = String.valueOf(side[4]);
+		Point at = Perspective.getCanvasTextLocation(client, graphics, local, text, 0);
+		if (at == null)
+			return;
+
+		Color color = config.bestTileColor();
+		int alpha = Math.max(color.getAlpha() * 3 / 5, 40);
+		graphics.setColor(new Color(0, 0, 0, alpha));
+		graphics.drawString(text, at.getX() + 1, at.getY() + 1);
+		graphics.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha));
+		graphics.drawString(text, at.getX(), at.getY());
 	}
 
 	/**

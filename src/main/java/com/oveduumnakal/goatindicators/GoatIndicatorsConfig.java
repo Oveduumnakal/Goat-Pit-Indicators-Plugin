@@ -221,6 +221,19 @@ public interface GoatIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "alwaysShowGoatCount",
+		name = "Always Show Goat Count",
+		description = "With Highlight Best Tile on and a lure spell ready, also draw a faint goat count beside "
+			+ "the pit's other three sides, so you can see how close they are to the best side.",
+		section = indicatorsSection,
+		position = 10
+	)
+	default boolean alwaysShowGoatCount()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "emptyOutlineColor",
 		name = "Empty Outline",
 		description = "Outline color for an empty or unspiked pit, and the low end of the fill gradient. "

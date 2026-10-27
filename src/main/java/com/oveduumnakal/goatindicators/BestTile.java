@@ -86,24 +86,23 @@ final class BestTile
 	}
 
 	/**
-	 * The best pit side to stand beside for a lure, as {@code int[]{minX, minY, maxX, maxY, score}}: the strip of
-	 * tiles along one edge of a pit, scored by how many goats a lure from any of its reachable tiles could send
-	 * into a catching pit. {@code null} when no side has a reachable tile that scores above zero.
+	 * Every pit side the player can reach, scored for a lure, as
+	 * {@code int[]{minX, minY, maxX, maxY, score, steps, pit}}: the strip of tiles along one edge of a pit, how
+	 * many goats a lure from any of its reachable tiles could send into a catching pit, the fewest steps to reach
+	 * it, and the index of its pit in {@code pits}. Sides with no reachable tile are left out.
 	 *
 	 * @param reach the walkable tiles and their step distance from the player, from {@link ProdPathing}
 	 * @param pits the catching pits' world footprints
 	 * @param goats the goats as {@code int[]{x, y, id}}
 	 * @param sight the line-of-sight test
-	 * @return the winning side and its score, or {@code null}
+	 * @return the reachable sides and their scores
 	 */
-	static int[] pickLureSide(Map<Long, Integer> reach, List<int[]> pits, List<int[]> goats, SightFn sight)
+	static List<int[]> lureSides(Map<Long, Integer> reach, List<int[]> pits, List<int[]> goats, SightFn sight)
 	{
-		int[] best = null;
-		int bestSteps = Integer.MAX_VALUE;
-		long bestKey = Long.MAX_VALUE;
-		for (int[] pit : pits)
+		List<int[]> scored = new ArrayList<>();
+		for (int i = 0; i < pits.size(); i++)
 		{
-			for (int[] side : sides(pit))
+			for (int[] side : sides(pits.get(i)))
 			{
 				int steps = Integer.MAX_VALUE;
 				for (int x = side[0]; x <= side[2]; x++)
@@ -116,18 +115,33 @@ final class BestTile
 					}
 				}
 
-				if (steps == Integer.MAX_VALUE)
-					continue;
-
-				int score = sideLureCount(side, reach, goats, pits, sight);
-				long key = ProdPathing.key(side[0], side[1]);
-				if (score > 0 && (best == null || beats(score, steps, key, best[4], bestSteps, bestKey)))
+				if (steps != Integer.MAX_VALUE)
 				{
-					best = new int[]{side[0], side[1], side[2], side[3], score};
-					bestSteps = steps;
-					bestKey = key;
+					int score = sideLureCount(side, reach, goats, pits, sight);
+					scored.add(new int[]{side[0], side[1], side[2], side[3], score, steps, i});
 				}
 			}
+		}
+
+		return scored;
+	}
+
+	/**
+	 * The best of the scored sides from {@link #lureSides}: the highest score, then the fewest steps. Returns the
+	 * side's own entry, or {@code null} when none scores above zero.
+	 *
+	 * @param sides the scored sides
+	 * @return the winning side, or {@code null}
+	 */
+	static int[] bestSide(List<int[]> sides)
+	{
+		int[] best = null;
+		for (int[] side : sides)
+		{
+			long key = ProdPathing.key(side[0], side[1]);
+			if (side[4] > 0 && (best == null
+					|| beats(side[4], side[5], key, best[4], best[5], ProdPathing.key(best[0], best[1]))))
+				best = side;
 		}
 
 		return best;
