@@ -15,7 +15,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Covers the session tally: the first sample fixes the baseline, later samples report the catch/XP delta and
- * elapsed time, the per-hour rates scale by elapsed time (and stay zero before any passes), a reset
+ * time since the first gain, the per-hour rates scale by elapsed time (and stay zero before any passes), a reset
  * re-baselines, and a shrinking lifetime total cannot drive the counts negative.
  */
 public class SessionStatsTest
@@ -39,7 +39,8 @@ public class SessionStatsTest
 	public void laterSamplesReportTheDeltaFromTheBaseline()
 	{
 		stats.update(T0, 100, 5000);
-		stats.update(T0.plus(Duration.ofHours(1)), 105, 5500);
+		stats.update(T0.plus(Duration.ofMinutes(1)), 101, 5100);
+		stats.update(T0.plus(Duration.ofMinutes(61)), 105, 5500);
 
 		assertEquals(5, stats.catches());
 		assertEquals(500, stats.xpGained());
@@ -50,10 +51,37 @@ public class SessionStatsTest
 	public void ratesScaleByElapsedTime()
 	{
 		stats.update(T0, 100, 5000);
-		stats.update(T0.plus(Duration.ofMinutes(30)), 105, 5500);
+		stats.update(T0.plus(Duration.ofMinutes(1)), 101, 5100);
+		stats.update(T0.plus(Duration.ofMinutes(31)), 105, 5500);
 
 		assertEquals(10, stats.catchesPerHour());
 		assertEquals(1000, stats.xpPerHour());
+	}
+
+	@Test
+	public void theClockWaitsForTheFirstCatchOrXpGain()
+	{
+		stats.update(T0, 100, 5000);
+		stats.update(T0.plus(Duration.ofHours(2)), 100, 5000);
+		assertEquals(Duration.ZERO, stats.elapsed());
+
+		stats.update(T0.plus(Duration.ofHours(2)), 100, 5100);
+		stats.update(T0.plus(Duration.ofMinutes(150)), 103, 5400);
+
+		assertEquals(Duration.ofMinutes(30), stats.elapsed());
+		assertEquals(6, stats.catchesPerHour());
+	}
+
+	@Test
+	public void resetAlsoRestartsTheClock()
+	{
+		stats.update(T0, 100, 5000);
+		stats.update(T0.plus(Duration.ofMinutes(1)), 101, 5100);
+		stats.reset();
+		stats.update(T0.plus(Duration.ofHours(1)), 101, 5100);
+		stats.update(T0.plus(Duration.ofHours(3)), 101, 5100);
+
+		assertEquals(Duration.ZERO, stats.elapsed());
 	}
 
 	@Test
@@ -113,9 +141,10 @@ public class SessionStatsTest
 	public void clockPausesWhileInactiveAndResumesAfter()
 	{
 		stats.update(T0, 100, 5000, true);
-		stats.update(T0.plus(Duration.ofMinutes(10)), 100, 5000, true);
-		stats.update(T0.plus(Duration.ofMinutes(40)), 100, 5000, false);
-		stats.update(T0.plus(Duration.ofMinutes(50)), 100, 5000, true);
+		stats.update(T0, 101, 5000, true);
+		stats.update(T0.plus(Duration.ofMinutes(10)), 101, 5000, true);
+		stats.update(T0.plus(Duration.ofMinutes(40)), 101, 5000, false);
+		stats.update(T0.plus(Duration.ofMinutes(50)), 101, 5000, true);
 
 		assertEquals(Duration.ofMinutes(20), stats.elapsed());
 	}

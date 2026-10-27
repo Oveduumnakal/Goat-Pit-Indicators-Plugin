@@ -548,7 +548,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "showSessionStats",
 		name = "Show Session Stats",
 		description = "Show a movable infobox with this session's stats: time, goats caught, goats per hour, "
-			+ "and Hunter XP gained and per hour. The session starts when the plugin loads and can be reset "
+			+ "and Hunter XP gained and per hour. Timed from your first catch or XP gain; can be reset "
 			+ "below; drag the box anywhere from the overlay menu.",
 		section = sessionSection,
 		position = 0
