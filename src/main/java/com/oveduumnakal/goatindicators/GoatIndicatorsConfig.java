@@ -559,12 +559,26 @@ public interface GoatIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "showSessionLoot",
+		name = "Show Fur & Horn",
+		description = "Add the goat fur and horns collected this session to the session infobox, with their "
+			+ "combined Grand Exchange value. Counted from your inventory as you loot the pit, so fur that goes "
+			+ "straight into a fur pouch is not seen.",
+		section = sessionSection,
+		position = 1
+	)
+	default boolean showSessionLoot()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "sessionReset",
 		name = "Reset Session Stats",
 		description = "Tick to restart the session — zeroing the time, catch count, and XP — then it un-ticks "
 			+ "itself.",
 		section = sessionSection,
-		position = 1
+		position = 2
 	)
 	default boolean sessionReset()
 	{

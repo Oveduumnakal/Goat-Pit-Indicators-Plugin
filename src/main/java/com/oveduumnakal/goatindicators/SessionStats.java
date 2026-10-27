@@ -38,6 +38,11 @@ import javax.inject.Singleton;
  * catch or Hunter XP gain (#126), so time spent banking or walking to the pit does not dilute the rates. Rates
  * are the delta scaled by the time since that first gain.
  * Kept free of the client and the clock so it is unit-testable — the caller supplies "now" and the readings.
+ *
+ * <p>It also tallies the goat fur and horn collected this session (#102) from inventory changes fed through
+ * {@link #recordInventory(int, int, boolean)}: every rise in the carried count while at the pit is a pickup.
+ * The last carried counts survive a {@link #reset()}, so restarting the session never books the fur and horn
+ * already in the inventory as fresh loot.
  */
 @Singleton
 class SessionStats
@@ -57,6 +62,13 @@ class SessionStats
 	private Duration elapsed = Duration.ZERO;
 	private int catches;
 	private long xpGained;
+
+	private int fur;
+	private int horn;
+
+	/** Fur and horn carried at the last inventory reading, or {@code -1} before the first one. */
+	private int lastFurHeld = -1;
+	private int lastHornHeld = -1;
 
 	/**
 	 * Records a fresh sample with the clock running; see {@link #update(Instant, int, long, boolean)}.
@@ -113,6 +125,28 @@ class SessionStats
 			startCatches = catchTotal - catches;
 	}
 
+	/**
+	 * Records the fur and horn now carried, booking any rise since the last reading as collected loot. Only
+	 * rises seen while at the pit count, so withdrawing fur from a bank is not mistaken for a catch; the
+	 * reading still updates the baseline either way. A drop (banking, grinding horns, dropping) books nothing,
+	 * and the very first reading only fixes the baseline.
+	 *
+	 * @param furHeld goat fur now in the inventory
+	 * @param hornHeld goat horns now in the inventory
+	 * @param atPit whether a goat pit is loaded in the scene, so a rise came from looting it
+	 */
+	void recordInventory(int furHeld, int hornHeld, boolean atPit)
+	{
+		if (atPit && lastFurHeld >= 0)
+		{
+			fur += Math.max(0, furHeld - lastFurHeld);
+			horn += Math.max(0, hornHeld - lastHornHeld);
+		}
+
+		lastFurHeld = furHeld;
+		lastHornHeld = hornHeld;
+	}
+
 	/** Clears the session so the next {@link #update(Instant, int, long)} starts a fresh one. */
 	void reset()
 	{
@@ -122,6 +156,8 @@ class SessionStats
 		elapsed = Duration.ZERO;
 		catches = 0;
 		xpGained = 0;
+		fur = 0;
+		horn = 0;
 	}
 
 	/** @return whether a session is running (at least one sample has been recorded since the last reset). */
@@ -146,6 +182,18 @@ class SessionStats
 	long xpGained()
 	{
 		return xpGained;
+	}
+
+	/** @return goat fur collected this session. */
+	int fur()
+	{
+		return fur;
+	}
+
+	/** @return goat horns collected this session. */
+	int horn()
+	{
+		return horn;
 	}
 
 	/** @return goats caught per hour at the current rate, or 0 before any time has elapsed. */
