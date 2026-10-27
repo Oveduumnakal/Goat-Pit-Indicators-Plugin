@@ -28,9 +28,12 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import net.runelite.api.Client;
+import net.runelite.api.Item;
+import net.runelite.api.ItemContainer;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
+import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
 
@@ -38,7 +41,7 @@ import net.runelite.api.gameval.VarbitID;
  * Decides whether the player can currently cast Dark Lure, the Arceuus alternative to Telekinetic Grab for
  * luring goats into the pit: Magic 50, the Arceuus spellbook, 1 death rune plus 1 nature rune, and A Kingdom
  * Divided complete (which unlocks the spell). Runes are counted through {@link SpellRunes} from both the
- * inventory and the rune pouch.
+ * inventory and the rune pouch; a worn charged Bryophyta's staff also pays the nature rune from its charges.
  *
  * <p>As with {@link TelekineticGrab}, the requirement combination is factored into
  * {@link #meetsRequirements} so it can be unit-tested without a {@code Client}; only the live level,
@@ -53,6 +56,12 @@ class DarkLure
 	/** {@link VarbitID#SPELLBOOK} value for the Arceuus spellbook, the only book with this spell. */
 	static final int ARCEUUS_SPELLBOOK = 3;
 
+	/**
+	 * The charged Bryophyta's staff, which pays nature runes from its charges. The uncharged staff is a separate
+	 * item, so the charged id alone means charges remain.
+	 */
+	private static final int NATURE_STAFF = ItemID.NATURE_STAFF_CHARGED;
+
 	@Inject
 	private Client client;
 
@@ -66,7 +75,7 @@ class DarkLure
 			client.getBoostedSkillLevel(Skill.MAGIC),
 			client.getVarbitValue(VarbitID.SPELLBOOK),
 			runes.has(ItemID.DEATHRUNE),
-			runes.has(ItemID.NATURERUNE),
+			runes.has(ItemID.NATURERUNE) || natureStaffEquipped(),
 			questComplete());
 	}
 
@@ -77,7 +86,7 @@ class DarkLure
 	 * @param magicLevel    the player's current (boosted) Magic level
 	 * @param spellbook     the {@link VarbitID#SPELLBOOK} value
 	 * @param hasDeathRune  whether a death rune is available
-	 * @param hasNatureRune whether a nature rune is available
+	 * @param hasNatureRune whether a nature rune is available, carried or paid by a charged Bryophyta's staff
 	 * @param questComplete whether A Kingdom Divided is complete, unlocking the spell
 	 * @return true when the spell can be cast
 	 */
@@ -88,6 +97,22 @@ class DarkLure
 			return false;
 
 		return hasDeathRune && hasNatureRune;
+	}
+
+	/** Whether a charged Bryophyta's staff is worn, so the cast needs no nature rune of its own. */
+	private boolean natureStaffEquipped()
+	{
+		ItemContainer worn = client.getItemContainer(InventoryID.WORN);
+		if (worn == null)
+			return false;
+
+		for (Item item : worn.getItems())
+		{
+			if (item != null && item.getId() == NATURE_STAFF)
+				return true;
+		}
+
+		return false;
 	}
 
 	/** Whether A Kingdom Divided is complete, the quest that unlocks Dark Lure. */
