@@ -14,6 +14,7 @@ import net.runelite.client.config.Notification;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -31,9 +32,10 @@ public class PitFullNotifierTest
 	private final GoatIndicatorsConfig config = mock(GoatIndicatorsConfig.class);
 	private final GoatPitTracker tracker = mock(GoatPitTracker.class);
 	private final GoatTransitTracker transitTracker = mock(GoatTransitTracker.class);
+	private final CarriedSpikes carriedSpikes = mock(CarriedSpikes.class);
 
 	private final PitFullNotifier notifierUnderTest =
-		new PitFullNotifier(notifier, config, tracker, transitTracker);
+		new PitFullNotifier(notifier, config, tracker, transitTracker, carriedSpikes);
 
 	@Test
 	public void firesOnceWhenThePitBecomesFullAndStaysQuietWhileFull()
@@ -105,6 +107,24 @@ public class PitFullNotifierTest
 		verify(notifier, never()).notify(any(Notification.class), anyString());
 	}
 
+	@Test
+	public void walkingBackToAPitThatIsStillFullDoesNotRepeatTheAlert()
+	{
+		when(config.pitFullNotification()).thenReturn(Notification.ON);
+		when(config.notifyCountInTransit()).thenReturn(true);
+
+		singleSpikedPit(16, 16);
+		notifierUnderTest.onTick();
+
+		when(tracker.getPits()).thenReturn(Collections.emptyList());
+		notifierUnderTest.onTick();
+
+		singleSpikedPit(16, 16);
+		notifierUnderTest.onTick();
+
+		verify(notifier, times(1)).notify(any(Notification.class), anyString());
+	}
+
 	/** Points the tracker at one spiked pit at {@code count}/{@code capacity}, with no goats in transit. */
 	private void singleSpikedPit(int count, int capacity)
 	{
@@ -112,5 +132,41 @@ public class PitFullNotifierTest
 		when(tracker.getPits()).thenReturn(Collections.singletonList(pit));
 		when(tracker.stateOf(pit)).thenReturn(new GoatPitState(count, true, capacity));
 		when(transitTracker.inTransitCount()).thenReturn(0);
+	}
+
+	@Test
+	public void addsTheRestockReminderWhenNoSpikesAreCarried()
+	{
+		when(config.pitFullNotification()).thenReturn(Notification.ON);
+		when(config.notifyCountInTransit()).thenReturn(true);
+		when(config.warnRestockSpikes()).thenReturn(true);
+		when(carriedSpikes.count()).thenReturn(0);
+		singleSpikedPit(16, 16);
+
+		notifierUnderTest.onTick();
+
+		verify(notifier).notify(Notification.ON,
+			PitFullNotifier.FULL_MESSAGE + " " + PitFullNotifier.RESTOCK_REMINDER);
+	}
+
+	@Test
+	public void leavesTheReminderOffWhenSpikesAreCarriedOrTheWarningIsOff()
+	{
+		when(config.pitFullNotification()).thenReturn(Notification.ON);
+		when(config.notifyCountInTransit()).thenReturn(true);
+		when(config.warnRestockSpikes()).thenReturn(true);
+		when(carriedSpikes.count()).thenReturn(1);
+		singleSpikedPit(16, 16);
+		notifierUnderTest.onTick();
+
+		singleSpikedPit(0, 16);
+		notifierUnderTest.onTick();
+
+		when(config.warnRestockSpikes()).thenReturn(false);
+		when(carriedSpikes.count()).thenReturn(0);
+		singleSpikedPit(16, 16);
+		notifierUnderTest.onTick();
+
+		verify(notifier, times(2)).notify(any(Notification.class), eq(PitFullNotifier.FULL_MESSAGE));
 	}
 }

@@ -25,14 +25,17 @@
 package com.oveduumnakal.goatindicators;
 
 /**
- * Where the lifetime total-caught label is drawn on a pit, or off. The eight positions are the pit's
- * compass points — four corners and four edge midpoints — in world space, where north is +y and east
- * is +x.
+ * Where the lifetime total-caught label is drawn on a pit, or off. {@link #CENTER} sits in the middle of
+ * the pit, under the pit count when that is shown; the other eight positions are the pit's compass
+ * points — four corners and four edge midpoints — in world space, where north is +y and east is +x.
  */
 public enum TotalCaughtPosition
 {
 	/** Do not draw the total. */
 	OFF("Off", Edge.MID, Edge.MID),
+
+	/** The middle of the pit, under the pit count when that is shown. */
+	CENTER("Center", Edge.MID, Edge.MID),
 
 	/** North edge midpoint. */
 	NORTH("North", Edge.MID, Edge.MAX),
@@ -86,6 +89,12 @@ public enum TotalCaughtPosition
 		this.label = label;
 		this.xEdge = xEdge;
 		this.yEdge = yEdge;
+	}
+
+	/** Whether this position is the centre placement, drawn in the pit's middle rather than on an edge. */
+	boolean isCenter()
+	{
+		return this == CENTER;
 	}
 
 	/**

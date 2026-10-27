@@ -33,7 +33,7 @@ public class GoatPitOverlaySupplyTest
 	private final GoatCatchCounter catchCounter = mock(GoatCatchCounter.class);
 
 	private final GoatPitOverlay overlay =
-		new GoatPitOverlay(client, config, tracker, transitTracker, catchCounter);
+		new GoatPitOverlay(client, config, tracker, transitTracker, catchCounter, new CarriedSpikes(client));
 
 	@Test
 	public void spikesInTheInventoryCount()
@@ -68,6 +68,27 @@ public class GoatPitOverlaySupplyTest
 
 		when(tracker.stateOf(pit)).thenReturn(new GoatPitState(5, false, 16));
 		assertFalse(overlay.anyPitNeedsSpikes());
+	}
+
+	@Test
+	public void aFullPitNeedsARestockOnlyWhileNoSpikesAreCarried()
+	{
+		GameObject pit = mock(GameObject.class);
+		when(tracker.getPits()).thenReturn(Collections.singletonList(pit));
+		when(tracker.stateOf(pit)).thenReturn(new GoatPitState(16, true, 16));
+
+		ItemContainer empty = container();
+		ItemContainer withSpike = container(item(GoatIds.SPIKES_ITEM_ID, 1));
+
+		when(client.getItemContainer(InventoryID.INV)).thenReturn(empty);
+		assertTrue(overlay.anyPitNeedsRestock());
+
+		when(client.getItemContainer(InventoryID.INV)).thenReturn(withSpike);
+		assertFalse(overlay.anyPitNeedsRestock());
+
+		when(tracker.stateOf(pit)).thenReturn(new GoatPitState(15, true, 16));
+		when(client.getItemContainer(InventoryID.INV)).thenReturn(empty);
+		assertFalse(overlay.anyPitNeedsRestock());
 	}
 
 	/** A mock item container returning exactly the given items. */
