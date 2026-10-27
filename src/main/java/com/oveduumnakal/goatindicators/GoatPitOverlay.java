@@ -40,14 +40,11 @@ import javax.inject.Inject;
 
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
-import net.runelite.api.Item;
-import net.runelite.api.ItemContainer;
 import net.runelite.api.Perspective;
 import net.runelite.api.Player;
 import net.runelite.api.Point;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
-import net.runelite.api.gameval.InventoryID;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -69,6 +66,7 @@ class GoatPitOverlay extends Overlay
 	private static final int OUTLINE_ALPHA = 220;
 	private static final String ADD_SPIKES_TEXT = "Add Spikes";
 	private static final String TAKE_SPIKE_TEXT = "Take Spike";
+	private static final String RESTOCK_TEXT = "Restock Spikes";
 
 	/** Progress bar dimensions in pixels, and the translucent backing drawn behind the fill. */
 	private static final int BAR_WIDTH = 48;
@@ -119,6 +117,7 @@ class GoatPitOverlay extends Overlay
 	private final GoatPitTracker tracker;
 	private final GoatTransitTracker transitTracker;
 	private final GoatCatchCounter catchCounter;
+	private final CarriedSpikes carriedSpikes;
 	private final BufferedImage[] totalIconFrames;
 	private final BufferedImage totalWalkFrame;
 	private final BufferedImage inTransitIcon;
@@ -130,13 +129,14 @@ class GoatPitOverlay extends Overlay
 
 	@Inject
 	GoatPitOverlay(Client client, GoatIndicatorsConfig config, GoatPitTracker tracker,
-		GoatTransitTracker transitTracker, GoatCatchCounter catchCounter)
+		GoatTransitTracker transitTracker, GoatCatchCounter catchCounter, CarriedSpikes carriedSpikes)
 	{
 		this.client = client;
 		this.config = config;
 		this.tracker = tracker;
 		this.transitTracker = transitTracker;
 		this.catchCounter = catchCounter;
+		this.carriedSpikes = carriedSpikes;
 		this.totalIconFrames = loadIconStrip("goat_leap_strip.png", TOTAL_ICON_FRAMES, TOTAL_ICON_HEIGHT);
 		BufferedImage[] walk = loadIconStrip("goat_walk.png", 1, TOTAL_ICON_HEIGHT);
 		this.totalWalkFrame = walk == null ? null : walk[0];
@@ -165,13 +165,17 @@ class GoatPitOverlay extends Overlay
 
 	/**
 	 * Outlines the spike supply object when a pit needs lining and the player carries no spikes, so the
-	 * restock point is obvious. Nothing is drawn once the player holds spikes (they can re-line in place)
-	 * or when no pit is prompting for spikes. Uses the same spike-warning fill and empty-outline color as
-	 * the pit, so the supply reads as part of the same "needs spikes" state.
+	 * restock point is obvious. With the restock warning on it also lights up as soon as a pit is full and no
+	 * spikes are carried — before emptying, rather than after (#103). Nothing is drawn once the player holds
+	 * spikes (they can re-line in place) or when no pit calls for them. Uses the same spike-warning fill and
+	 * empty-outline color as the pit, so the supply reads as part of the same "needs spikes" state.
 	 */
 	private void renderSpikeSupplies(Graphics2D graphics, WorldPoint playerLocation)
 	{
-		if (!config.highlightSpikeSupply() || !anyPitNeedsSpikes() || playerHasSpikes())
+		if (!config.highlightSpikeSupply() || playerHasSpikes())
+			return;
+
+		if (!anyPitNeedsSpikes() && !(config.warnRestockSpikes() && anyPitNeedsRestock()))
 			return;
 
 		for (GameObject supply : tracker.getSupplies())
@@ -219,20 +223,23 @@ class GoatPitOverlay extends Overlay
 		return false;
 	}
 
-	/** Whether the player is carrying spikes, so they can re-line a pit without visiting the supply. */
-	boolean playerHasSpikes()
+	/** Whether any loaded pit is full while no spikes are carried, so emptying it now would strand it. */
+	boolean anyPitNeedsRestock()
 	{
-		ItemContainer inventory = client.getItemContainer(InventoryID.INV);
-		if (inventory == null)
-			return false;
-
-		for (Item item : inventory.getItems())
+		int carried = carriedSpikes.count();
+		for (GameObject pit : tracker.getPits())
 		{
-			if (item != null && item.getId() == GoatIds.SPIKES_ITEM_ID && item.getQuantity() > 0)
+			if (CarriedSpikes.needsRestock(tracker.stateOf(pit), carried))
 				return true;
 		}
 
 		return false;
+	}
+
+	/** Whether the player is carrying spikes, so they can re-line a pit without visiting the supply. */
+	boolean playerHasSpikes()
+	{
+		return carriedSpikes.count() > 0;
 	}
 
 	private void renderPit(Graphics2D graphics, GameObject pit, WorldPoint playerLocation)
@@ -246,8 +253,9 @@ class GoatPitOverlay extends Overlay
 			drawColorIndicators(graphics, pit, state);
 
 		renderLabels(graphics, pit, state);
-		renderInTransit(graphics, pit);
-		renderTotalCaught(graphics, pit);
+		renderSpikeLine(graphics, pit, state);
+		renderInTransit(graphics, pit, state);
+		renderTotalCaught(graphics, pit, state);
 	}
 
 	/**
@@ -274,12 +282,39 @@ class GoatPitOverlay extends Overlay
 	}
 
 	/**
+	 * Draws a spikes line one text line above the pit count (#103). A full pit with no spikes carried shows
+	 * "Restock Spikes" while the restock warning is on, since emptying it would leave nothing to re-line it
+	 * with; otherwise the optional carried count, e.g. {@code "Spikes: 2"}, is shown.
+	 */
+	private void renderSpikeLine(Graphics2D graphics, GameObject pit, GoatPitState state)
+	{
+		int carried = carriedSpikes.count();
+		String text;
+		if (config.warnRestockSpikes() && CarriedSpikes.needsRestock(state, carried))
+			text = RESTOCK_TEXT;
+		else if (config.showSpikeCount())
+			text = "Spikes: " + carried;
+		else
+			return;
+
+		Point at = pit.getCanvasTextLocation(graphics, text, 0);
+		if (at != null)
+			drawText(graphics, aboveLine(graphics, at), text, config.countLabelColor());
+	}
+
+	/** Shifts a canvas point up by one text line so a label sits over the pit count. */
+	private static Point aboveLine(Graphics2D graphics, Point at)
+	{
+		return new Point(at.getX(), at.getY() - graphics.getFontMetrics().getHeight());
+	}
+
+	/**
 	 * Draws the current in-transit goat count on the pit, e.g. {@code "In transit: 2"}, so the player can see
 	 * at a glance how many of their goats — lured or prodded — are on their way in. The number is preceded by
 	 * the configured {@link InTransitPrefix} (nothing, an "In transit: " label, or the icon) and placed by the
 	 * configured {@link InTransitPosition}.
 	 */
-	private void renderInTransit(Graphics2D graphics, GameObject pit)
+	private void renderInTransit(Graphics2D graphics, GameObject pit, GoatPitState state)
 	{
 		InTransitPosition position = config.inTransitPosition();
 		if (!position.isDrawn())
@@ -287,7 +322,7 @@ class GoatPitOverlay extends Overlay
 
 		InTransitPrefix prefix = config.inTransitPrefix();
 		String text = inTransitText(prefix, transitTracker.inTransitCount());
-		Point at = inTransitAnchor(graphics, pit, position, text);
+		Point at = inTransitAnchor(graphics, pit, state, position, text);
 		if (at == null)
 			return;
 
@@ -316,15 +351,24 @@ class GoatPitOverlay extends Overlay
 
 	/**
 	 * The canvas point the in-transit line is drawn at. The centre placement sits one line under the pit
-	 * count; a compass placement sits on that pit tile, dropped one line under the total-caught label when
-	 * both share the tile so the two stack instead of overlapping.
+	 * count, or one line under the total when that is centred too; a compass placement sits on that pit
+	 * tile, dropped one line under the total-caught label when both share the tile so the two stack instead
+	 * of overlapping.
 	 */
-	private Point inTransitAnchor(Graphics2D graphics, GameObject pit, InTransitPosition position, String text)
+	private Point inTransitAnchor(Graphics2D graphics, GameObject pit, GoatPitState state,
+		InTransitPosition position, String text)
 	{
 		if (position.isCenter())
 		{
 			Point at = pit.getCanvasTextLocation(graphics, text, 0);
-			return at == null ? null : belowLine(graphics, at);
+			if (at == null)
+				return null;
+
+			Point under = belowLine(graphics, at);
+			if (config.totalCaughtPosition().isCenter() && drawsCenterLabel(state))
+				return belowLine(graphics, under);
+
+			return under;
 		}
 
 		Point min = pit.getSceneMinLocation();
@@ -352,25 +396,18 @@ class GoatPitOverlay extends Overlay
 	}
 
 	/**
-	 * Draws the lifetime catch total on the pit corner chosen in the config, in Stockpile short form, so
-	 * it sits clear of the centred count. North is +y and east is +x.
+	 * Draws the lifetime catch total on the pit position chosen in the config, in Stockpile short form. A
+	 * compass position sits clear of the centred count; the centre position takes the count's place when no
+	 * centre label is drawn, and stacks one line under it otherwise. North is +y and east is +x.
 	 */
-	private void renderTotalCaught(Graphics2D graphics, GameObject pit)
+	private void renderTotalCaught(Graphics2D graphics, GameObject pit, GoatPitState state)
 	{
 		TotalCaughtPosition position = config.totalCaughtPosition();
 		if (position == TotalCaughtPosition.OFF)
 			return;
 
-		Point min = pit.getSceneMinLocation();
-		Point max = pit.getSceneMaxLocation();
-		if (min == null || max == null)
-			return;
-
-		int sceneX = position.sceneX(min.getX(), max.getX());
-		int sceneY = position.sceneY(min.getY(), max.getY());
 		String text = totalCaughtText();
-		LocalPoint tile = LocalPoint.fromScene(sceneX, sceneY, pit.getWorldView());
-		Point at = Perspective.getCanvasTextLocation(client, graphics, tile, text, 0);
+		Point at = totalCaughtAnchor(graphics, pit, state, position, text);
 		if (at == null)
 			return;
 
@@ -386,6 +423,42 @@ class GoatPitOverlay extends Overlay
 		}
 
 		drawText(graphics, at, text, color);
+	}
+
+	/**
+	 * The canvas point the total-caught label is drawn at: the pit's centre, dropped one line when the
+	 * count or "Add Spikes" line is drawn there, or the chosen compass tile.
+	 */
+	private Point totalCaughtAnchor(Graphics2D graphics, GameObject pit, GoatPitState state,
+		TotalCaughtPosition position, String text)
+	{
+		if (position.isCenter())
+		{
+			Point at = pit.getCanvasTextLocation(graphics, text, 0);
+			if (at == null || !drawsCenterLabel(state))
+				return at;
+
+			return belowLine(graphics, at);
+		}
+
+		Point min = pit.getSceneMinLocation();
+		Point max = pit.getSceneMaxLocation();
+		if (min == null || max == null)
+			return null;
+
+		int sceneX = position.sceneX(min.getX(), max.getX());
+		int sceneY = position.sceneY(min.getY(), max.getY());
+		LocalPoint tile = LocalPoint.fromScene(sceneX, sceneY, pit.getWorldView());
+		return Perspective.getCanvasTextLocation(client, graphics, tile, text, 0);
+	}
+
+	/**
+	 * Whether {@link #renderLabels} draws anything in the pit's centre: the "Add Spikes" prompt, or the
+	 * count as text or bar.
+	 */
+	private boolean drawsCenterLabel(GoatPitState state)
+	{
+		return (config.showAddSpikes() && promptAddSpikes(state)) || config.showCount();
 	}
 
 	/**
@@ -699,19 +772,9 @@ class GoatPitOverlay extends Overlay
 	{
 		float f = Math.max(0.0f, Math.min(1.0f, fraction));
 		if (f <= 0.5f)
-			return lerp(from, mid, f * 2.0f);
+			return ColorUtil.lerp(from, mid, f * 2.0f, false);
 
-		return lerp(mid, to, (f - 0.5f) * 2.0f);
-	}
-
-	/** Linearly blends two colors, ignoring their alpha; {@code fraction} is clamped to 0..1. */
-	private static Color lerp(Color from, Color to, float fraction)
-	{
-		float f = Math.max(0.0f, Math.min(1.0f, fraction));
-		int r = Math.round(from.getRed() + (to.getRed() - from.getRed()) * f);
-		int g = Math.round(from.getGreen() + (to.getGreen() - from.getGreen()) * f);
-		int b = Math.round(from.getBlue() + (to.getBlue() - from.getBlue()) * f);
-		return new Color(r, g, b);
+		return ColorUtil.lerp(mid, to, (f - 0.5f) * 2.0f, false);
 	}
 
 	/**

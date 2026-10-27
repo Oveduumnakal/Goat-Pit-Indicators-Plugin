@@ -92,6 +92,13 @@ class GoatHighlightOverlay extends Overlay
 	/** The tile the last prod-from-location flood started from, so the flood is reused until the player moves. */
 	private WorldPoint cachedPathOrigin;
 
+	/**
+	 * The game tick the cached flood was computed on. The flood is reused across the many render frames
+	 * within a tick, but recomputed on the next tick even from an unchanged tile, so a collision change
+	 * (a gate or door opening on an adjacent tile) is picked up rather than served stale.
+	 */
+	private int cachedPathTick = -1;
+
 	/** The reach map from the last flood, keyed by {@link ProdPathing#key(int, int)}. */
 	private Map<Long, Integer> cachedReach;
 
@@ -124,20 +131,20 @@ class GoatHighlightOverlay extends Overlay
 		if (player == null)
 			return null;
 
+		WorldPoint playerLocation = player.getWorldLocation();
+		if (playerLocation == null)
+			return null;
+
 		if (config.highlightBestTile())
-			renderBestTile(graphics, player.getWorldLocation());
+			renderBestTile(graphics, playerLocation);
 
 		if (config.highlightProdable() && cattleprodEquipped())
 		{
-			renderProdable(graphics, player.getWorldLocation());
+			renderProdable(graphics, playerLocation);
 			return null;
 		}
 
 		if (!config.highlightTelegrab() || !lureSpells.canLure())
-			return null;
-
-		WorldPoint playerLocation = player.getWorldLocation();
-		if (playerLocation == null)
 			return null;
 
 		List<GameObject> catchingPits = catchingPits();
@@ -165,7 +172,7 @@ class GoatHighlightOverlay extends Overlay
 		for (int i = 0; i < targets.size(); i++)
 		{
 			float fraction = TelegrabTargeting.priorityFraction(distances.get(i), nearest, farthest);
-			drawOutline(graphics, targets.get(i), lerp(closest, furthest, fraction));
+			drawOutline(graphics, targets.get(i), ColorUtil.lerp(closest, furthest, fraction, true));
 		}
 
 		return null;
@@ -329,7 +336,7 @@ class GoatHighlightOverlay extends Overlay
 		for (int i = 0; i < targets.size(); i++)
 		{
 			float fraction = TelegrabTargeting.priorityFraction(distances.get(i), nearest, farthest);
-			drawOutline(graphics, targets.get(i), lerp(closest, furthest, fraction));
+			drawOutline(graphics, targets.get(i), ColorUtil.lerp(closest, furthest, fraction, true));
 		}
 	}
 
@@ -379,15 +386,18 @@ class GoatHighlightOverlay extends Overlay
 
 	/**
 	 * Floods the walkable tiles out from the player to predict where a click would land, reusing the last
-	 * result until the player moves. The walkability of each step is taken from the scene collision map via
-	 * {@link WorldArea#canTravelInDirection}. Returns {@code null} when the player location is unknown.
+	 * result until the player moves or the tick advances. The walkability of each step is taken from the
+	 * scene collision map via {@link WorldArea#canTravelInDirection}. Recomputing once per tick (rather than
+	 * only on movement) keeps the flood off the per-frame hot path while still picking up a collision change
+	 * that happens with the player standing still. Returns {@code null} when the player location is unknown.
 	 */
 	private Map<Long, Integer> reachFromPlayer(WorldPoint playerLocation)
 	{
 		if (playerLocation == null)
 			return null;
 
-		if (playerLocation.equals(cachedPathOrigin))
+		int tick = client.getTickCount();
+		if (playerLocation.equals(cachedPathOrigin) && tick == cachedPathTick)
 			return cachedReach;
 
 		WorldView worldView = client.getTopLevelWorldView();
@@ -396,6 +406,7 @@ class GoatHighlightOverlay extends Overlay
 			new WorldArea(new WorldPoint(x, y, plane), 1, 1).canTravelInDirection(worldView, dx, dy);
 		cachedReach = ProdPathing.reachDistances(playerLocation.getX(), playerLocation.getY(), step, PATH_RADIUS);
 		cachedPathOrigin = playerLocation;
+		cachedPathTick = tick;
 		return cachedReach;
 	}
 
@@ -580,19 +591,5 @@ class GoatHighlightOverlay extends Overlay
 		graphics.setColor(color);
 		graphics.setStroke(OUTLINE_STROKE);
 		graphics.draw(hull);
-	}
-
-	/**
-	 * Linearly blends two colors including their alpha; {@code fraction} is clamped to 0..1. Used to place
-	 * each grabbable goat's outline along the closest-to-furthest gradient.
-	 */
-	private static Color lerp(Color from, Color to, float fraction)
-	{
-		float f = Math.max(0.0f, Math.min(1.0f, fraction));
-		int r = Math.round(from.getRed() + (to.getRed() - from.getRed()) * f);
-		int g = Math.round(from.getGreen() + (to.getGreen() - from.getGreen()) * f);
-		int b = Math.round(from.getBlue() + (to.getBlue() - from.getBlue()) * f);
-		int a = Math.round(from.getAlpha() + (to.getAlpha() - from.getAlpha()) * f);
-		return new Color(r, g, b, a);
 	}
 }

@@ -30,15 +30,15 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 
 - **Find the spike supply when a pit runs dry**
 
-  When a pit needs re-spiking and you are carrying none, the spike supply object is outlined in the same warning colors, with a "Take Spike" prompt — so you can restock without hunting for it.
+  When a pit needs re-spiking and you are carrying none, the spike supply object is outlined in the same warning colors, with a "Take Spike" prompt — so you can restock without hunting for it. It also warns you *before* you empty a full pit with no spikes on you — emptying uses up the spikes, so a "Restock Spikes" line on the pit and a reminder in the pit-full notification save you a dead pit.
 
 - **Track your lifetime total**
 
-  A running count of every goat you have caught, drawn on the pit and kept across logins and client restarts. The game keeps no total of its own, so the plugin tallies each catch itself. The total's icon is an animated leaping goat by default. Place it on any compass point, or turn it off.
+  A running count of every goat you have caught, drawn on the pit and kept across logins and client restarts. The game keeps no total of its own, so the plugin tallies each catch itself. The total's icon is an animated leaping goat by default. Place it in the center of the pit, on any compass point, or turn it off.
 
 - **See how the session is going**
 
-  An optional movable infobox tracks this session at a glance: time elapsed, goats caught, goats per hour, and Hunter XP gained and per hour. Starts when the plugin loads, resets on demand, and drags anywhere you like.
+  An optional movable infobox tracks this session at a glance: time elapsed, goats caught, goats per hour, and Hunter XP gained and per hour — plus the goat fur and horns you've looted and what they're worth on the Grand Exchange. The clock starts at your first catch or Hunter XP gain, so time spent getting to the pit does not drag the rates down. Resets on demand, and drags anywhere you like.
 
 - **Watch the ones on their way in**
 
@@ -46,7 +46,7 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 
 - **Get pinged when the pit fills**
 
-  Filling a pit is semi-AFK, and the moment that matters is when it reaches capacity and needs emptying. The plugin fires a notification once the pit is full — tray, sound, and screen flash all follow your notification settings — and re-arms after you empty it, so one fill is one ping. Optionally count goats still in transit toward the trigger to be pinged the moment the pit is committed to filling.
+  Filling a pit is semi-AFK, and the moment that matters is when it reaches capacity and needs emptying. The plugin fires a notification once the pit is full — tray, sound, and screen flash all follow your notification settings — and re-arms after you empty it, so one fill is one ping. Optionally count goats still in transit toward the trigger to be pinged the moment the pit is committed to filling. An optional idle nudge covers the opposite case — drifting off — and pings you once when nothing has happened at the pit for a set time, saying whether the pit needs emptying, needs spikes, or has just stopped catching.
 
 - **Guard against misclicks**
 
@@ -81,6 +81,7 @@ Goats you can lure into the pit glow pink:
 | Prodable from Location | Only highlight prodable goats you can prod in without repositioning, judged from the tile a click would walk you to | On |
 | Near/Far Gradient | Shade each highlighted goat's outline by distance to the pit, closest color to furthest; applies to both the telegrab and prod highlights | On |
 | Highlight Spike Supply | Outline the spike supply when a pit needs lining and you carry no spikes | On |
+| Restock Before Emptying | When the pit is full and you carry no spikes, show "Restock Spikes" on the pit, outline the supply, and add a reminder to the pit-full notification | On |
 | Highlight Best Tile | Mark the reachable tile that puts the most goats in reach at once — lure range and across the pit, or beside you to prod — with a "Stand here" count | Off |
 
 **Indicator Colors**
@@ -106,10 +107,12 @@ Goats you can lure into the pit glow pink:
 | Pit Indicator Style | Draw the count as text, a progress bar, or both | Text |
 | Show Goats in Transit | Where to draw a running count of goats on their way in: Off, Center, or a compass point | Center |
 | In Transit Prefix | What precedes the in-transit number: nothing, a label, or the icon | Icon |
-| Show Total Caught | Where to draw the lifetime catch total: Off or a compass point | South-East |
+| Show Total Caught | Where to draw the lifetime catch total: Off, Center, or a compass point | South-East |
 | Total Prefix | What precedes the total: nothing, a "Total: " label, or the animated goat | Animated |
 | Count Label Color | Color of the count and "Add Spikes" text | White |
 | Total Label Color | Color of the total-caught text | White |
+| Show Spikes Carried | Show how many spikes you are carrying, one line above the pit count | Off |
+| Reset Total Caught | Tick to zero the lifetime goats-caught total; un-ticks itself | Off |
 
 **Context Menu**
 
@@ -126,6 +129,8 @@ Goats you can lure into the pit glow pink:
 |---|---|---|
 | Notify When Pit Is Full | Fire a notification (tray / sound / flash) once the pit fills and needs emptying, re-arming after you empty it | On |
 | Count Goats In Transit | Count goats still on their way in toward the full trigger, firing the moment the pit is committed to filling | On |
+| Nudge When Idle | Notify when nothing has happened at the pit for a while, naming the likely cause (full pit, needs spikes, or no catches) | Off |
+| Idle After | How long the pit must see no activity before the idle nudge fires (seconds) | 60 |
 
 **Misc**
 
@@ -139,6 +144,7 @@ Goats you can lure into the pit glow pink:
 | Setting | What it does | Default |
 |---|---|---|
 | Show Session Stats | Show a movable infobox with this session's time, goats caught, goats/hr, and Hunter XP gained and per hour | On |
+| Show Fur & Horn | Add the fur and horns looted this session, and their GE value, to the session infobox | On |
 | Reset Session Stats | Tick to restart the session (time, catches, XP); un-ticks itself | Off |
 
 ## Links

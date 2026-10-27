@@ -33,32 +33,45 @@ import net.runelite.client.Notifier;
 /**
  * Fires a single notification when the goat pit fills up and needs emptying (#100).
  *
- * <p>The one moment that matters while filling a semi-AFK pit is when it reaches capacity, so this watches
- * for the pit crossing into full each tick and fires RuneLite's {@link Notifier} once — tray, sound and
- * flash all follow the user's configured {@link net.runelite.client.config.Notification}. It re-arms once a
- * pit drops back below full (emptied or re-spiking), so one fill yields exactly one alert rather than a
- * stream. "Full" reuses the same effectively-full test the menu swaps use (landed goats plus, optionally,
- * goats still in transit), so no new pit tracking is introduced. Ticked from {@link GoatIndicatorsPlugin}.
+ * <p>The one moment that matters while filling a semi-AFK pit is when it reaches capacity, so this watches for
+ * the pit crossing into full each tick and fires RuneLite's {@link Notifier} once — tray, sound and flash all
+ * follow the user's configured {@link net.runelite.client.config.Notification}. It re-arms once a spiked pit is
+ * seen below full again, so one fill yields exactly one alert rather than a stream. While no spiked pit is
+ * loaded — the player has walked away, or the pit is being cleared out — the armed state is left alone, so
+ * walking back to a pit that is still full does not repeat the alert (#127). "Full" reuses the same
+ * effectively-full test the menu swaps use (landed goats plus, optionally, goats still in transit), so no new
+ * pit tracking is introduced. Ticked from {@link GoatIndicatorsPlugin}.
+ *
+ * <p>With the restock warning on, a fill reached while no spikes are carried adds a reminder to the same
+ * notification (#103) rather than firing a second one, since emptying the pit uses up its spikes.
  */
 @Singleton
 class PitFullNotifier
 {
+	/** The base pit-full alert. */
+	static final String FULL_MESSAGE = "Your goat pit is full.";
+
+	/** Appended when no spikes are carried, since emptying the pit uses up its spikes. */
+	static final String RESTOCK_REMINDER = "You have no spikes — grab one before emptying it.";
+
 	private final Notifier notifier;
 	private final GoatIndicatorsConfig config;
 	private final GoatPitTracker tracker;
 	private final GoatTransitTracker transitTracker;
+	private final CarriedSpikes carriedSpikes;
 
 	/** Whether the current fill has already been notified, so it fires once per fill rather than every tick. */
 	private boolean notified;
 
 	@Inject
 	PitFullNotifier(Notifier notifier, GoatIndicatorsConfig config, GoatPitTracker tracker,
-		GoatTransitTracker transitTracker)
+		GoatTransitTracker transitTracker, CarriedSpikes carriedSpikes)
 	{
 		this.notifier = notifier;
 		this.config = config;
 		this.tracker = tracker;
 		this.transitTracker = transitTracker;
+		this.carriedSpikes = carriedSpikes;
 	}
 
 	/**
@@ -67,24 +80,33 @@ class PitFullNotifier
 	 */
 	void onTick()
 	{
-		boolean full = allCatchingPitsFull();
-		if (full && !notified)
+		Fill fill = fill();
+		if (fill == Fill.FULL && !notified)
 		{
-			notifier.notify(config.pitFullNotification(), "Your goat pit is full.");
+			notifier.notify(config.pitFullNotification(), message());
 			notified = true;
 		}
-		else if (!full)
+		else if (fill == Fill.ROOM)
 		{
 			notified = false;
 		}
 	}
 
+	/** The alert text, with a restock reminder when the warning is on and no spikes are carried. */
+	private String message()
+	{
+		if (config.warnRestockSpikes() && carriedSpikes.count() <= 0)
+			return FULL_MESSAGE + " " + RESTOCK_REMINDER;
+
+		return FULL_MESSAGE;
+	}
+
 	/**
-	 * Whether at least one spiked pit is loaded and every spiked pit is effectively full, so there is no room
-	 * left to catch. Unspiked pits are skipped, since they cannot catch and so cannot be "full". In-transit
-	 * goats count toward the trigger only when the matching config option is on.
+	 * How full the loaded spiked pits are: {@link Fill#NONE} when none is loaded, {@link Fill#FULL} when every
+	 * one is effectively full, otherwise {@link Fill#ROOM}. Unspiked pits are skipped, since they cannot catch
+	 * and so cannot be "full". In-transit goats count toward the trigger only when the matching option is on.
 	 */
-	private boolean allCatchingPitsFull()
+	private Fill fill()
 	{
 		int inTransit = config.notifyCountInTransit() ? transitTracker.inTransitCount() : 0;
 		boolean sawCatchingPit = false;
@@ -96,9 +118,22 @@ class PitFullNotifier
 
 			sawCatchingPit = true;
 			if (!TelegrabTargeting.effectivelyFull(state.getCount(), inTransit, state.getCapacity()))
-				return false;
+				return Fill.ROOM;
 		}
 
-		return sawCatchingPit;
+		return sawCatchingPit ? Fill.FULL : Fill.NONE;
+	}
+
+	/** How full the loaded spiked pits are, as seen this tick. */
+	private enum Fill
+	{
+		/** No spiked pit is loaded, so there is nothing to judge; the armed state is left as it is. */
+		NONE,
+
+		/** At least one spiked pit can still take a goat; re-arms the alert. */
+		ROOM,
+
+		/** Every spiked pit is effectively full; fires the alert if armed. */
+		FULL
 	}
 }
