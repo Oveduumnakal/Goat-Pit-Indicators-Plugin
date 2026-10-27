@@ -52,6 +52,32 @@ public class InTransitPositionTest
 	}
 
 	@Test
+	public void centerDoesNotShareACenteredTotal()
+	{
+		assertFalse(InTransitPosition.CENTER.sharesTileWith(TotalCaughtPosition.CENTER));
+	}
+
+	@Test
+	public void compassPointDoesNotShareACenteredTotal()
+	{
+		assertFalse(InTransitPosition.NORTH.sharesTileWith(TotalCaughtPosition.CENTER));
+	}
+
+	@Test
+	public void totalCenterIsTheOnlyCenterPlacement()
+	{
+		for (TotalCaughtPosition position : TotalCaughtPosition.values())
+			assertEquals(position == TotalCaughtPosition.CENTER, position.isCenter());
+	}
+
+	@Test
+	public void totalCenterSitsMidPit()
+	{
+		assertEquals(5, TotalCaughtPosition.CENTER.sceneX(4, 6));
+		assertEquals(11, TotalCaughtPosition.CENTER.sceneY(10, 12));
+	}
+
+	@Test
 	public void nothingSharesAnOffTotal()
 	{
 		assertFalse(InTransitPosition.NORTH.sharesTileWith(TotalCaughtPosition.OFF));

@@ -65,6 +65,13 @@ final class TelegrabTargeting
 	 * those in transit toward it have reached its capacity, so another cast would be wasted. This is a
 	 * stricter test than {@code isFull()} — it counts the goats still on their way in.
 	 *
+	 * <p>A goat mid jump-in (the {@code JUMPING} transit phase) is still counted as in transit by design. If
+	 * the pit's count varbit steps up at the <em>start</em> of that jump rather than when the goat lands, that
+	 * goat is briefly counted in both {@code goatsInPit} and {@code goatsInTransit}, so this can read "full" a
+	 * tick or two early. The error is conservative — it only ever stops a fresh cast or prod sooner, never
+	 * invites a wasted one — so the behaviour is left as-is; the varbit-vs-animation timing wants an in-game
+	 * check before {@code JUMPING} is dropped from the in-transit tally to close the transient overlap.
+	 *
 	 * @param goatsInPit     goats currently in the pit
 	 * @param goatsInTransit goats currently being lured toward the pit
 	 * @param limit          the pit's capacity
