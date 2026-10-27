@@ -40,21 +40,25 @@ import net.runelite.client.ui.overlay.components.TitleComponent;
 /**
  * A movable infobox showing this session's catching stats (#101): elapsed time, goats caught, goats per
  * hour, Hunter XP gained, and XP per hour — plus, optionally, the goat fur and horn collected and their Grand
- * Exchange value (#102). Reads {@link SessionStats}, which the plugin samples each tick;
- * hidden until the session has a sample and while the config toggle is off. A standard {@link OverlayPanel},
+ * Exchange value (#102). Reads {@link SessionStats}, which the plugin samples each tick; hidden until the
+ * session has a sample, while the config toggle is off, and whenever no goat pit is loaded in the scene (the
+ * player is away from the pit). A standard {@link OverlayPanel},
  * so the user can drag it anywhere from the overlay menu.
  */
 class SessionStatsOverlay extends OverlayPanel
 {
 	private final GoatIndicatorsConfig config;
 	private final SessionStats stats;
+	private final GoatPitTracker tracker;
 	private final ItemManager itemManager;
 
 	@Inject
-	SessionStatsOverlay(GoatIndicatorsConfig config, SessionStats stats, ItemManager itemManager)
+	SessionStatsOverlay(GoatIndicatorsConfig config, SessionStats stats, GoatPitTracker tracker,
+		ItemManager itemManager)
 	{
 		this.config = config;
 		this.stats = stats;
+		this.tracker = tracker;
 		this.itemManager = itemManager;
 		setPosition(OverlayPosition.TOP_LEFT);
 	}
@@ -63,6 +67,9 @@ class SessionStatsOverlay extends OverlayPanel
 	public Dimension render(Graphics2D graphics)
 	{
 		if (!config.showSessionStats() || !stats.started())
+			return null;
+
+		if (tracker.getPits().isEmpty())
 			return null;
 
 		panelComponent.getChildren().clear();
@@ -99,9 +106,9 @@ class SessionStatsOverlay extends OverlayPanel
 	 * @param hornPrice price of one horn
 	 * @return the total value, computed in {@code long} so a long session cannot overflow
 	 */
-	static long lootValue(int fur, int furPrice, int horn, int hornPrice)
+	static long lootValue(int fur, long furPrice, int horn, long hornPrice)
 	{
-		return (long) fur * furPrice + (long) horn * hornPrice;
+		return fur * furPrice + horn * hornPrice;
 	}
 
 	/** @return a two-column stat row with {@code label} on the left and {@code value} on the right. */

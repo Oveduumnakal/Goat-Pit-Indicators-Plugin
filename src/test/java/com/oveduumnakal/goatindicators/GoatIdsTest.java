@@ -15,7 +15,8 @@ public class GoatIdsTest
 	public void capacityStepsUpWithHunterLevel()
 	{
 		assertEquals(16, GoatIds.capacityForHunterLevel(60));
-		assertEquals(16, GoatIds.capacityForHunterLevel(69));
+		assertEquals(16, GoatIds.capacityForHunterLevel(68));
+		assertEquals(18, GoatIds.capacityForHunterLevel(69));
 		assertEquals(18, GoatIds.capacityForHunterLevel(70));
 		assertEquals(18, GoatIds.capacityForHunterLevel(76));
 		assertEquals(20, GoatIds.capacityForHunterLevel(77));

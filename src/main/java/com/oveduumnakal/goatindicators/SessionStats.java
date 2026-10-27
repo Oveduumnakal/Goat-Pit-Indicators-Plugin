@@ -34,7 +34,9 @@ import javax.inject.Singleton;
  *
  * <p>The plugin feeds a fresh sample each game tick via {@link #update(Instant, int, long)}; the first
  * sample after a {@link #reset()} fixes the session baseline (the lifetime catch total and Hunter XP at that
- * moment), and every later sample reports the delta from it. Rates are the delta scaled by elapsed wall time.
+ * moment), and every later sample reports the delta from it. The session clock starts later, at the first
+ * catch or Hunter XP gain (#126), so time spent banking or walking to the pit does not dilute the rates. Rates
+ * are the delta scaled by the time since that first gain.
  * Kept free of the client and the clock so it is unit-testable — the caller supplies "now" and the readings.
  *
  * <p>It also tallies the goat fur and horn collected this session (#102) from inventory changes fed through
@@ -45,7 +47,15 @@ import javax.inject.Singleton;
 @Singleton
 class SessionStats
 {
-	private Instant start;
+	/** Whether the first sample has fixed the catch and XP baseline. */
+	private boolean baselined;
+
+	/** Whether the first catch or XP gain has landed, which starts the session clock. */
+	private boolean clockRunning;
+
+	/** When the previous sample was taken, so an active sample can add the time since it. */
+	private Instant last;
+
 	private int startCatches;
 	private long startXp;
 
@@ -61,8 +71,7 @@ class SessionStats
 	private int lastHornHeld = -1;
 
 	/**
-	 * Records a fresh sample. The first sample after construction or {@link #reset()} fixes the baseline;
-	 * later samples report the catch and XP gained since, and the time elapsed.
+	 * Records a fresh sample with the clock running; see {@link #update(Instant, int, long, boolean)}.
 	 *
 	 * @param now the current instant
 	 * @param catchTotal the lifetime goats-caught total (its session delta is the catch count)
@@ -70,16 +79,38 @@ class SessionStats
 	 */
 	void update(Instant now, int catchTotal, long hunterXp)
 	{
-		if (start == null)
+		update(now, catchTotal, hunterXp, true);
+	}
+
+	/**
+	 * Records a fresh sample. The first sample after construction or {@link #reset()} fixes the baseline;
+	 * later samples report the catch and XP gained since. The clock starts at the first catch or XP gain and
+	 * only accrues across samples taken while {@code active}, so the clock — and with it the per-hour rates —
+	 * pauses while the player is away from the pit.
+	 *
+	 * @param now the current instant
+	 * @param catchTotal the lifetime goats-caught total (its session delta is the catch count)
+	 * @param hunterXp the current total Hunter experience
+	 * @param active whether the player is at the pit, so the time since the previous sample counts
+	 */
+	void update(Instant now, int catchTotal, long hunterXp, boolean active)
+	{
+		if (!baselined)
 		{
-			start = now;
+			baselined = true;
 			startCatches = catchTotal;
 			startXp = hunterXp;
 		}
+		else if (active && clockRunning)
+		{
+			elapsed = elapsed.plus(Duration.between(last, now));
+		}
 
-		elapsed = Duration.between(start, now);
+		last = now;
 		catches = Math.max(0, catchTotal - startCatches);
 		xpGained = Math.max(0, hunterXp - startXp);
+		if (catches > 0 || xpGained > 0)
+			clockRunning = true;
 	}
 
 	/**
@@ -90,7 +121,7 @@ class SessionStats
 	 */
 	void rebaseCatches(int catchTotal)
 	{
-		if (start != null)
+		if (baselined)
 			startCatches = catchTotal - catches;
 	}
 
@@ -119,7 +150,9 @@ class SessionStats
 	/** Clears the session so the next {@link #update(Instant, int, long)} starts a fresh one. */
 	void reset()
 	{
-		start = null;
+		baselined = false;
+		clockRunning = false;
+		last = null;
 		elapsed = Duration.ZERO;
 		catches = 0;
 		xpGained = 0;
@@ -130,10 +163,10 @@ class SessionStats
 	/** @return whether a session is running (at least one sample has been recorded since the last reset). */
 	boolean started()
 	{
-		return start != null;
+		return baselined;
 	}
 
-	/** @return the time elapsed since the session began. */
+	/** @return the time elapsed since the session's first catch or XP gain, or zero before one. */
 	Duration elapsed()
 	{
 		return elapsed;

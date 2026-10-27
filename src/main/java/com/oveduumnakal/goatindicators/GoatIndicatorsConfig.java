@@ -369,9 +369,9 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "totalCaughtPosition",
 		name = "Show Total Caught",
-		description = "Where to draw the lifetime total of goats caught on the pit: off, or one of its "
-			+ "compass points. The game keeps no total of its own, so the plugin counts every catch and "
-			+ "keeps the tally across logins and restarts.",
+		description = "Where to draw the lifetime total of goats caught on the pit: off, the center (under "
+			+ "the pit count when shown), or one of its compass points. The game keeps no total of its own, "
+			+ "so the plugin counts every catch and keeps the tally across logins and restarts.",
 		section = labelsSection,
 		position = 5
 	)
@@ -548,7 +548,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "showSessionStats",
 		name = "Show Session Stats",
 		description = "Show a movable infobox with this session's stats: time, goats caught, goats per hour, "
-			+ "and Hunter XP gained and per hour. The session starts when the plugin loads and can be reset "
+			+ "and Hunter XP gained and per hour. Timed from your first catch or XP gain; can be reset "
 			+ "below; drag the box anywhere from the overlay menu.",
 		section = sessionSection,
 		position = 0

@@ -30,11 +30,11 @@ Goat Pit Indicators is a RuneLite plugin that shows how full a goat pit is at a 
 
 - **Track your lifetime total**
 
-  A running count of every goat you have caught, drawn on the pit and kept across logins and client restarts. The game keeps no total of its own, so the plugin tallies each catch itself. The total's icon is an animated leaping goat by default. Place it on any compass point, or turn it off.
+  A running count of every goat you have caught, drawn on the pit and kept across logins and client restarts. The game keeps no total of its own, so the plugin tallies each catch itself. The total's icon is an animated leaping goat by default. Place it in the center of the pit, on any compass point, or turn it off.
 
 - **See how the session is going**
 
-  An optional movable infobox tracks this session at a glance: time elapsed, goats caught, goats per hour, and Hunter XP gained and per hour — plus the goat fur and horns you've looted and what they're worth on the Grand Exchange. Starts when the plugin loads, resets on demand, and drags anywhere you like.
+  An optional movable infobox tracks this session at a glance: time elapsed, goats caught, goats per hour, and Hunter XP gained and per hour — plus the goat fur and horns you've looted and what they're worth on the Grand Exchange. The clock starts at your first catch or Hunter XP gain, so time spent getting to the pit does not drag the rates down. Resets on demand, and drags anywhere you like.
 
 - **Watch the ones on their way in**
 
@@ -100,10 +100,11 @@ Goats you can lure into the pit glow pink:
 | Pit Indicator Style | Draw the count as text, a progress bar, or both | Text |
 | Show Goats in Transit | Where to draw a running count of goats on their way in: Off, Center, or a compass point | Center |
 | In Transit Prefix | What precedes the in-transit number: nothing, a label, or the icon | Icon |
-| Show Total Caught | Where to draw the lifetime catch total: Off or a compass point | South-East |
+| Show Total Caught | Where to draw the lifetime catch total: Off, Center, or a compass point | South-East |
 | Total Prefix | What precedes the total: nothing, a "Total: " label, or the animated goat | Animated |
 | Count Label Color | Color of the count and "Add Spikes" text | White |
 | Total Label Color | Color of the total-caught text | White |
+| Reset Total Caught | Tick to zero the lifetime goats-caught total; un-ticks itself | Off |
 
 **Context Menu**
 

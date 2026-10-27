@@ -246,8 +246,8 @@ class GoatPitOverlay extends Overlay
 			drawColorIndicators(graphics, pit, state);
 
 		renderLabels(graphics, pit, state);
-		renderInTransit(graphics, pit);
-		renderTotalCaught(graphics, pit);
+		renderInTransit(graphics, pit, state);
+		renderTotalCaught(graphics, pit, state);
 	}
 
 	/**
@@ -279,7 +279,7 @@ class GoatPitOverlay extends Overlay
 	 * the configured {@link InTransitPrefix} (nothing, an "In transit: " label, or the icon) and placed by the
 	 * configured {@link InTransitPosition}.
 	 */
-	private void renderInTransit(Graphics2D graphics, GameObject pit)
+	private void renderInTransit(Graphics2D graphics, GameObject pit, GoatPitState state)
 	{
 		InTransitPosition position = config.inTransitPosition();
 		if (!position.isDrawn())
@@ -287,7 +287,7 @@ class GoatPitOverlay extends Overlay
 
 		InTransitPrefix prefix = config.inTransitPrefix();
 		String text = inTransitText(prefix, transitTracker.inTransitCount());
-		Point at = inTransitAnchor(graphics, pit, position, text);
+		Point at = inTransitAnchor(graphics, pit, state, position, text);
 		if (at == null)
 			return;
 
@@ -316,15 +316,24 @@ class GoatPitOverlay extends Overlay
 
 	/**
 	 * The canvas point the in-transit line is drawn at. The centre placement sits one line under the pit
-	 * count; a compass placement sits on that pit tile, dropped one line under the total-caught label when
-	 * both share the tile so the two stack instead of overlapping.
+	 * count, or one line under the total when that is centred too; a compass placement sits on that pit
+	 * tile, dropped one line under the total-caught label when both share the tile so the two stack instead
+	 * of overlapping.
 	 */
-	private Point inTransitAnchor(Graphics2D graphics, GameObject pit, InTransitPosition position, String text)
+	private Point inTransitAnchor(Graphics2D graphics, GameObject pit, GoatPitState state,
+		InTransitPosition position, String text)
 	{
 		if (position.isCenter())
 		{
 			Point at = pit.getCanvasTextLocation(graphics, text, 0);
-			return at == null ? null : belowLine(graphics, at);
+			if (at == null)
+				return null;
+
+			Point under = belowLine(graphics, at);
+			if (config.totalCaughtPosition().isCenter() && drawsCenterLabel(state))
+				return belowLine(graphics, under);
+
+			return under;
 		}
 
 		Point min = pit.getSceneMinLocation();
@@ -352,25 +361,18 @@ class GoatPitOverlay extends Overlay
 	}
 
 	/**
-	 * Draws the lifetime catch total on the pit corner chosen in the config, in Stockpile short form, so
-	 * it sits clear of the centred count. North is +y and east is +x.
+	 * Draws the lifetime catch total on the pit position chosen in the config, in Stockpile short form. A
+	 * compass position sits clear of the centred count; the centre position takes the count's place when no
+	 * centre label is drawn, and stacks one line under it otherwise. North is +y and east is +x.
 	 */
-	private void renderTotalCaught(Graphics2D graphics, GameObject pit)
+	private void renderTotalCaught(Graphics2D graphics, GameObject pit, GoatPitState state)
 	{
 		TotalCaughtPosition position = config.totalCaughtPosition();
 		if (position == TotalCaughtPosition.OFF)
 			return;
 
-		Point min = pit.getSceneMinLocation();
-		Point max = pit.getSceneMaxLocation();
-		if (min == null || max == null)
-			return;
-
-		int sceneX = position.sceneX(min.getX(), max.getX());
-		int sceneY = position.sceneY(min.getY(), max.getY());
 		String text = totalCaughtText();
-		LocalPoint tile = LocalPoint.fromScene(sceneX, sceneY, pit.getWorldView());
-		Point at = Perspective.getCanvasTextLocation(client, graphics, tile, text, 0);
+		Point at = totalCaughtAnchor(graphics, pit, state, position, text);
 		if (at == null)
 			return;
 
@@ -386,6 +388,42 @@ class GoatPitOverlay extends Overlay
 		}
 
 		drawText(graphics, at, text, color);
+	}
+
+	/**
+	 * The canvas point the total-caught label is drawn at: the pit's centre, dropped one line when the
+	 * count or "Add Spikes" line is drawn there, or the chosen compass tile.
+	 */
+	private Point totalCaughtAnchor(Graphics2D graphics, GameObject pit, GoatPitState state,
+		TotalCaughtPosition position, String text)
+	{
+		if (position.isCenter())
+		{
+			Point at = pit.getCanvasTextLocation(graphics, text, 0);
+			if (at == null || !drawsCenterLabel(state))
+				return at;
+
+			return belowLine(graphics, at);
+		}
+
+		Point min = pit.getSceneMinLocation();
+		Point max = pit.getSceneMaxLocation();
+		if (min == null || max == null)
+			return null;
+
+		int sceneX = position.sceneX(min.getX(), max.getX());
+		int sceneY = position.sceneY(min.getY(), max.getY());
+		LocalPoint tile = LocalPoint.fromScene(sceneX, sceneY, pit.getWorldView());
+		return Perspective.getCanvasTextLocation(client, graphics, tile, text, 0);
+	}
+
+	/**
+	 * Whether {@link #renderLabels} draws anything in the pit's centre: the "Add Spikes" prompt, or the
+	 * count as text or bar.
+	 */
+	private boolean drawsCenterLabel(GoatPitState state)
+	{
+		return (config.showAddSpikes() && promptAddSpikes(state)) || config.showCount();
 	}
 
 	/**
@@ -699,19 +737,9 @@ class GoatPitOverlay extends Overlay
 	{
 		float f = Math.max(0.0f, Math.min(1.0f, fraction));
 		if (f <= 0.5f)
-			return lerp(from, mid, f * 2.0f);
+			return ColorUtil.lerp(from, mid, f * 2.0f, false);
 
-		return lerp(mid, to, (f - 0.5f) * 2.0f);
-	}
-
-	/** Linearly blends two colors, ignoring their alpha; {@code fraction} is clamped to 0..1. */
-	private static Color lerp(Color from, Color to, float fraction)
-	{
-		float f = Math.max(0.0f, Math.min(1.0f, fraction));
-		int r = Math.round(from.getRed() + (to.getRed() - from.getRed()) * f);
-		int g = Math.round(from.getGreen() + (to.getGreen() - from.getGreen()) * f);
-		int b = Math.round(from.getBlue() + (to.getBlue() - from.getBlue()) * f);
-		return new Color(r, g, b);
+		return ColorUtil.lerp(mid, to, (f - 0.5f) * 2.0f, false);
 	}
 
 	/**

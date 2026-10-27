@@ -105,6 +105,24 @@ public class PitFullNotifierTest
 		verify(notifier, never()).notify(any(Notification.class), anyString());
 	}
 
+	@Test
+	public void walkingBackToAPitThatIsStillFullDoesNotRepeatTheAlert()
+	{
+		when(config.pitFullNotification()).thenReturn(Notification.ON);
+		when(config.notifyCountInTransit()).thenReturn(true);
+
+		singleSpikedPit(16, 16);
+		notifierUnderTest.onTick();
+
+		when(tracker.getPits()).thenReturn(Collections.emptyList());
+		notifierUnderTest.onTick();
+
+		singleSpikedPit(16, 16);
+		notifierUnderTest.onTick();
+
+		verify(notifier, times(1)).notify(any(Notification.class), anyString());
+	}
+
 	/** Points the tracker at one spiked pit at {@code count}/{@code capacity}, with no goats in transit. */
 	private void singleSpikedPit(int count, int capacity)
 	{
