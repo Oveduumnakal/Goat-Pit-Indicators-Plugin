@@ -354,7 +354,7 @@ public interface GoatIndicatorsConfig extends Config
 	)
 	default Color bestTileColor()
 	{
-		return new Color(0, 220, 255, 200);
+		return new Color(0, 173, 255, 125);
 	}
 
 	@ConfigItem(

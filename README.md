@@ -97,7 +97,7 @@ Goats you can lure into the pit glow pink:
 | Telegrab Furthest | Outline for the furthest (lowest-priority) lure target | Faint pink |
 | Prod Closest | Outline for the closest prodable goat, nearest the pit | Orange |
 | Prod Furthest | Outline for the furthest prodable goat still in prod range | Pale yellow |
-| Best Tile | Color of the best-tile marker and its "Stand here" label | Cyan |
+| Best Tile | Color of the best-tile marker and its "Stand here" label | Sky blue (`#7D00ADFF`) |
 
 **Labels**
 
