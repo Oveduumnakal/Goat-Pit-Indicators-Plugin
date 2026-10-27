@@ -28,20 +28,22 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Pure scoring for the "stand here" hint (#104): the tile the player can walk to that puts the most goats in
- * reach of the current catching method at once.
+ * Pure scoring for the "stand here" hint (#104): where the player can walk to put the most goats in reach of the
+ * current catching method at once.
  *
- * <p>Candidates are the tiles the prod-reach flood ({@link ProdPathing#reachDistances}) found walkable from the
- * player, minus the pit's own footprint. Each is scored by how many goats the method could send into a catching
- * pit from there, reusing the same rules the goat highlight applies to the player's own tile:
+ * <p>Candidates come from the tiles the prod-reach flood ({@link ProdPathing#reachDistances}) found walkable from
+ * the player, minus the pit's own footprint, and are scored by how many goats the method could send into a
+ * catching pit from there, reusing the same rules the goat highlight applies to the player's own tile:
  * <ul>
  *   <li><b>Lure</b> (Telekinetic Grab / Dark Lure): goats within cast range, on the far side of a pit, and in
- *   line of sight ({@link TelegrabTargeting}).</li>
+ *   line of sight ({@link TelegrabTargeting}). A lure is best cast from right beside the pit, so the candidates
+ *   are a pit's four sides: the strip of tiles sharing that side's edge (3 on a 3x3 pit, corners excluded),
+ *   scored by the goats any of its reachable tiles could lure (#151).</li>
  *   <li><b>Prod</b>: goats right beside the tile (a prod needs you adjacent), within prod range of a pit, and
- *   with that pit in the push direction ({@link ProdTargeting}).</li>
+ *   with that pit in the push direction ({@link ProdTargeting}). Candidates are single tiles.</li>
  * </ul>
- * The highest score wins; ties go to the tile the player reaches in the fewest steps, so standing still wins
- * whenever the current tile is already as good as any.
+ * The highest score wins; ties go to the candidate the player reaches in the fewest steps, so standing still
+ * wins whenever the current tile is already as good as any.
  *
  * <p>Goats are passed as {@code int[]{x, y, id}} and pit footprints as {@code int[]{minX, minY, maxX, maxY}},
  * all in world coordinates, so the rules can be unit-tested without a {@code Client}. Line of sight depends on
@@ -80,6 +82,54 @@ final class BestTile
 
 	private BestTile()
 	{
+	}
+
+	/**
+	 * The best pit side to stand beside for a lure, as {@code int[]{minX, minY, maxX, maxY, score}}: the strip of
+	 * tiles along one edge of a pit, scored by how many goats a lure from any of its reachable tiles could send
+	 * into a catching pit. {@code null} when no side has a reachable tile that scores above zero.
+	 *
+	 * @param reach the walkable tiles and their step distance from the player, from {@link ProdPathing}
+	 * @param pits the catching pits' world footprints
+	 * @param goats the goats as {@code int[]{x, y, id}}
+	 * @param sight the line-of-sight test
+	 * @return the winning side and its score, or {@code null}
+	 */
+	static int[] pickLureSide(Map<Long, Integer> reach, List<int[]> pits, List<int[]> goats, SightFn sight)
+	{
+		int[] best = null;
+		int bestSteps = Integer.MAX_VALUE;
+		long bestKey = Long.MAX_VALUE;
+		for (int[] pit : pits)
+		{
+			for (int[] side : sides(pit))
+			{
+				int steps = Integer.MAX_VALUE;
+				for (int x = side[0]; x <= side[2]; x++)
+				{
+					for (int y = side[1]; y <= side[3]; y++)
+					{
+						Integer distance = reach.get(ProdPathing.key(x, y));
+						if (distance != null && !insideAnyPit(x, y, pits))
+							steps = Math.min(steps, distance);
+					}
+				}
+
+				if (steps == Integer.MAX_VALUE)
+					continue;
+
+				int score = sideLureCount(side, reach, goats, pits, sight);
+				long key = ProdPathing.key(side[0], side[1]);
+				if (score > 0 && (best == null || beats(score, steps, key, best[4], bestSteps, bestKey)))
+				{
+					best = new int[]{side[0], side[1], side[2], side[3], score};
+					bestSteps = steps;
+					bestKey = key;
+				}
+			}
+		}
+
+		return best;
 	}
 
 	/**
@@ -136,14 +186,60 @@ final class BestTile
 		int count = 0;
 		for (int[] goat : goats)
 		{
-			if (!TelegrabTargeting.withinCastRange(chebyshev(x, y, goat[0], goat[1])))
-				continue;
-
-			if (acrossAnyPit(x, y, goat, pits) && sight.canSee(x, y, goat[2]))
+			if (canLure(x, y, goat, pits, sight))
 				count++;
 		}
 
 		return count;
+	}
+
+	/** The four strips of tiles sharing an edge with the pit, as {@code int[]{minX, minY, maxX, maxY}}. */
+	private static int[][] sides(int[] pit)
+	{
+		return new int[][]{
+			{pit[0] - 1, pit[1], pit[0] - 1, pit[3]},
+			{pit[2] + 1, pit[1], pit[2] + 1, pit[3]},
+			{pit[0], pit[1] - 1, pit[2], pit[1] - 1},
+			{pit[0], pit[3] + 1, pit[2], pit[3] + 1},
+		};
+	}
+
+	/** How many goats a lure from at least one reachable, non-pit tile of the side could send into a pit. */
+	private static int sideLureCount(int[] side, Map<Long, Integer> reach, List<int[]> goats, List<int[]> pits,
+		SightFn sight)
+	{
+		int count = 0;
+		for (int[] goat : goats)
+		{
+			if (sideCanLure(side, reach, goat, pits, sight))
+				count++;
+		}
+
+		return count;
+	}
+
+	/** Whether a lure from any reachable, non-pit tile of the side could send the goat into a pit. */
+	private static boolean sideCanLure(int[] side, Map<Long, Integer> reach, int[] goat, List<int[]> pits,
+		SightFn sight)
+	{
+		for (int x = side[0]; x <= side[2]; x++)
+		{
+			for (int y = side[1]; y <= side[3]; y++)
+			{
+				if (reach.containsKey(ProdPathing.key(x, y)) && !insideAnyPit(x, y, pits)
+						&& canLure(x, y, goat, pits, sight))
+					return true;
+			}
+		}
+
+		return false;
+	}
+
+	/** Whether a lure from the tile could send the goat into a pit: in cast range, across a pit, and in sight. */
+	private static boolean canLure(int x, int y, int[] goat, List<int[]> pits, SightFn sight)
+	{
+		return TelegrabTargeting.withinCastRange(chebyshev(x, y, goat[0], goat[1]))
+			&& acrossAnyPit(x, y, goat, pits) && sight.canSee(x, y, goat[2]);
 	}
 
 	/**

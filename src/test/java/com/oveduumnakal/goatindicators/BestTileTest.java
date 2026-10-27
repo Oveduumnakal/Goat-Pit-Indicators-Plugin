@@ -19,7 +19,8 @@ import static org.junit.Assert.assertNull;
 /**
  * Covers the best-tile scoring (#104) on a synthetic 3x3 pit spanning (10, 10)-(12, 12): lure counts goats in
  * range, across the pit and in sight; prod counts adjacent goats a push sends into the pit; the pick takes the
- * highest score, breaks ties by fewest steps, never suggests a pit tile, and yields nothing when no tile scores.
+ * highest score, breaks ties by fewest steps, never suggests a pit tile, and yields nothing when no tile scores;
+ * the lure side pick takes the pit side whose tiles lure the most goats.
  */
 public class BestTileTest
 {
@@ -75,6 +76,43 @@ public class BestTileTest
 		reach.put(ProdPathing.key(11, 9), 2);
 
 		assertArrayEquals(new int[]{11, 9, 1}, BestTile.pick(reach, PITS, (x, y) -> x == 11 && y == 11 ? 9 : 1));
+	}
+
+	@Test
+	public void lureSidePicksTheSideAcrossFromTheGoats()
+	{
+		List<int[]> goats = Arrays.asList(new int[]{14, 11, 0}, new int[]{15, 10, 1});
+		Map<Long, Integer> reach = new HashMap<>();
+		for (int y = 10; y <= 12; y++)
+		{
+			reach.put(ProdPathing.key(9, y), 3);
+			reach.put(ProdPathing.key(13, y), 1);
+		}
+
+		assertArrayEquals(new int[]{9, 10, 9, 12, 2}, BestTile.pickLureSide(reach, PITS, goats, ALWAYS));
+	}
+
+	@Test
+	public void lureSideCountsGoatsAnyOfItsTilesCanLure()
+	{
+		List<int[]> goats = Arrays.asList(new int[]{13, 10, 0}, new int[]{13, 12, 1});
+		Map<Long, Integer> reach = new HashMap<>();
+		reach.put(ProdPathing.key(9, 10), 2);
+		reach.put(ProdPathing.key(9, 12), 2);
+		BestTile.SightFn split = (x, y, id) -> y == 10 ? id == 0 : id == 1;
+
+		assertArrayEquals(new int[]{9, 10, 9, 12, 2}, BestTile.pickLureSide(reach, PITS, goats, split));
+	}
+
+	@Test
+	public void lureSideSkipsSidesWithNoReachableTile()
+	{
+		List<int[]> goats = Collections.singletonList(new int[]{13, 11, 0});
+		Map<Long, Integer> reach = new HashMap<>();
+		reach.put(ProdPathing.key(8, 11), 0);
+		reach.put(ProdPathing.key(9, 9), 1);
+
+		assertNull(BestTile.pickLureSide(reach, PITS, goats, ALWAYS));
 	}
 
 	@Test

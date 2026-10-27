@@ -209,9 +209,9 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "highlightBestTile",
 		name = "Highlight Best Tile",
-		description = "Mark the tile you can walk to that puts the most goats in reach at once — for a lure "
-			+ "spell, goats in range and across the pit; with a Cattleprod equipped, goats beside the tile you "
-			+ "can prod in. Updates every tick as the goats move.",
+		description = "Mark where to stand to put the most goats in reach at once — for a lure spell, the side "
+			+ "of the pit (its 3 edge tiles) with the most goats in range and across it; with a Cattleprod "
+			+ "equipped, the tile with the most goats beside it to prod in. Updates every tick as the goats move.",
 		section = indicatorsSection,
 		position = 9
 	)
