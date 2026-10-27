@@ -45,8 +45,11 @@ class SessionStats
 	/** Whether the first sample has fixed the catch and XP baseline. */
 	private boolean baselined;
 
-	/** When the first catch or XP gain landed, which the session clock runs from, or {@code null} before it. */
-	private Instant clockStart;
+	/** Whether the first catch or XP gain has landed, which starts the session clock. */
+	private boolean clockRunning;
+
+	/** When the previous sample was taken, so an active sample can add the time since it. */
+	private Instant last;
 
 	private int startCatches;
 	private long startXp;
@@ -56,8 +59,7 @@ class SessionStats
 	private long xpGained;
 
 	/**
-	 * Records a fresh sample. The first sample after construction or {@link #reset()} fixes the baseline;
-	 * later samples report the catch and XP gained since, and the time elapsed since the first gain.
+	 * Records a fresh sample with the clock running; see {@link #update(Instant, int, long, boolean)}.
 	 *
 	 * @param now the current instant
 	 * @param catchTotal the lifetime goats-caught total (its session delta is the catch count)
@@ -65,19 +67,38 @@ class SessionStats
 	 */
 	void update(Instant now, int catchTotal, long hunterXp)
 	{
+		update(now, catchTotal, hunterXp, true);
+	}
+
+	/**
+	 * Records a fresh sample. The first sample after construction or {@link #reset()} fixes the baseline;
+	 * later samples report the catch and XP gained since. The clock starts at the first catch or XP gain and
+	 * only accrues across samples taken while {@code active}, so the clock — and with it the per-hour rates —
+	 * pauses while the player is away from the pit.
+	 *
+	 * @param now the current instant
+	 * @param catchTotal the lifetime goats-caught total (its session delta is the catch count)
+	 * @param hunterXp the current total Hunter experience
+	 * @param active whether the player is at the pit, so the time since the previous sample counts
+	 */
+	void update(Instant now, int catchTotal, long hunterXp, boolean active)
+	{
 		if (!baselined)
 		{
 			baselined = true;
 			startCatches = catchTotal;
 			startXp = hunterXp;
 		}
+		else if (active && clockRunning)
+		{
+			elapsed = elapsed.plus(Duration.between(last, now));
+		}
 
+		last = now;
 		catches = Math.max(0, catchTotal - startCatches);
 		xpGained = Math.max(0, hunterXp - startXp);
-		if (clockStart == null && (catches > 0 || xpGained > 0))
-			clockStart = now;
-
-		elapsed = clockStart == null ? Duration.ZERO : Duration.between(clockStart, now);
+		if (catches > 0 || xpGained > 0)
+			clockRunning = true;
 	}
 
 	/**
@@ -96,7 +117,8 @@ class SessionStats
 	void reset()
 	{
 		baselined = false;
-		clockStart = null;
+		clockRunning = false;
+		last = null;
 		elapsed = Duration.ZERO;
 		catches = 0;
 		xpGained = 0;

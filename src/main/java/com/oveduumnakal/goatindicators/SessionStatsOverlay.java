@@ -38,19 +38,22 @@ import net.runelite.client.ui.overlay.components.TitleComponent;
 /**
  * A movable infobox showing this session's catching stats (#101): elapsed time, goats caught, goats per
  * hour, Hunter XP gained, and XP per hour. Reads {@link SessionStats}, which the plugin samples each tick;
- * hidden until the session has a sample and while the config toggle is off. A standard {@link OverlayPanel},
+ * hidden until the session has a sample, while the config toggle is off, and whenever no goat pit is loaded
+ * in the scene (the player is away from the pit). A standard {@link OverlayPanel},
  * so the user can drag it anywhere from the overlay menu.
  */
 class SessionStatsOverlay extends OverlayPanel
 {
 	private final GoatIndicatorsConfig config;
 	private final SessionStats stats;
+	private final GoatPitTracker tracker;
 
 	@Inject
-	SessionStatsOverlay(GoatIndicatorsConfig config, SessionStats stats)
+	SessionStatsOverlay(GoatIndicatorsConfig config, SessionStats stats, GoatPitTracker tracker)
 	{
 		this.config = config;
 		this.stats = stats;
+		this.tracker = tracker;
 		setPosition(OverlayPosition.TOP_LEFT);
 	}
 
@@ -58,6 +61,9 @@ class SessionStatsOverlay extends OverlayPanel
 	public Dimension render(Graphics2D graphics)
 	{
 		if (!config.showSessionStats() || !stats.started())
+			return null;
+
+		if (tracker.getPits().isEmpty())
 			return null;
 
 		panelComponent.getChildren().clear();
