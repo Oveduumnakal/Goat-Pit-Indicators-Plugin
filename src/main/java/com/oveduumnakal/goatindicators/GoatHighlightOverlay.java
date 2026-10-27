@@ -107,17 +107,17 @@ class GoatHighlightOverlay extends Overlay
 		if (player == null)
 			return null;
 
+		WorldPoint playerLocation = player.getWorldLocation();
+		if (playerLocation == null)
+			return null;
+
 		if (config.highlightProdable() && cattleprodEquipped())
 		{
-			renderProdable(graphics, player.getWorldLocation());
+			renderProdable(graphics, playerLocation);
 			return null;
 		}
 
 		if (!config.highlightTelegrab() || !lureSpells.canLure())
-			return null;
-
-		WorldPoint playerLocation = player.getWorldLocation();
-		if (playerLocation == null)
 			return null;
 
 		List<GameObject> catchingPits = catchingPits();
