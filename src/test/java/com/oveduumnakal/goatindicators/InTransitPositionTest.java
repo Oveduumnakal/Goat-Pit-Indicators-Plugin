@@ -85,7 +85,8 @@ public class InTransitPositionTest
 
 	/**
 	 * {@link InTransitPosition#sharesTileWith(TotalCaughtPosition)} matches the two enums by {@code name()},
-	 * so their eight compass constants must carry identical names. Renaming one in either enum without the
+	 * so their eight compass constants must carry identical names. Off and centre are left out: neither
+	 * stacks by name. Renaming one in either enum without the
 	 * other would silently disable the stack-under-total behaviour; this fails the build instead.
 	 */
 	@Test
@@ -101,7 +102,7 @@ public class InTransitPositionTest
 		Set<String> total = new HashSet<>();
 		for (TotalCaughtPosition p : TotalCaughtPosition.values())
 		{
-			if (p != TotalCaughtPosition.OFF)
+			if (p != TotalCaughtPosition.OFF && p != TotalCaughtPosition.CENTER)
 				total.add(p.name());
 		}
 
