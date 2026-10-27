@@ -24,6 +24,7 @@
  */
 package com.oveduumnakal.goatindicators;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -191,6 +192,42 @@ final class BestTile
 		}
 
 		return count;
+	}
+
+	/**
+	 * The edges to outline around a stand-here spot {@code int[]{minX, minY, maxX, maxY, ...}}: every tile edge
+	 * except those shared with another tile of the spot or with a pit, so only the spot's outer border shows.
+	 * Each edge is {@code int[]{x1, y1, x2, y2}} in tile-corner coordinates, where corner {@code (x, y)} is the
+	 * south-west corner of tile {@code (x, y)}.
+	 *
+	 * @param spot the spot's world bounds
+	 * @param pits the catching pits' world footprints
+	 * @return the outer edges to draw
+	 */
+	static List<int[]> outerEdges(int[] spot, List<int[]> pits)
+	{
+		List<int[]> edges = new ArrayList<>();
+		for (int x = spot[0]; x <= spot[2]; x++)
+		{
+			for (int y = spot[1]; y <= spot[3]; y++)
+			{
+				addEdgeUnlessShared(edges, spot, pits, x, y - 1, new int[]{x, y, x + 1, y});
+				addEdgeUnlessShared(edges, spot, pits, x, y + 1, new int[]{x, y + 1, x + 1, y + 1});
+				addEdgeUnlessShared(edges, spot, pits, x - 1, y, new int[]{x, y, x, y + 1});
+				addEdgeUnlessShared(edges, spot, pits, x + 1, y, new int[]{x + 1, y, x + 1, y + 1});
+			}
+		}
+
+		return edges;
+	}
+
+	/** Adds the edge unless the tile across it, {@code (nx, ny)}, is part of the spot or of a pit. */
+	private static void addEdgeUnlessShared(List<int[]> edges, int[] spot, List<int[]> pits, int nx, int ny,
+		int[] edge)
+	{
+		boolean inSpot = nx >= spot[0] && nx <= spot[2] && ny >= spot[1] && ny <= spot[3];
+		if (!inSpot && !insideAnyPit(nx, ny, pits))
+			edges.add(edge);
 	}
 
 	/** The four strips of tiles sharing an edge with the pit, as {@code int[]{minX, minY, maxX, maxY}}. */

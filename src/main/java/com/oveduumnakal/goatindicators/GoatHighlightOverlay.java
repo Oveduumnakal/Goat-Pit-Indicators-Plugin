@@ -114,6 +114,9 @@ class GoatHighlightOverlay extends Overlay
 	 */
 	private int[] bestTile;
 
+	/** The catching pits' world footprints the cached spot was scored against, so its pit-facing edges hide. */
+	private List<int[]> bestTilePits = new ArrayList<>();
+
 	@Inject
 	GoatHighlightOverlay(Client client, GoatIndicatorsConfig config, GoatPitTracker tracker,
 		GoatTransitTracker transitTracker, LureSpells lureSpells)
@@ -225,6 +228,8 @@ class GoatHighlightOverlay extends Overlay
 				pits.add(footprint);
 		}
 
+		bestTilePits = pits;
+
 		List<int[]> goats = new ArrayList<>();
 		List<WorldArea> goatAreas = new ArrayList<>();
 		for (NPC npc : client.getTopLevelWorldView().npcs())
@@ -259,28 +264,33 @@ class GoatHighlightOverlay extends Overlay
 	}
 
 	/**
-	 * Draws the stand-here marker: each tile of the spot lightly filled and outlined in the configured color,
-	 * with a {@code "Stand here: N"} label on its middle tile, where {@code N} is how many goats it reaches.
+	 * Draws the stand-here marker: each tile of the spot lightly filled in the configured color, an outline
+	 * around the spot's outer border only (no lines between its tiles or along the pit), and a
+	 * {@code "Stand here: N"} label on its middle tile, where {@code N} is how many goats it reaches.
 	 */
 	private void drawBestTile(Graphics2D graphics, int[] spot, int plane)
 	{
 		Color color = config.bestTileColor();
-		Color fill = new Color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha() / 4);
-		graphics.setStroke(OUTLINE_STROKE);
+		graphics.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha() / 4));
 		for (int x = spot[0]; x <= spot[2]; x++)
 		{
 			for (int y = spot[1]; y <= spot[3]; y++)
 			{
 				LocalPoint local = LocalPoint.fromWorld(client.getTopLevelWorldView(), new WorldPoint(x, y, plane));
 				Polygon poly = local == null ? null : Perspective.getCanvasTilePoly(client, local);
-				if (poly == null)
-					continue;
-
-				graphics.setColor(fill);
-				graphics.fill(poly);
-				graphics.setColor(color);
-				graphics.draw(poly);
+				if (poly != null)
+					graphics.fill(poly);
 			}
+		}
+
+		graphics.setColor(color);
+		graphics.setStroke(OUTLINE_STROKE);
+		for (int[] edge : BestTile.outerEdges(spot, bestTilePits))
+		{
+			Point from = tileCorner(edge[0], edge[1], plane);
+			Point to = tileCorner(edge[2], edge[3], plane);
+			if (from != null && to != null)
+				graphics.drawLine(from.getX(), from.getY(), to.getX(), to.getY());
 		}
 
 		WorldPoint middle = new WorldPoint((spot[0] + spot[2]) / 2, (spot[1] + spot[3]) / 2, plane);
@@ -292,6 +302,22 @@ class GoatHighlightOverlay extends Overlay
 		Point at = Perspective.getCanvasTextLocation(client, graphics, local, text, 0);
 		if (at != null)
 			OverlayUtil.renderTextLocation(graphics, at, text, color);
+	}
+
+	/**
+	 * The canvas point of a tile corner at ground height, where corner {@code (x, y)} is the south-west corner of
+	 * world tile {@code (x, y)}, or {@code null} when it is off the scene or off screen.
+	 */
+	private Point tileCorner(int x, int y, int plane)
+	{
+		WorldView worldView = client.getTopLevelWorldView();
+		LocalPoint center = LocalPoint.fromWorld(worldView, new WorldPoint(x, y, plane));
+		if (center == null)
+			return null;
+
+		int half = Perspective.LOCAL_TILE_SIZE / 2;
+		LocalPoint corner = new LocalPoint(center.getX() - half, center.getY() - half, worldView);
+		return Perspective.localToCanvas(client, corner, plane);
 	}
 
 	/**

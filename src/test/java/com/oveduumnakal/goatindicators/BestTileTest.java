@@ -14,6 +14,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
 /**
@@ -113,6 +114,18 @@ public class BestTileTest
 		reach.put(ProdPathing.key(9, 9), 1);
 
 		assertNull(BestTile.pickLureSide(reach, PITS, goats, ALWAYS));
+	}
+
+	@Test
+	public void outerEdgesSkipThePitAndTheSpotsOwnSeams()
+	{
+		List<int[]> edges = BestTile.outerEdges(new int[]{9, 10, 9, 12}, PITS);
+
+		assertEquals(5, edges.size());
+		for (int[] edge : edges)
+			assertFalse(edge[0] == 10 && edge[2] == 10);
+
+		assertEquals(4, BestTile.outerEdges(new int[]{5, 5, 5, 5}, PITS).size());
 	}
 
 	@Test
