@@ -209,13 +209,26 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "highlightBestTile",
 		name = "Highlight Best Tile",
-		description = "Mark the tile you can walk to that puts the most goats in reach at once — for a lure "
-			+ "spell, goats in range and across the pit; with a Cattleprod equipped, goats beside the tile you "
-			+ "can prod in.<br>Updates every tick as the goats move.",
+		description = "Mark where to stand to put the most goats in reach at once — for a lure spell, the side "
+			+ "of the pit (its 3 edge tiles) with the most goats in range and across it; with a Cattleprod "
+			+ "equipped, the tile with the most goats beside it to prod in.<br>Updates every tick as the goats move.",
 		section = indicatorsSection,
 		position = 9
 	)
 	default boolean highlightBestTile()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "alwaysShowGoatCount",
+		name = "Always Show Goat Count",
+		description = "With Highlight Best Tile on and a lure spell ready, also draw a faint goat count beside "
+			+ "the pit's other three sides, so you can see how close they are to the best side.",
+		section = indicatorsSection,
+		position = 10
+	)
+	default boolean alwaysShowGoatCount()
 	{
 		return false;
 	}
@@ -354,7 +367,7 @@ public interface GoatIndicatorsConfig extends Config
 	)
 	default Color bestTileColor()
 	{
-		return new Color(0, 220, 255, 200);
+		return new Color(0, 173, 255, 125);
 	}
 
 	@ConfigItem(
