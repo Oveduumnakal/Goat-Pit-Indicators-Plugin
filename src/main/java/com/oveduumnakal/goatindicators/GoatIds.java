@@ -58,13 +58,13 @@ final class GoatIds
 	 * level, per the OSRS Wiki (<a href="https://oldschool.runescape.wiki/w/Goat_pit">Goat pit</a>):
 	 *
 	 * <pre>
-	 *   Hunter 60-69 -&gt; 16    Hunter 85-92 -&gt; 22
-	 *   Hunter 70-76 -&gt; 18    Hunter 93+   -&gt; 24
+	 *   Hunter 60-68 -&gt; 16    Hunter 85-92 -&gt; 22
+	 *   Hunter 69-76 -&gt; 18    Hunter 93+   -&gt; 24
 	 *   Hunter 77-84 -&gt; 20
 	 * </pre>
 	 *
-	 * The wiki lists levels 68-69 as unconfirmed; they are treated as {@code 16} (the last confirmed
-	 * value below 70) here. Levels below 60 cannot use the pit, so they also return {@link #MIN_CAPACITY}.
+	 * The step up to {@code 18} lands at level 69, not 70 (confirmed in-game by a player reaching 69).
+	 * Levels below 60 cannot use the pit, so they also return {@link #MIN_CAPACITY}.
 	 *
 	 * @param hunterLevel the player's Hunter level (real, unboosted)
 	 * @return the pit capacity for that level, always within {@link #MIN_CAPACITY}..{@link #MAX_CAPACITY}
@@ -80,7 +80,7 @@ final class GoatIds
 		if (hunterLevel >= 77)
 			return 20;
 
-		if (hunterLevel >= 70)
+		if (hunterLevel >= 69)
 			return 18;
 
 		return MIN_CAPACITY;

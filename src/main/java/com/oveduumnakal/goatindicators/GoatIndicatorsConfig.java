@@ -384,9 +384,9 @@ public interface GoatIndicatorsConfig extends Config
 	@ConfigItem(
 		keyName = "totalCaughtPosition",
 		name = "Show Total Caught",
-		description = "Where to draw the lifetime total of goats caught on the pit: off, or one of its "
-			+ "compass points. The game keeps no total of its own, so the plugin counts every catch and "
-			+ "keeps the tally across logins and restarts.",
+		description = "Where to draw the lifetime total of goats caught on the pit: off, the center (under "
+			+ "the pit count when shown), or one of its compass points. The game keeps no total of its own, "
+			+ "so the plugin counts every catch and keeps the tally across logins and restarts.",
 		section = labelsSection,
 		position = 5
 	)
@@ -575,7 +575,7 @@ public interface GoatIndicatorsConfig extends Config
 		keyName = "showSessionStats",
 		name = "Show Session Stats",
 		description = "Show a movable infobox with this session's stats: time, goats caught, goats per hour, "
-			+ "and Hunter XP gained and per hour. The session starts when the plugin loads and can be reset "
+			+ "and Hunter XP gained and per hour. Timed from your first catch or XP gain; can be reset "
 			+ "below; drag the box anywhere from the overlay menu.",
 		section = sessionSection,
 		position = 0
@@ -586,12 +586,26 @@ public interface GoatIndicatorsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "showSessionLoot",
+		name = "Show Fur & Horn",
+		description = "Add the goat fur and horns collected this session to the session infobox, with their "
+			+ "combined Grand Exchange value. Counted from your inventory as you loot the pit, so fur that goes "
+			+ "straight into a fur pouch is not seen.",
+		section = sessionSection,
+		position = 1
+	)
+	default boolean showSessionLoot()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "sessionReset",
 		name = "Reset Session Stats",
 		description = "Tick to restart the session — zeroing the time, catch count, and XP — then it un-ticks "
 			+ "itself.",
 		section = sessionSection,
-		position = 1
+		position = 2
 	)
 	default boolean sessionReset()
 	{

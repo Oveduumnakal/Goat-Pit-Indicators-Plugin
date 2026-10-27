@@ -25,8 +25,9 @@
 package com.oveduumnakal.goatindicators;
 
 /**
- * Where the in-transit goat count is drawn on a pit, or off. It offers the same eight compass points as
- * {@link TotalCaughtPosition}, plus a {@link #CENTER} that sits under the pit count. The eight compass
+ * Where the in-transit goat count is drawn on a pit, or off. It offers the same eight compass points and
+ * {@link #CENTER} as {@link TotalCaughtPosition}; its centre sits under the pit count, and under the total
+ * too when that is centred. The eight compass
  * constants share their names with {@link TotalCaughtPosition} so a position can be matched to the
  * total's tile: when both land on the same tile, the in-transit line is stacked under the total.
  */

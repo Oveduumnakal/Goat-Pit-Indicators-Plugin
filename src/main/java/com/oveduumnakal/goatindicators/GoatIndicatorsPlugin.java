@@ -34,6 +34,8 @@ import com.google.inject.Provides;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.Item;
+import net.runelite.api.ItemContainer;
 import net.runelite.api.NPC;
 import net.runelite.api.Player;
 import net.runelite.api.Skill;
@@ -41,8 +43,12 @@ import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.PostMenuSort;
 import net.runelite.api.events.VarbitChanged;
+import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.ItemID;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -86,6 +92,9 @@ public class GoatIndicatorsPlugin extends Plugin
 
 	@Inject
 	private Client client;
+
+	@Inject
+	private ClientThread clientThread;
 
 	@Inject
 	private ConfigManager configManager;
@@ -136,6 +145,22 @@ public class GoatIndicatorsPlugin extends Plugin
 		catchCounter.restore(loadPersistedTotal());
 		sessionStats.reset();
 		scheduleSeed();
+		clientThread.invokeLater(this::scanScene);
+	}
+
+	/**
+	 * Picks up a pit and spike supply that were already loaded when the plugin started — enabled, installed or
+	 * re-enabled while standing at the pit — since their spawn events fired before it was listening (#122). Runs
+	 * on the client thread; does nothing while logged out, when the login scene build fires spawn events anyway.
+	 */
+	private void scanScene()
+	{
+		if (client.getGameState() != GameState.LOGGED_IN)
+			return;
+
+		tracker.scan(client.getTopLevelWorldView()
+			.getScene()
+			.getTiles());
 	}
 
 	/**
@@ -196,7 +221,8 @@ public class GoatIndicatorsPlugin extends Plugin
 		transitTracker.onTick(client.getTopLevelWorldView().npcs(), localTargetIndex(), localProdding(),
 			remoteProddedGoatIndices());
 		pitFullNotifier.onTick();
-		sessionStats.update(Instant.now(), catchCounter.getTotal(), client.getSkillExperience(Skill.HUNTER));
+		sessionStats.update(Instant.now(), catchCounter.getTotal(), client.getSkillExperience(Skill.HUNTER),
+			!tracker.getPits().isEmpty());
 		if (seedCountdown > 0 && --seedCountdown == 0)
 			catchCounter.seed(client.getVarbitValue(GoatIds.COUNT_VARBIT_OVERRIDE));
 	}
@@ -279,6 +305,38 @@ public class GoatIndicatorsPlugin extends Plugin
 		catchCounter.onCountChanged(event.getValue());
 		if (catchCounter.getTotal() != before)
 			configManager.setConfiguration(GoatIndicatorsConfig.GROUP, TOTAL_CAUGHT_KEY, catchCounter.getTotal());
+	}
+
+	/**
+	 * Feeds the carried goat fur and horn to the session tally on every inventory change, so what is looted
+	 * from the pit shows in the session infobox. Rises only count while a pit is loaded, which keeps a bank
+	 * withdrawal from reading as loot.
+	 */
+	@Subscribe
+	public void onItemContainerChanged(ItemContainerChanged event)
+	{
+		if (event.getContainerId() != InventoryID.INV)
+			return;
+
+		ItemContainer inventory = event.getItemContainer();
+		sessionStats.recordInventory(heldCount(inventory, ItemID.GOAT_PIT_FUR),
+			heldCount(inventory, ItemID.DESERT_GOAT_HORN), !tracker.getPits().isEmpty());
+	}
+
+	/** How many of an item a container holds, summing every stack, or {@code 0} for a missing container. */
+	private static int heldCount(ItemContainer container, int itemId)
+	{
+		if (container == null)
+			return 0;
+
+		int count = 0;
+		for (Item item : container.getItems())
+		{
+			if (item != null && item.getId() == itemId)
+				count += item.getQuantity();
+		}
+
+		return count;
 	}
 
 	/**
